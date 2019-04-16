@@ -16,10 +16,10 @@ from rdflib import Graph, URIRef, Literal
 from typing import Dict, List, Optional
 import logging
 
-from namespaces import NS
-import rule
-from rule import DataRuleWrapper
-from sparql_helper import ComponentInfo
+from .namespaces import NS
+from . import rule
+from .rule import DataRuleWrapper
+from .sparql_helper import ComponentInfo
 
 
 logger = logging.getLogger("AUGM")

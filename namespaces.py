@@ -11,7 +11,7 @@
 
 '''
 
-from rdflib import Graph, Literal, BNode, Namespace, RDF, URIRef
+from rdflib import Namespace
 
 RDF = Namespace('http://www.w3.org/1999/02/22-rdf-syntax-ns#')
 RDFS = Namespace('http://www.w3.org/2000/01/rdf-schema#')
@@ -26,3 +26,4 @@ NS = {
         's-prov': S_PROV,
         'mine': MINE,
 }
+

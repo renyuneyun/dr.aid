@@ -12,6 +12,10 @@
 '''
 
 from functools import partial
+from rdflib import URIRef
+from typing import Iterable, TypeVar
+
+T_REF = TypeVar('T_REF', str, URIRef)
 
 def P(s, *args, **kwargs):
     if callable(s):
@@ -60,9 +64,15 @@ PREFIX provone: <http://purl.dataone.org/provone/2015/01/15/ontology#>
 PREFIX s-prov: <http://s-prov/ns/#>
 '''
 
+ALL_WFE_GRAPHS = '''
+SELECT ?g WHERE {
+  ?g a s-prov:WFExecutionBundle
+} 
+'''
+
 T_QUERY = P("""
 SELECT {target} {{
-  graph ?g {{
+  GRAPH <{graph}> {{
 
     {body}
 
@@ -70,13 +80,9 @@ SELECT {target} {{
 }}
 """)
 
-ALL_COMPONENTS = '''
-SELECT ?component WHERE {
-  graph ?g {
-    ?component a s-prov:Component .
-  }
-}
-'''
+def F_QUERY(target: str, graph: T_REF, body: str) -> str:
+    #return T_QUERY(target=target, graph="<{}>".format(graph), body=body)
+    return T_QUERY(target=target, graph=graph, body=body)
 
 P_INVOCATION_DATA_IN = '''
     { # invocation <- data
@@ -129,29 +135,14 @@ P_INVOCATION_OF_COMPONENT_INDIRECT = '''
 
 P_COMPONENT_TIL_DATA = P_INVOCATION_OF_COMPONENT_INDIRECT + P_INVOCATION_DATA
 
-#T_ALL_DATA_OF_COMPONENT = P("""
-#SELECT * WHERE {{
-#  graph ?g {{
-#
-#    ?component a s-prov:Component.
-#    FILTER (str(?component) = "{}")
-#
-#    {body}
-#
-#  }}
-#}}
-#""", body=P_COMPONENT_TIL_DATA)
-
-DATA_OF_COMPONENT = DP(T_QUERY,
-        'body',
-        P("""
+def F_DATA_OF_COMPONENT(graph: T_REF, component: str) -> str:
+    body = """
     ?component a s-prov:Component.
     FILTER (str(?component) = "{}")
 
     {body}
-        """, body=P_COMPONENT_TIL_DATA),
-        target='*'
-        )
+        """
+    return F_QUERY('*', graph, body.format(component, body=P_COMPONENT_TIL_DATA))
 
 
 #T_QUERY_INFLUENCED_DATA = P("""
@@ -183,6 +174,17 @@ INFLUENCED_DATA = DP(T_QUERY,
         target='*'
         )
 
+def F_INFLUENCED_DATA(graph: T_REF, data_out: T_REF) -> str:
+    body = """
+    ?component a s-prov:Component .
+
+    ?data_out a s-prov:Data.
+    FILTER (str(?data_out) = "{}")
+
+    {body}
+        """
+    return F_QUERY('*', graph, body.format(data_out, body=P_COMPONENT_TIL_DATA))
+
 #T_COMPONENT_WITH_DATA = P("""
 #SELECT * WHERE {{
 #  graph ?g {{
@@ -201,8 +203,16 @@ COMPONENT_AND_DATA = P(T_QUERY, target='*', body="""
     {body}
 """.format(body=P_COMPONENT_TIL_DATA))
 
+def F_COMPONENT_AND_DATA(graph: T_REF) -> str:
+    body = """
+    ?component a s-prov:Component .
 
-def P_FILTER_COMPONENT_IN(component_list) -> str:
+    {body}
+    """
+    return F_QUERY('*', graph, body.format(body=P_COMPONENT_TIL_DATA))
+
+
+def F_P_FILTER_COMPONENT_IN(component_list: Iterable) -> str:
     T_FILTER = """
 FILTER (str(?component) in ({}))
 """
@@ -236,6 +246,9 @@ P_COMPONENT_WITHOUT_INPUT_DATA = """
 
 COMPONENT_WITHOUT_INPUT_DATA = P(T_QUERY, target='?component', body=P_COMPONENT_WITHOUT_INPUT_DATA)
 
+def F_COMPONENT_WITHOUT_INPUT_DATA(graph: T_REF) -> str:
+    return F_QUERY('?component', graph, P_COMPONENT_WITHOUT_INPUT_DATA)
+
 INITIAL_COMPONENT_AND_DATA = P(T_QUERY, target='?component ?data_out ?port_out',
         body=P_COMPONENT_WITHOUT_INPUT_DATA+P_INVOCATION_OF_COMPONENT_INDIRECT+P_INVOCATION_DATA_OUT)
 
@@ -266,10 +279,15 @@ COMPONENT_PARS_IN = DP(T_QUERY,
         'body',
         DP("{body} {filter}",
             'filter',
-            P_FILTER_COMPONENT_IN,
+            F_P_FILTER_COMPONENT_IN,
             body=P_COMPONENT_PARS,
             ),
         target='DISTINCT ?component ?par ?pred ?obj')
+
+def F_COMPONENT_PARS_IN(graph, component_list: Iterable) -> str:
+    ifilter = F_P_FILTER_COMPONENT_IN(component_list)
+    q_body = "{body} {filter}".format(body=P_COMPONENT_PARS, filter=ifilter)
+    return F_QUERY('DISTINCT ?component ?par ?pred ?obj', graph, q_body)
 
 P_COMPONENT_FUNCTION = '''
     ?component a s-prov:Component .
@@ -279,16 +297,19 @@ P_COMPONENT_FUNCTION = '''
 COMPONENT_FUNCTION = P(T_QUERY, target='?component ?function_name',
                        body=P_COMPONENT_FUNCTION)
 
+def F_COMPONENT_FUNCTION(graph: T_REF) -> str:
+    return F_QUERY('?component ?function_name', graph, P_COMPONENT_FUNCTION)
 
-C_COMPONENT_GRAPH = '''
+
+T_COMPONENT_GRAPH = P('''
 PREFIX : <http://ryey/ns/#>
 
 
-CONSTRUCT {
+CONSTRUCT {{
   ?component0 :hasNextStage ?component1 .
-}
-WHERE {
-  graph ?g {
+}}
+WHERE {{
+  graph {} {{
 
     ?component0 a s-prov:Component .
     ?invocation0 a prov:Activity ;
@@ -300,7 +321,7 @@ WHERE {
     ?generation prov:activity ?invocation0 .
 
 
-    OPTIONAL {
+    OPTIONAL {{
       ?component1 a s-prov:Component .
       ?invocation1 a prov:Activity ;
                    prov:wasAssociatedWith ?component_instance1 .
@@ -311,11 +332,17 @@ WHERE {
       ?usage prov:entity ?data_out0 .
 
       FILTER (?component0 != ?component1)
-    }
+    }}
 
-  }
-}
-'''
+  }}
+}}
+''')
+
+C_COMPONENT_GRAPH = T_COMPONENT_GRAPH('?g')
+
+
+def F_C_COMPONENT_GRAPH(graph: T_REF) -> str:
+    return T_COMPONENT_GRAPH("<{}>".format(graph))
 
 
 C_DATA_DEPENDENCY = '''
@@ -357,11 +384,11 @@ WHERE {
 }
 '''
 
-C_DATA_DEPENDENCY_WITH_PORT = '''
+T_DATA_DEPENDENCY_WITH_PORT = P('''
 PREFIX : <http://ryey/ns/#>
 
 
-CONSTRUCT {
+CONSTRUCT {{
   ?component0 a s-prov:Component ;
     :hasOutPort ?port_out .
 
@@ -378,9 +405,9 @@ CONSTRUCT {
   ?port_in a :InputPort ;
     :name ?in_port ;
     :inputTo ?component1 .
-}
-WHERE {
-  graph ?g {
+}}
+WHERE {{
+  graph {} {{
 
     ?component0 a s-prov:Component .
     ?invocation0 a prov:Activity ;
@@ -394,7 +421,7 @@ WHERE {
                 provone:hadOutPort ?out_port .
 
 
-    OPTIONAL {
+    OPTIONAL {{
       ?component1 a s-prov:Component .
       ?invocation1 a prov:Activity ;
                    prov:wasAssociatedWith ?component_instance1 .
@@ -407,7 +434,7 @@ WHERE {
              provone:hadInPort ?in_port .
 
       FILTER (?component0 != ?component1)
-    }
+    }}
 
     BIND (STRAFTER(STR(?component0), "#") AS ?component0_name)
     BIND (STRAFTER(STR(?component1), "#") AS ?component1_name)
@@ -424,9 +451,15 @@ WHERE {
             )
           )
       	) AS ?connection)
-  }
-}
-'''
+  }}
+}}
+''')
+
+
+C_DATA_DEPENDENCY_WITH_PORT = T_DATA_DEPENDENCY_WITH_PORT('?g')
+
+def F_C_DATA_DEPENDENCY_WITH_PORT(graph: T_REF) -> str:
+    return T_DATA_DEPENDENCY_WITH_PORT("<{}>".format(graph))
 
 #C_INITIAL_DATA = '''
 #PREFIX : <http://ryey/ns/#>

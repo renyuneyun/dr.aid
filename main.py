@@ -12,11 +12,11 @@
 '''
 
 import logging
-from SPARQLWrapper import SPARQLWrapper, N3, TURTLE, JSON, JSONLD, XML
+from rdflib.extras.external_graph_libs import rdflib_to_networkx_multidigraph
 
-import augmentation as ag
-import reason
-import sparql_helper as sh
+import exp.augmentation as ag
+import exp.reason as reason
+import exp.sparql_helper as sh
 
 
 def main():
@@ -25,30 +25,40 @@ def main():
     
     logger.log(99, "Start")
 
-    sparql = SPARQLWrapper("http://localhost:3030/data")
-    
-    initial_components = list(sh.get_initial_components(sparql))
-    
-    component_info_list = sh.get_components_info(sparql, initial_components)
-    
+    service = "http://localhost:3030/data"
+    s_helper = sh.SProvHelper(service)
+
+    graphs = list(s_helper.get_wfe_graphs())
+    assert len(graphs) == 1
+    graph = 'http://schema.org#debbf0e323c8-18-1a15ad5e-5629-11e9-9864-0242ac120003'
+    assert str(graphs[0]) == graph
+
+    s_helper.set_graph(graph)
+
+    initial_components = s_helper.get_initial_components()
+    component_info_list = s_helper.get_components_info(initial_components)
     component_augmentation_list = ag.obtain_component_augmentation(component_info_list)    
-    rdf_graph = sh.get_graph_dependency_with_port(sparql)
+
+    rdf_graph = s_helper.get_graph_dependency_with_port()
+
     ag.apply_augmentation(rdf_graph, component_augmentation_list)
-    sh.write_transformed_graph(sparql, rdf_graph)
-    
+
+    a_helper = sh.AugmentedGraphHelper(service)
+
+    a_helper.write_transformed_graph(rdf_graph)
+
     logger.log(99, "Finished Initialization")
-    
-    component_graph = reason.get_component_graph(sparql)
+
+    rdf_component_graph = s_helper.get_graph_component()
+    component_graph = rdflib_to_networkx_multidigraph(rdf_component_graph)
     batches = reason.graph_into_batches(component_graph)
-    
+
     batches = batches[1:]
     for batch in batches:
         augmentations = reason.propagate(rdf_graph, batch)
         ag.apply_augmentation(rdf_graph, augmentations)
-    
-    sh.write_transformed_graph(sparql, rdf_graph)
 
-    logger.log(99, "Finished")
+    a_helper.write_transformed_graph(rdf_graph)
 
 
 if __name__ == '__main__':

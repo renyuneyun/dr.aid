@@ -16,7 +16,9 @@ import copy
 import logging
 from typing import Dict, List, Optional
 
-from augmentation import PortedRules
+import typing
+if typing.TYPE_CHECKING:
+    from .augmentation import PortedRules
 
 
 class _DataRule(object):
@@ -120,8 +122,8 @@ class FlowRuleHandler(object):
     def __init__(self, flow_rule: FlowRule):
         self._rule = flow_rule
 
-    def dispatch(self, rules: Dict[str, DataRuleWrapper]) -> PortedRules:
-        outs = {}
+    def dispatch(self, rules: Dict[str, DataRuleWrapper]) -> 'PortedRules':
+        outs: 'PortedRules' = {}
         for op in self._rule._conn:
             rules_to_merge = [rules[ip] for ip in self._rule._conn[op] if ip in rules]
             if rules_to_merge:
