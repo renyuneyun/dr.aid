@@ -1,0 +1,7 @@
+*.bak
+*~
+*.swo
+*.swi
+
+__pycache__/
+.mypy_cache/
