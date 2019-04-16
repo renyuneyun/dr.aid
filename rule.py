@@ -16,9 +16,7 @@ import copy
 import logging
 from typing import Dict, List, Optional
 
-import typing
-if typing.TYPE_CHECKING:
-    from .augmentation import PortedRules
+PortedRules = Dict[str, Optional['DataRuleWrapper']]
 
 
 class _DataRule(object):

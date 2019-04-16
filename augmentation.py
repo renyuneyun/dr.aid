@@ -18,7 +18,7 @@ import logging
 
 from .namespaces import NS
 from . import rule
-from .rule import DataRuleWrapper
+from .rule import PortedRules
 from .sparql_helper import ComponentInfo
 
 
@@ -26,8 +26,6 @@ logger = logging.getLogger("AUGM")
 logger.setLevel(logging.DEBUG)
 logger.setLevel(logging.WARNING)
 
-
-PortedRules = Dict[str, Optional[DataRuleWrapper]]
 
 @dataclass
 class ComponentAugmentation:

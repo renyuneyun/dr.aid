@@ -12,10 +12,10 @@
 '''
 
 from functools import partial
-from rdflib import URIRef
-from typing import Iterable, TypeVar
+from typing import Iterable
 
-T_REF = TypeVar('T_REF', str, URIRef)
+from .names import T_REF
+
 
 def P(s, *args, **kwargs):
     if callable(s):

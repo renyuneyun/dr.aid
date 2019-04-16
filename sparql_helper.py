@@ -18,14 +18,16 @@ from typing import List, Dict
 import logging
 
 from . import queries as q
-from .queries import T_REF
+from .names import T_REF
 from .namespaces import NS
 
-from collections import namedtuple
+DEFAULT_PORT = ''
 
-InitialInfo = namedtuple('InitialInfo', ['par', 'data'])
 
-DEFAULT_PORT = None
+@dataclass
+class InitialInfo:
+    par: List[str] = []
+    data: Dict[str, List[str]] = {}
 
 
 @dataclass
@@ -185,12 +187,12 @@ def get_initial_info(sparql) -> Dict[URIRef, InitialInfo]:
     sparql.setQuery(q.Q(q.INITIAL_COMPONENT_AND_DATA_AND_PAR))
     sparql.setReturnFormat(JSON)
     results = sparql.query().convert()
-    initial_info: Dict[URIRef, InitialInfo] = {}
+    initial_info_map: Dict[URIRef, InitialInfo] = {}
     for binding in results['results']['bindings']:
         component = _rd(binding, 'value')
-        if component not in initial_info:
-            initial_info[component] = InitialInfo([], {})
-        info = initial_info[component]
+        if component not in initial_info_map:
+            initial_info_map[component] = InitialInfo()
+        info = initial_info_map[component]
         par, real = _rd(binding, 'par', True)
         if real:
             info.par.append(par)
@@ -201,7 +203,7 @@ def get_initial_info(sparql) -> Dict[URIRef, InitialInfo]:
                 info.data[port].append(data)
             else:
                 info.data[port] = [data]
-    return initial_info
+    return initial_info_map
 
 
 

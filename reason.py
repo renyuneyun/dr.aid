@@ -62,7 +62,7 @@ def propagate(rdf_graph: Graph, component_list: List[URIRef]) -> List[ComponentA
                     rules.append(rule)
                     logger.debug("%s :: %s: %s", component, input_port_name, rule)
             if rules:
-                merged_rule = DataRuleWrapper.merge(*rules)
+                merged_rule = DataRuleWrapper.merge(rules[0], rules[1:])
                 input_rules[input_port_name] = merged_rule
             else:
                 logger.info("InputPort %s of %s has no rules", input_port_name, component)
