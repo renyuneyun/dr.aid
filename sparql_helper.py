@@ -205,8 +205,3 @@ def get_initial_info(sparql) -> Dict[URIRef, InitialInfo]:
                 info.data[port] = [data]
     return initial_info_map
 
-
-
-
-
-

@@ -19,7 +19,7 @@ from typing import List
 from .augmentation import ComponentAugmentation
 from .namespaces import NS
 from . import rule as rs
-from .rule import DataRuleWrapper
+from .rule import DataRuleContainer
 
 
 logger = logging.getLogger("REASONING")
@@ -57,12 +57,12 @@ def propagate(rdf_graph: Graph, component_list: List[URIRef]) -> List[ComponentA
                     incomming_rules = list(rdf_graph.objects(output_port, NS['mine']['rule']))
                     if incomming_rules:
                         assert len(incomming_rules) == 1
-                        rule = DataRuleWrapper.load(str(incomming_rules[0]))
+                        rule = DataRuleContainer.load(str(incomming_rules[0]))
                 if rule:
                     rules.append(rule)
                     logger.debug("%s :: %s: %s", component, input_port_name, rule)
             if rules:
-                merged_rule = DataRuleWrapper.merge(rules[0], *rules[1:])
+                merged_rule = DataRuleContainer.merge(rules[0], *rules[1:])
                 input_rules[input_port_name] = merged_rule
             else:
                 logger.info("InputPort %s of %s has no rules", input_port_name, component)
@@ -77,8 +77,4 @@ def propagate(rdf_graph: Graph, component_list: List[URIRef]) -> List[ComponentA
         aug = ComponentAugmentation(component, output_rules)
         augmentations.append(aug)
     return augmentations
-        
-
-
-
 
