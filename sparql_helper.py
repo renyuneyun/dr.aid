@@ -26,8 +26,8 @@ DEFAULT_PORT = ''
 
 @dataclass
 class InitialInfo:
-    par: List[str] = []
-    data: Dict[str, List[str]] = {}
+    par: List[str]
+    data: Dict[str, List[str]]
 
 
 @dataclass
@@ -191,7 +191,7 @@ def get_initial_info(sparql) -> Dict[URIRef, InitialInfo]:
     for binding in results['results']['bindings']:
         component = _rd(binding, 'value')
         if component not in initial_info_map:
-            initial_info_map[component] = InitialInfo()
+            initial_info_map[component] = InitialInfo([], {})
         info = initial_info_map[component]
         par, real = _rd(binding, 'par', True)
         if real:
