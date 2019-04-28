@@ -18,14 +18,21 @@ import exp.augmentation as ag
 import exp.reason as reason
 import exp.sparql_helper as sh
 
+logger = logging.getLogger()
+
 
 def main():
-    logger = logging.getLogger()
     logger.setLevel(logging.DEBUG)
-    
+
     logger.log(99, "Start")
 
     service = "http://localhost:3030/data"
+
+    rdf_graph = propagate_all(service)
+    draw(rdf_graph)
+
+
+def propagate_all(service):
     s_helper = sh.SProvHelper(service)
 
     graphs = list(s_helper.get_wfe_graphs())
@@ -37,7 +44,7 @@ def main():
 
     initial_components = s_helper.get_initial_components()
     component_info_list = s_helper.get_components_info(initial_components)
-    component_augmentation_list = ag.obtain_component_augmentation(component_info_list)    
+    component_augmentation_list = ag.obtain_component_augmentation(component_info_list)
 
     rdf_graph = s_helper.get_graph_dependency_with_port()
 
@@ -59,6 +66,16 @@ def main():
         ag.apply_augmentation(rdf_graph, augmentations)
 
     a_helper.write_transformed_graph(rdf_graph)
+
+    return rdf_graph
+
+
+def draw(rdf_graph):
+    from exp import visualise as vis
+    filename = "graph.png"
+    gb = vis.GraphBuilder(rdf_graph)
+    G = gb.data_flow().rules().build()
+    vis.draw_to_file(G, filename)
 
 
 if __name__ == '__main__':

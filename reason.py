@@ -12,9 +12,10 @@
 '''
 
 import logging
+from typing import List
+
 from networkx import MultiDiGraph
 from rdflib import Graph, URIRef
-from typing import List
 
 from .augmentation import ComponentAugmentation
 from .namespaces import NS
@@ -66,6 +67,7 @@ def propagate(rdf_graph: Graph, component_list: List[URIRef]) -> List[ComponentA
                 input_rules[input_port_name] = merged_rule
             else:
                 logger.info("InputPort %s of %s has no rules", input_port_name, component)
+
         output_ports = []
         for output_port in rdf_graph.objects(component, NS['mine']['hasOutPort']):
             out_name = str(next(rdf_graph.objects(output_port, NS['mine']['name'])))

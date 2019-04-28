@@ -15,6 +15,7 @@
 import copy
 import logging
 from typing import Dict, List, Optional
+from random import randint
 
 PortedRules = Dict[str, Optional['DataRuleContainer']]
 
@@ -50,7 +51,7 @@ class DataRuleContainer(object):
     logger = logging.getLogger('DataRuleContainer')
 
     @classmethod
-    def merge(cls, first, *rest) -> 'DataRuleContainer':
+    def merge(cls, first: 'DataRuleContainer', *rest: 'DataRuleContainer') -> 'DataRuleContainer':
         new = first.clone()
         for nxt in rest:
             for nr in nxt._rules.values():
@@ -58,7 +59,7 @@ class DataRuleContainer(object):
                 if r:
                     new.replace(DataRule.merge(r, nr))
                 else:
-                    new.add(r)
+                    new.add(nr)
         return new
 
     @classmethod
@@ -101,6 +102,9 @@ class DataRuleContainer(object):
 
 def TestRule() -> DataRuleContainer:
     return DataRuleContainer.load('TestRule')
+
+def RandomRule() -> DataRuleContainer:
+    return DataRuleContainer.load("TestRule{}".format(randint(0, 20)))
 
 
 class FlowRule(object):

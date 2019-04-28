@@ -64,9 +64,15 @@ PREFIX provone: <http://purl.dataone.org/provone/2015/01/15/ontology#>
 PREFIX s-prov: <http://s-prov/ns/#>
 '''
 
+#ALL_WFE_GRAPHS = '''
+#SELECT ?g WHERE {
+#  ?g a s-prov:WFExecutionBundle
+#} 
+#'''
 ALL_WFE_GRAPHS = '''
 SELECT ?g WHERE {
-  ?g a s-prov:WFExecutionBundle
+  GRAPH ?g {
+  }
 } 
 '''
 

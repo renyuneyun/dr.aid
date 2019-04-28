@@ -12,10 +12,11 @@
 '''
 
 from dataclasses import dataclass
+import logging
+from typing import List, Dict
+
 from rdflib import Graph, URIRef
 from SPARQLWrapper import SPARQLWrapper, JSON, XML
-from typing import List, Dict
-import logging
 
 from . import queries as q
 from .names import T_REF
@@ -37,7 +38,7 @@ class ComponentInfo:
     par: Dict[str, str]
 
 
-logger = logging.getLogger('HELPER')
+logger = logging.getLogger('SPARQL_HELPER')
 logger.setLevel(logging.INFO)
 
 
@@ -113,7 +114,7 @@ class SProvHelper(Helper):
         ret = []
         results = self._q(q.Q(q.F_COMPONENT_WITHOUT_INPUT_DATA(self.graph)))
         for binding in results['results']['bindings']:
-            component = _rd(binding, 'component')
+            component = _rdu(binding, 'component')
             ret.append(component)
         return ret
 
@@ -131,7 +132,7 @@ class SProvHelper(Helper):
 
     def get_components_info(self, components: List[URIRef]) -> List[ComponentInfo]:
         component_function = self.get_components_function()
-        info: Dict[URIRef, Dict[str, str]] = {}
+        info: Dict[URIRef, Dict[str, str]] = {com: {} for com in components}
         results = self._q(q.Q(q.F_COMPONENT_PARS_IN(self.graph, components)))
         for binding in results['results']['bindings']:
             component = _rdu(binding, 'component')

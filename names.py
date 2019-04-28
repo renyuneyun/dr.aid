@@ -11,8 +11,9 @@
 
 '''
 
-from rdflib import URIRef
 from typing import TypeVar
+
+from rdflib import URIRef
 
 T_REF = TypeVar('T_REF', str, URIRef)
 

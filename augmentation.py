@@ -12,9 +12,10 @@
 '''
 
 from dataclasses import dataclass
-from rdflib import Graph, URIRef, Literal
-from typing import Dict, List, Optional
 import logging
+from typing import List
+
+from rdflib import Graph, URIRef, Literal
 
 from .namespaces import NS
 from . import rule
