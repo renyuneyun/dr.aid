@@ -39,7 +39,7 @@ class ComponentInfo:
 
 
 logger = logging.getLogger('SPARQL_HELPER')
-logger.setLevel(logging.INFO)
+logger.setLevel(logging.WARNING)
 
 
 def _q(sparql: SPARQLWrapper, query: str) -> Dict:

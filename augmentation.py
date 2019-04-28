@@ -19,7 +19,8 @@ from rdflib import Graph, URIRef, Literal
 
 from .namespaces import NS
 from . import rule
-from .rule import PortedRules
+from . import rdf_helper as rh
+from .rule import DataRuleContainer, PortedRules
 from .sparql_helper import ComponentInfo
 
 
@@ -34,32 +35,46 @@ class ComponentAugmentation:
     rules: PortedRules
 
 
-def is_originator(component_info: ComponentInfo) -> bool:
-    if component_info.function == 'Source':
+@dataclass
+class ImportedRule:
+    id: URIRef
+    rule: DataRuleContainer
+
+
+def obtain_imported_rules(component_info_list: List[ComponentInfo]) -> List[ImportedRule]:
+    def is_originator(component_info: ComponentInfo) -> bool:
+        #if component_info.function == 'Source':
+        #    return True
+        #return False
         return True
-    return False
-
-
-def get_rules_of_ports(component_info: ComponentInfo) -> PortedRules:
-    port = 'output'
-    if is_originator(component_info):
-        return {port: rule.TestRule()}
-    else:
-        return {port: None}
-
-
-def obtain_component_augmentation(component_info_list: List[ComponentInfo]) -> List[ComponentAugmentation]:
-    augmentations = []
+    rules = []
     for component_info in component_info_list:
-        ported_rules = get_rules_of_ports(component_info)
-        logger.info("component: {} rules: {}ported_rules".format(component_info, ported_rules))
-        aug = ComponentAugmentation(component_info.id, ported_rules)
-        augmentations.append(aug)
-    return augmentations
+        if is_originator(component_info):
+            irules = rule.RandomRule()
+            logger.info("component: {} rules: {}ported_rules".format(component_info, irules))
+            imported = ImportedRule(component_info.id, irules)
+            rules.append(imported)
+    return rules
+
+
+def apply_imported_rules(graph: Graph, imported_rules: List[ImportedRule]) -> None:
+    '''
+
+    Modifies the graph in-place
+    '''
+    for imported in imported_rules:
+        component = imported.id
+
+        input_ports = rh.input_ports(graph, component)
+        assert 'imported' not in input_ports
+
+        if imported.rule:
+            rh.insert_imported_rule(graph, component, imported.rule)
 
 
 def apply_augmentation(graph: Graph, augmentations: List[ComponentAugmentation]) -> None:
     '''
+
     Modifies the graph in-place
     '''
     for aug in augmentations:

@@ -28,54 +28,59 @@ def main():
 
     service = "http://localhost:3030/data"
 
-    rdf_graph = propagate_all(service)
-    draw(rdf_graph)
+    results = propagate_all(service)
+    draw(results)
+
+
+def import_rules(rdf_graph, s_helper, components):
+    component_info_list = s_helper.get_components_info(components)
+    imported_rule_list = ag.obtain_imported_rules(component_info_list)
+    ag.apply_imported_rules(rdf_graph, imported_rule_list)
 
 
 def propagate_all(service):
     s_helper = sh.SProvHelper(service)
 
     graphs = list(s_helper.get_wfe_graphs())
-    assert len(graphs) == 1
-    graph = 'http://schema.org#debbf0e323c8-18-1a15ad5e-5629-11e9-9864-0242ac120003'
-    assert str(graphs[0]) == graph
+    assert graphs
 
-    s_helper.set_graph(graph)
+    results = []
+    for i, graph in enumerate(graphs):
 
-    initial_components = s_helper.get_initial_components()
-    component_info_list = s_helper.get_components_info(initial_components)
-    component_augmentation_list = ag.obtain_component_augmentation(component_info_list)
+        s_helper.set_graph(graph)
 
-    rdf_graph = s_helper.get_graph_dependency_with_port()
+        rdf_graph = s_helper.get_graph_dependency_with_port()
 
-    ag.apply_augmentation(rdf_graph, component_augmentation_list)
+        a_helper = sh.AugmentedGraphHelper(service)
 
-    a_helper = sh.AugmentedGraphHelper(service)
+        logger.log(99, "Finished Initialization")
 
-    a_helper.write_transformed_graph(rdf_graph)
+        rdf_component_graph = s_helper.get_graph_component()
+        component_graph = rdflib_to_networkx_multidigraph(rdf_component_graph)
+        batches = reason.graph_into_batches(component_graph)
 
-    logger.log(99, "Finished Initialization")
+        batches = batches
+        for batch in batches:
+            import_rules(rdf_graph, s_helper, batch)
+            augmentations = reason.propagate(rdf_graph, batch)
+            ag.apply_augmentation(rdf_graph, augmentations)
 
-    rdf_component_graph = s_helper.get_graph_component()
-    component_graph = rdflib_to_networkx_multidigraph(rdf_component_graph)
-    batches = reason.graph_into_batches(component_graph)
+        a_helper.write_transformed_graph(rdf_graph)
 
-    batches = batches[1:]
-    for batch in batches:
-        augmentations = reason.propagate(rdf_graph, batch)
-        ag.apply_augmentation(rdf_graph, augmentations)
+        results.append(rdf_graph)
 
-    a_helper.write_transformed_graph(rdf_graph)
+    return results
+
+
+def draw(rdf_graphs):
+    from exp import visualise as vis
+    for i, rdf_graph in enumerate(rdf_graphs):
+        filename = "graph_{}.png".format(i)
+        gb = vis.GraphBuilder(rdf_graph)
+        G = gb.data_flow().rules().build()
+        vis.draw_to_file(G, filename)
 
     return rdf_graph
-
-
-def draw(rdf_graph):
-    from exp import visualise as vis
-    filename = "graph.png"
-    gb = vis.GraphBuilder(rdf_graph)
-    G = gb.data_flow().rules().build()
-    vis.draw_to_file(G, filename)
 
 
 if __name__ == '__main__':

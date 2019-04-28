@@ -98,6 +98,13 @@ class GraphBuilder(object):
                     ruleNode = self._ni[component, oportName, rule]
                     sg.add_node(ruleNode, label=str(rule))
                     self.G.add_edge(oportNode, ruleNode)
+            imported_rule = rh.imported_rule(self._rdf_graph, component)
+            if imported_rule:
+                ruleNode = self._ni[component, 'imported_rule_data']
+                self.G.add_node(ruleNode, label=imported_rule.dump())
+                connectedNode = self._ni[component, 'imported_rule']
+                sg.add_node(connectedNode, label='imported')
+                self.G.add_edge(ruleNode, connectedNode)
         return self
 
     def build(self):

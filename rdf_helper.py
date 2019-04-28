@@ -16,6 +16,7 @@ from typing import Optional
 from rdflib import Literal
 
 from .namespaces import NS
+from .rule import DataRuleContainer
 
 
 def one(iterator):
@@ -62,4 +63,14 @@ def input_to(graph, input_port):
 
 def rule(graph, output_port) -> Optional[Literal]:
     return one_or_none(graph.objects(output_port, NS['mine']['rule']))
+
+def imported_rule(graph, component) -> Optional[DataRuleContainer]:
+    imported_rule_literal = one_or_none(graph.objects(component, NS['mine']['importedRule']))
+    if imported_rule_literal:
+        return DataRuleContainer.load(imported_rule_literal)
+    return None
+
+
+def insert_imported_rule(graph, component, rule: DataRuleContainer) -> None:
+    graph.add((component, NS['mine']['importedRule'], Literal(rule.dump())))
 

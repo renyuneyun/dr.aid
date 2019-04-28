@@ -19,12 +19,13 @@ from rdflib import Graph, URIRef
 
 from .augmentation import ComponentAugmentation
 from .namespaces import NS
+from . import rdf_helper as rh
 from . import rule as rs
 from .rule import DataRuleContainer
 
 
 logger = logging.getLogger("REASONING")
-logger.setLevel(logging.INFO)
+logger.setLevel(logging.WARNING)
 
 
 def graph_into_batches(graph: MultiDiGraph) -> List[List[URIRef]]:
@@ -43,6 +44,7 @@ def graph_into_batches(graph: MultiDiGraph) -> List[List[URIRef]]:
 
 
 def propagate(rdf_graph: Graph, component_list: List[URIRef]) -> List[ComponentAugmentation]:
+    import_port_name = 'imported_rule'
     augmentations = []
     for component in component_list:
         input_rules = {}
@@ -67,6 +69,12 @@ def propagate(rdf_graph: Graph, component_list: List[URIRef]) -> List[ComponentA
                 input_rules[input_port_name] = merged_rule
             else:
                 logger.info("InputPort %s of %s has no rules", input_port_name, component)
+
+        imported_rule = rh.imported_rule(rdf_graph, component)
+        if imported_rule:
+            assert import_port_name not in input_ports
+            input_ports.append(import_port_name)
+            input_rules[import_port_name] = imported_rule
 
         output_ports = []
         for output_port in rdf_graph.objects(component, NS['mine']['hasOutPort']):
