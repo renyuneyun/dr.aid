@@ -19,6 +19,7 @@ from . import rdf_helper as rh
 def _clean_name(ref):
     name = str(ref)
     name = name[name.find('#')+1:]
+    name = name[:name.find('_orfeus-as')]
     return name
 
 
