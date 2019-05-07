@@ -41,12 +41,15 @@ class ImportedRule:
     rule: DataRuleContainer
 
 
+SOURCE_FUNCTION = {'Source', 'downloadPE', 'Collector', 'COLLECTOR1', 'COLLECTOR2'}
+
+
 def obtain_imported_rules(component_info_list: List[ComponentInfo]) -> List[ImportedRule]:
     def is_originator(component_info: ComponentInfo) -> bool:
-        #if component_info.function == 'Source':
-        #    return True
-        #return False
-        return True
+        if component_info.function in SOURCE_FUNCTION:
+            return True
+        return False
+        #return True
     rules = []
     for component_info in component_info_list:
         if is_originator(component_info):
