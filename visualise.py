@@ -20,6 +20,7 @@ def _clean_name(ref):
     name = str(ref)
     name = name[name.find('#')+1:]
     name = name[:name.find('_orfeus-as')]
+    name = name[:name.find('_taastrup')]
     return name
 
 

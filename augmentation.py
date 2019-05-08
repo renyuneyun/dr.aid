@@ -41,7 +41,8 @@ class ImportedRule:
     rule: DataRuleContainer
 
 
-SOURCE_FUNCTION = {'Source', 'downloadPE', 'Collector', 'COLLECTOR1', 'COLLECTOR2'}
+SOURCE_FUNCTION = {'Source', 'downloadPE', 'Collector', 'COLLECTOR1', 'COLLECTOR2',
+        'NumberProducer'}
 
 
 def obtain_imported_rules(component_info_list: List[ComponentInfo]) -> List[ImportedRule]:
