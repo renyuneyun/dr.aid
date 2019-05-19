@@ -57,10 +57,7 @@ def propagate(rdf_graph: Graph, component_list: List[URIRef]) -> List[ComponentA
                 rule = None
                 for oi, output_port in enumerate(rdf_graph.subjects(NS['mine']['hasConnection'], connection)):
                     assert oi == 0  # Every connection has exactly one OutputPort
-                    incomming_rules = list(rdf_graph.objects(output_port, NS['mine']['rule']))
-                    if incomming_rules:
-                        assert len(incomming_rules) == 1
-                        rule = DataRuleContainer.load(str(incomming_rules[0]))
+                    rule = rh.rule(rdf_graph, output_port)
                 if rule:
                     rules.append(rule)
                     logger.debug("%s :: %s: %s", component, input_port_name, rule)

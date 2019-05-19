@@ -18,6 +18,7 @@ from typing import List
 from rdflib import Graph, URIRef, Literal
 
 from .namespaces import NS
+from . import parser
 from . import rule
 from . import rdf_helper as rh
 from .rule import DataRuleContainer, PortedRules
@@ -46,6 +47,9 @@ SOURCE_FUNCTION = {'Source', 'downloadPE', 'Collector', 'COLLECTOR1', 'COLLECTOR
 
 
 def obtain_imported_rules(component_info_list: List[ComponentInfo]) -> List[ImportedRule]:
+    '''
+    Recogniser
+    '''
     def is_originator(component_info: ComponentInfo) -> bool:
         if component_info.function in SOURCE_FUNCTION:
             return True
@@ -54,7 +58,7 @@ def obtain_imported_rules(component_info_list: List[ComponentInfo]) -> List[Impo
     rules = []
     for component_info in component_info_list:
         if is_originator(component_info):
-            irules = rule.RandomRule()
+            irules = parser.parse_data_rule(rule.RandomRule())
             logger.info("component: {} rules: {}ported_rules".format(component_info, irules))
             imported = ImportedRule(component_info.id, irules)
             rules.append(imported)

@@ -14,97 +14,210 @@
 
 import copy
 import logging
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Tuple, Union
 from random import randint
 
 PortedRules = Dict[str, Optional['DataRuleContainer']]
 
 
-class DataRule(object):
+class Property(object):
     '''
-    DataRule is stateful
     '''
 
-    # TODO: states
+    def __init__(self, value):
+        self._v = value
 
-    @classmethod
-    def merge(cls, first, *rest) -> 'DataRule':
-        # TODO
-        return first
+    def value(self):
+        return self._v
 
-    @classmethod
-    def load(cls, data) -> Optional['DataRule']:
-        return DataRule(data)
+    def __eq__(self, other):
+        if isinstance(other, self.__class__):
+            if self._v != other._v:
+                return False
+            return True
+        else:
+            return NotImplemented
+
+
+class PropertyCapsule:
+
+    @staticmethod
+    def merge(first: 'PropertyCapsule', second: 'PropertyCapsule') -> Tuple['PropertyCapsule', List[int]]:
+        assert first._name == second._name
+        new = first.clone()
+        diff = []
+        for i, pr in enumerate(second._prs):
+            try:
+                index = new._prs.index(pr)
+            except ValueError:
+                index = len(new._prs)
+                new._prs.append(pr)
+            diff.append(index - i)
+        return new, diff
+
+    def __init__(self, name: str, property: Optional[Union[str, List[str]]] = None):
+        self._name = name
+        self._prs: List[Property] = []
+        if property:
+            if isinstance(property, str):
+                self._prs.append(Property(property))
+            else:
+                self._prs.extend([Property(pr) for pr in property])
+
+    def clone(self) -> 'PropertyCapsule':
+        new = PropertyCapsule(self._name)
+        for pr in self._prs:
+            new.add_property(pr)
+        return new
+
+    def add_property(self, pr: Property):
+        self._prs.append(pr)
 
     def dump(self) -> str:
-        return self.id
+        s = "property {}".format(self._name)
+        ss = " {}".format(self._prs[0].value())
+        if len(self._prs) >= 1:
+            for pr in self._prs[1:]:
+                ss += ", {}".format(pr._v)
+        return "{} [{}] .".format(s, ss)
 
-    def __init__(self, ID):
-        self.id = ID
+    def __eq__(self, other):
+        if isinstance(other, self.__class__):
+            if self._name != other._name:
+                return False
+            if self._prs != other._prs:
+                return False
+            return True
+        else:
+            return NotImplemented
 
-    def clone(self) -> 'DataRule':
-        return DataRule(self.id)
+
+class DataRule(object):
+    '''
+    DataRule is not stateful itself, but activated data rules are.
+    There is no grouping of data rules, so it makes no sense to "merge" two data rules: two data rules that are exactly the same should have one removed. However, it makes sense to merge two activated data rules.
+    '''
+
+    # TODO: activated data rules
+
+    def dump(self) -> str:
+        s = "obligation {}".format(self._name)
+        if self._property:
+            s = "{} {}[{}]".format(s, self._property[0], self._property[1])
+        s += " ."
+        return s
+
+    def __init__(self, name: str, property: Optional[Tuple[str, int]] = None):
+        self._name = name
+        self._property = property
+
+    def clone(self, dmap={}) -> 'DataRule':
+        if self._property:
+            index = self._property[1]
+            if dmap and self._property[0] in dmap:
+                index += dmap[self._property[0]]
+            new_property = (self._property[0], index)
+            return DataRule(self._name, new_property)
+        return DataRule(self._name)
+
+    def name(self):
+        return self._name
+
+    def __eq__(self, other):
+        if isinstance(other, self.__class__):
+            if self._name != other._name:
+                return False
+            if self._property != other._property:
+                return False
+            return True
+        else:
+            return NotImplemented
 
 
 class DataRuleContainer(object):
-
-    logger = logging.getLogger('DataRuleContainer')
 
     @classmethod
     def merge(cls, first: 'DataRuleContainer', *rest: 'DataRuleContainer') -> 'DataRuleContainer':
         new = first.clone()
         for nxt in rest:
-            for nr in nxt._rules.values():
-                r = new.find_id(nr.id)
-                if r:
-                    new.replace(DataRule.merge(r, nr))
+            dmap = {}
+            for pname, pr in nxt._pmap.items():
+                if pname in new._pmap:
+                    pr, diff = PropertyCapsule.merge(new._pmap[pname], pr)
                 else:
-                    new.add(nr)
+                    diff = None  # type: ignore
+                new._pmap[pname] = pr
+                if diff is not None:
+                    dmap[pname] = diff
+            for r in nxt._rules:
+                if r in new._rules:
+                    continue
+                r = r.clone(dmap)
+                new._rules.append(r)
         return new
 
-    @classmethod
-    def load(cls, s: str) -> 'DataRuleContainer':
-        rules: List[DataRule] = []
-        for rs in s.split('\n'):
-            r = DataRule.load(rs)
-            if r:
-                rules.append(r)
-            else:
-                cls.logger.error("can't parse DataRule: %s", rs)
-        return DataRuleContainer(rules)
-
     def dump(self) -> str:
-        return "\n".join([r.dump() for r in self._rules.values()])
+        skeleton = """rule {} begin
+        {}
+        end
+        """
+        name = ''
+        s = "\n".join([r.dump() for r in self._rules])
+        s += '\n'
+        s += "\n".join([pr.dump() for pr in self._pmap.values()])
+        return skeleton.format(name, s)
 
-    def __init__(self, rules):
-        self._rules = {}
-        assert isinstance(rules, list)
-        for r in rules:
-            self.add(r)
+    def __init__(self, rules: List[DataRule], property_map: Dict[str, PropertyCapsule]):
+        self._rules: List[DataRule] = [r for r in rules]
+        self._pmap = property_map
 
     def clone(self) -> 'DataRuleContainer':
-        rules = [r.clone() for r in self._rules.values()]
-        return DataRuleContainer(rules)
+        pmap: Dict[str, PropertyCapsule] = copy.deepcopy(self._pmap)
+        rules = [r.clone() for r in self._rules]
+        return DataRuleContainer(rules, pmap)
 
-    def add(self, rule: DataRule) -> None:
-        _id = rule.id
-        assert _id not in self._rules
-        self._rules[_id] = rule
-
-    def find_id(self, ID) -> Optional[DataRule]:
-        return self._rules.get(ID)
-
-    def replace(self, new_rule: DataRule) -> None:
-        _id = new_rule.id
-        assert _id in self._rules
-        self._rules[_id] = new_rule
+    def __eq__(self, other):
+        # TODO: order independent
+        if isinstance(other, self.__class__):
+            if not self._rules == other._rules:
+                return False
+            if not self._pmap == other._pmap:
+                return False
+            return True
+        else:
+            return NotImplemented
 
 
-def TestRule() -> DataRuleContainer:
-    return DataRuleContainer.load('TestRule')
+def RandomRule() -> str:
+    return random_rule(str(randint(0, 20)))
 
-def RandomRule() -> DataRuleContainer:
-    return DataRuleContainer.load("TestRule{}".format(randint(0, 20)))
+
+def random_rule(suffix='') -> str:
+    rint = randint(0, 2)
+    if not rint:
+        return ""
+    else:
+        if rint == 1:
+            return rule_acknowledge(suffix)
+        else:
+            return rule_account(suffix)
+
+
+def rule_acknowledge(source: str, suffix='') -> str:
+    return f'''
+    rule Rule0
+        obligation Acknowledge{suffix} source_name .
+        property source_name {source} .
+    end
+    '''
+
+
+def rule_account(suffix='') -> str:
+    return f'''
+    rule Rule1
+        obligation Account{suffix} .
+    end
+    '''
 
 
 class FlowRule(object):
@@ -125,7 +238,8 @@ class FlowRuleHandler(object):
     def dispatch(self, rules: Dict[str, DataRuleContainer]) -> PortedRules:
         outs: 'PortedRules' = {}
         for op in self._rule._conn:
-            rules_to_merge = [rules[ip] for ip in self._rule._conn[op] if ip in rules]
+            rules_to_merge = [rules[ip]
+                              for ip in self._rule._conn[op] if ip in rules]
             if rules_to_merge:
                 outs[op] = DataRuleContainer.merge(*rules_to_merge)
             else:
@@ -138,4 +252,3 @@ def DefaultFlow(input_ports: List[str], output_ports: List[str]) -> FlowRule:
     for output_port in output_ports:
         connectivity[output_port] = copy.copy(input_ports)
     return FlowRule(connectivity)
-
