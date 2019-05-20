@@ -58,7 +58,8 @@ def obtain_imported_rules(component_info_list: List[ComponentInfo]) -> List[Impo
     rules = []
     for component_info in component_info_list:
         if is_originator(component_info):
-            irules = parser.parse_data_rule(rule.RandomRule())
+            irules = parser.parse_data_rule(rule.RandomRule(True))
+            assert irules
             logger.info("component: {} rules: {}ported_rules".format(component_info, irules))
             imported = ImportedRule(component_info.id, irules)
             rules.append(imported)

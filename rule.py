@@ -162,9 +162,11 @@ class DataRuleContainer(object):
         end
         """
         name = ''
-        s = "\n".join([r.dump() for r in self._rules])
-        s += '\n'
-        s += "\n".join([pr.dump() for pr in self._pmap.values()])
+        s_ob = "\n".join([r.dump() for r in self._rules])
+        s_pr = "\n".join([pr.dump() for pr in self._pmap.values()])
+        s = s_ob
+        if s_pr:
+            s += '\n' + s_pr
         return skeleton.format(name, s)
 
     def __init__(self, rules: List[DataRule], property_map: Dict[str, PropertyCapsule]):
@@ -188,12 +190,15 @@ class DataRuleContainer(object):
             return NotImplemented
 
 
-def RandomRule() -> str:
-    return random_rule(str(randint(0, 20)))
+def RandomRule(must=False) -> str:
+    return random_rule(str(randint(0, 20)), must)
 
 
-def random_rule(suffix='') -> str:
-    rint = randint(0, 2)
+def random_rule(suffix='', must=False) -> str:
+    if must:
+        rint = randint(1, 2)
+    else:
+        rint = randint(0, 2)
     if not rint:
         return ""
     else:

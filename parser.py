@@ -155,7 +155,7 @@ def _parse_title_line(line: str) -> Tuple[str, VMapping, Optional[str]]:
     return title, vmapping, line
 
 
-def read_obligation(line0: str) -> Tuple[str, Optional[Tuple[str, int]]]:
+def read_obligation(line0: str) -> Tuple[str, Optional[Tuple[str, int]], str]:
     _, line = _next_keyword(line0)
     name, line = _next_keyword(line)
     token, line = _next_token(line)
@@ -176,13 +176,13 @@ def read_obligation(line0: str) -> Tuple[str, Optional[Tuple[str, int]]]:
             token, line = _next_token(line)
     if token == '.':
         if property_name:
-            return name, (property_name, property_order)
+            return name, (property_name, property_order), line
         else:
-            return name, None
+            return name, None, line
     raise TermFinishingNotEncountered(token, line0)
 
 
-def read_property(line0: str) -> Tuple[str, Union[str, List[str]]]:
+def read_property(line0: str) -> Tuple[str, Union[str, List[str]], str]:
     _, line = _next_keyword(line0)
     name, line = _next_keyword(line)
     token, line = _next_token(line)
@@ -194,7 +194,7 @@ def read_property(line0: str) -> Tuple[str, Union[str, List[str]]]:
         property = token  # type: ignore
     token, line = _next_token(line)
     if token == '.':
-        return name, property
+        return name, property, line
     raise TermFinishingNotEncountered(token, line0)
 
 
@@ -205,7 +205,9 @@ def _construct_obligation(name: str, property: Optional[Tuple[str, int]]) -> Dat
         return DataRule(name)
 
 
-def parse_data_rule(data_rule: str) -> DataRuleContainer:
+def parse_data_rule(data_rule: str) -> Optional[DataRuleContainer]:
+    if not data_rule:
+        return None
     lines = list(map(str.strip, data_rule.splitlines(False)))
 
     i = 0
@@ -220,7 +222,10 @@ def parse_data_rule(data_rule: str) -> DataRuleContainer:
     obligations: List[Tuple[str, Optional[Tuple[str, int]]]] = []
     pmap: Dict[str, PropertyCapsule] = {}
 
+    line_remaining = ''
     for line in lines[i+1:]:
+        if line_remaining:
+            line = line_remaining + ' ' + line
         if not line:
             continue
         line = line.strip()
@@ -233,13 +238,14 @@ def parse_data_rule(data_rule: str) -> DataRuleContainer:
         if line:
             token, line = _next_keyword(line)
             if token == 'obligation':
-                name, property_ref = read_obligation('obligation ' + line)
+                name, property_ref, line = read_obligation('obligation ' + line)
                 obligations.append((name, property_ref))
             elif token == 'property':
-                name, property_data = read_property('property ' + line)
+                name, property_data, line = read_property('property ' + line)
                 if name in pmap:
                     raise UnexpectedTerm(name, "property already defined")
                 pmap[name] = PropertyCapsule(name, property_data)
+            line_remaining = line
 
     raise NotTerminated(
         "data rule should end with 'end'. Rule: {}".format(lines))

@@ -85,14 +85,16 @@ class TestRuleSerialise(unittest.TestCase):
         for p in ps:
             pr.add_property(p)
         s = pr.dump()
-        name, content = parser.read_property(s)
+        name, content, remaining = parser.read_property(s)
+        self.assertFalse(remaining.strip())
         pr2 = PropertyCapsule(name, content)
         self.assertEqual(pr, pr2)
 
     def test_data_rule_serialise(self):
         r = DataRule('ru1', ('a', 1))
         s = r.dump()
-        name, property = parser.read_obligation(s)
+        name, property, remaining = parser.read_obligation(s)
+        self.assertFalse(remaining.strip())
         r2 = DataRule(name, property)
         self.assertEqual(r2, r)
 

@@ -97,7 +97,7 @@ class GraphBuilder(object):
                 rule = rh.rule(self._rdf_graph, output_port)
                 if rule:
                     ruleNode = self._ni[component, oportName, rule]
-                    sg.add_node(ruleNode, label=str(rule))
+                    sg.add_node(ruleNode, label=rule.dump())
                     self.G.add_edge(oportNode, ruleNode)
             imported_rule = rh.imported_rule(self._rdf_graph, component)
             if imported_rule:
