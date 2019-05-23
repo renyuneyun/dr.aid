@@ -92,9 +92,9 @@ class PropertyCapsule:
             return NotImplemented
 
 
-class DataRule(object):
+class Obligation(object):
     '''
-    DataRule is not stateful itself, but activated data rules are.
+    Obligation is not stateful itself, but activated data rules are.
     There is no grouping of data rules, so it makes no sense to "merge" two data rules: two data rules that are exactly the same should have one removed. However, it makes sense to merge two activated data rules.
     '''
 
@@ -111,14 +111,14 @@ class DataRule(object):
         self._name = name
         self._property = property
 
-    def clone(self, dmap={}) -> 'DataRule':
+    def clone(self, dmap={}) -> 'Obligation':
         if self._property:
             index = self._property[1]
             if dmap and self._property[0] in dmap:
                 index += dmap[self._property[0]]
             new_property = (self._property[0], index)
-            return DataRule(self._name, new_property)
-        return DataRule(self._name)
+            return Obligation(self._name, new_property)
+        return Obligation(self._name)
 
     def name(self):
         return self._name
@@ -169,8 +169,8 @@ class DataRuleContainer(object):
             s += '\n' + s_pr
         return skeleton.format(name, s)
 
-    def __init__(self, rules: List[DataRule], property_map: Dict[str, PropertyCapsule]):
-        self._rules: List[DataRule] = [r for r in rules]
+    def __init__(self, rules: List[Obligation], property_map: Dict[str, PropertyCapsule]):
+        self._rules: List[Obligation] = [r for r in rules]
         self._pmap = property_map
 
     def clone(self) -> 'DataRuleContainer':

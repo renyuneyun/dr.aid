@@ -15,7 +15,7 @@ from dataclasses import dataclass
 import re
 from typing import Dict, List, Optional, Tuple, Union
 
-from .rule import DataRule, DataRuleContainer, Property, PropertyCapsule
+from .rule import Obligation, DataRuleContainer, Property, PropertyCapsule
 
 
 @dataclass
@@ -198,11 +198,11 @@ def read_property(line0: str) -> Tuple[str, Union[str, List[str]], str]:
     raise TermFinishingNotEncountered(token, line0)
 
 
-def _construct_obligation(name: str, property: Optional[Tuple[str, int]]) -> DataRule:
+def _construct_obligation(name: str, property: Optional[Tuple[str, int]]) -> Obligation:
     if property:
-        return DataRule(name, property)
+        return Obligation(name, property)
     else:
-        return DataRule(name)
+        return Obligation(name)
 
 
 def parse_data_rule(data_rule: str) -> Optional[DataRuleContainer]:

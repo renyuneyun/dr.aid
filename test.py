@@ -14,7 +14,7 @@
 import unittest
 
 from exp import parser
-from exp.rule import DataRule, DataRuleContainer, Property, PropertyCapsule
+from exp.rule import Obligation, DataRuleContainer, Property, PropertyCapsule
 
 
 class TestParser(unittest.TestCase):
@@ -30,7 +30,7 @@ class TestParser(unittest.TestCase):
             obligation ob1 .
             obligation ob2 .
         end'''
-        rule = DataRuleContainer([DataRule('ob1'), DataRule('ob2')], {})
+        rule = DataRuleContainer([Obligation('ob1'), Obligation('ob2')], {})
         self.assertEqual(parser.parse_data_rule(s), rule)
 
     def test_obligation_with_property(self):
@@ -40,7 +40,7 @@ class TestParser(unittest.TestCase):
         end'''
         pr1 = PropertyCapsule('pr1', 'ddd')
         pmap = {'pr1': pr1}
-        obligations = [DataRule('ob1', ('pr1', 0))]
+        obligations = [Obligation('ob1', ('pr1', 0))]
         rule = DataRuleContainer(obligations, pmap)
         self.assertEqual(parser.parse_data_rule(s), rule)
 
@@ -55,8 +55,8 @@ class TestParser(unittest.TestCase):
             property pr1  www  .
 
         end'''
-        r1 = DataRule('ob1')
-        r2 = DataRule('ob2', ('pr1', 0))
+        r1 = Obligation('ob1')
+        r2 = Obligation('ob2', ('pr1', 0))
         pr = PropertyCapsule('pr1', 'www')
         rule = DataRuleContainer([r1, r2], {'pr1': pr})
         rule2 = parser.parse_data_rule(s)
@@ -71,7 +71,7 @@ class TestParser(unittest.TestCase):
         '''
         pr1 = PropertyCapsule('pr1', ['1', '2'])
         pmap = {'pr1': pr1}
-        obligations = [DataRule('ob1', ('pr1', 0)), DataRule('ob2', ('pr1', 1))]
+        obligations = [Obligation('ob1', ('pr1', 0)), Obligation('ob2', ('pr1', 1))]
         rule = DataRuleContainer(obligations, pmap)
         rule2 = parser.parse_data_rule(s)
         self.assertEqual(rule2, rule)
@@ -91,17 +91,17 @@ class TestRuleSerialise(unittest.TestCase):
         self.assertEqual(pr, pr2)
 
     def test_data_rule_serialise(self):
-        r = DataRule('ru1', ('a', 1))
+        r = Obligation('ru1', ('a', 1))
         s = r.dump()
         name, property, remaining = parser.read_obligation(s)
         self.assertFalse(remaining.strip())
-        r2 = DataRule(name, property)
+        r2 = Obligation(name, property)
         self.assertEqual(r2, r)
 
     def test_whole_data_rule_serialise(self):
         pr1 = PropertyCapsule('pr1', ['1', '2'])
         pmap = {'pr1': pr1}
-        obligations = [DataRule('ob1', ('pr1', 0)), DataRule('ob2', ('pr1', 1))]
+        obligations = [Obligation('ob1', ('pr1', 0)), Obligation('ob2', ('pr1', 1))]
         rule = DataRuleContainer(obligations, pmap)
         s = rule.dump()
         rule2 = parser.parse_data_rule(s)
