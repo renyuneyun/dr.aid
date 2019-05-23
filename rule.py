@@ -17,6 +17,10 @@ import logging
 from typing import Dict, List, Optional, Tuple, Union
 from random import randint
 
+from .activation import ActivationCondition, Never, WhenImported
+from .stage import Stage
+
+
 PortedRules = Dict[str, Optional['DataRuleContainer']]
 
 
@@ -73,6 +77,9 @@ class PropertyCapsule:
     def add_property(self, pr: Property):
         self._prs.append(pr)
 
+    def get(self, index: int) -> Property:
+        return self._prs[index]
+
     def dump(self) -> str:
         s = "property {}".format(self._name)
         ss = " {}".format(self._prs[0].value())
@@ -92,6 +99,23 @@ class PropertyCapsule:
             return NotImplemented
 
 
+class PropertyResolver:
+
+    def __init__(self, property_map: Dict[str, PropertyCapsule]):
+        self._pmap = property_map
+
+    def resolve(self, property_reference: Tuple[str, int]):
+        name, index = property_reference
+        return self._pmap[name].get(index)
+
+
+class ActivatedObligation:
+
+    def __init__(self, name: str, property: Optional[Property] = None):
+        self._name = name
+        self._property = property
+
+
 class Obligation(object):
     '''
     Obligation is not stateful itself, but activated data rules are.
@@ -107,9 +131,10 @@ class Obligation(object):
         s += " ."
         return s
 
-    def __init__(self, name: str, property: Optional[Tuple[str, int]] = None):
+    def __init__(self, name: str, property: Optional[Tuple[str, int]] = None, activation_condition: Optional[ActivationCondition] = None):
         self._name = name
         self._property = property
+        self._ac = activation_condition if activation_condition else Never()
 
     def clone(self, dmap={}) -> 'Obligation':
         if self._property:
@@ -123,6 +148,14 @@ class Obligation(object):
     def name(self):
         return self._name
 
+    def on_stage(self, current_stage: Stage, property_resolver: PropertyResolver) -> Optional[ActivatedObligation]:
+        if self._ac.is_met(current_stage):
+            if self._property:
+                return ActivatedObligation(self._name, property_resolver.resolve(self._property))
+            else:
+                return ActivatedObligation(self._name)
+        return None
+
     def __eq__(self, other):
         if isinstance(other, self.__class__):
             if self._name != other._name:
@@ -134,7 +167,7 @@ class Obligation(object):
             return NotImplemented
 
 
-class DataRuleContainer(object):
+class DataRuleContainer(PropertyResolver):
 
     @classmethod
     def merge(cls, first: 'DataRuleContainer', *rest: 'DataRuleContainer') -> 'DataRuleContainer':
@@ -171,12 +204,20 @@ class DataRuleContainer(object):
 
     def __init__(self, rules: List[Obligation], property_map: Dict[str, PropertyCapsule]):
         self._rules: List[Obligation] = [r for r in rules]
-        self._pmap = property_map
+        super().__init__(property_map)
 
     def clone(self) -> 'DataRuleContainer':
         pmap: Dict[str, PropertyCapsule] = copy.deepcopy(self._pmap)
         rules = [r.clone() for r in self._rules]
         return DataRuleContainer(rules, pmap)
+
+    def on_stage(self, current_stage: Stage) -> List[ActivatedObligation]:
+        lst = []
+        for r in self._rules:
+            ret = r.on_stage(current_stage, self)
+            if ret:
+                lst.append(ret)
+        return lst
 
     def __eq__(self, other):
         # TODO: order independent
