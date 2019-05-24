@@ -131,19 +131,22 @@ class Obligation(object):
         s += " ."
         return s
 
-    def __init__(self, name: str, property: Optional[Tuple[str, int]] = None, activation_condition: Optional[ActivationCondition] = None):
+    def __init__(self, name: str, property: Optional[Tuple[str, int]] = None, activation_condition: ActivationCondition = Never()):
         self._name = name
         self._property = property
-        self._ac = activation_condition if activation_condition else Never()
+        self._ac = activation_condition
 
-    def clone(self, dmap={}) -> 'Obligation':
+    def clone(self) -> 'Obligation':
+        return self._transfer({})
+
+    def _transfer(self, dmap) -> 'Obligation':
         if self._property:
             index = self._property[1]
             if dmap and self._property[0] in dmap:
-                index += dmap[self._property[0]]
+                index += dmap[self._property[0]][index]
             new_property = (self._property[0], index)
-            return Obligation(self._name, new_property)
-        return Obligation(self._name)
+            return Obligation(self._name, new_property, self._ac)
+        return Obligation(self._name, activation_condition=self._ac)
 
     def name(self):
         return self._name
@@ -161,6 +164,8 @@ class Obligation(object):
             if self._name != other._name:
                 return False
             if self._property != other._property:
+                return False
+            if self._ac != other._ac:
                 return False
             return True
         else:
@@ -185,7 +190,7 @@ class DataRuleContainer(PropertyResolver):
             for r in nxt._rules:
                 if r in new._rules:
                     continue
-                r = r.clone(dmap)
+                r = r._transfer(dmap)
                 new._rules.append(r)
         return new
 
