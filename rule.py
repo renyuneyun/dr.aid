@@ -24,15 +24,12 @@ from .stage import Stage
 PortedRules = Dict[str, Optional['DataRuleContainer']]
 
 
-class Property(object):
+class Property:
     '''
     '''
 
     def __init__(self, value):
         self._v = value
-
-    def value(self):
-        return self._v
 
     def __eq__(self, other):
         if isinstance(other, self.__class__):
@@ -41,6 +38,9 @@ class Property(object):
             return True
         else:
             return NotImplemented
+
+    def value(self):
+        return self._v
 
 
 class PropertyCapsule:
@@ -68,6 +68,24 @@ class PropertyCapsule:
             else:
                 self._prs.extend([Property(pr) for pr in property])
 
+    def __eq__(self, other):
+        if isinstance(other, self.__class__):
+            if self._name != other._name:
+                return False
+            if self._prs != other._prs:
+                return False
+            return True
+        else:
+            return NotImplemented
+
+    def dump(self) -> str:
+        s = "property {}".format(self._name)
+        ss = " {}".format(self._prs[0].value())
+        if len(self._prs) >= 1:
+            for pr in self._prs[1:]:
+                ss += ", {}".format(pr._v)
+        return "{} [{}] .".format(s, ss)
+
     def clone(self) -> 'PropertyCapsule':
         new = PropertyCapsule(self._name)
         for pr in self._prs:
@@ -79,24 +97,6 @@ class PropertyCapsule:
 
     def get(self, index: int) -> Property:
         return self._prs[index]
-
-    def dump(self) -> str:
-        s = "property {}".format(self._name)
-        ss = " {}".format(self._prs[0].value())
-        if len(self._prs) >= 1:
-            for pr in self._prs[1:]:
-                ss += ", {}".format(pr._v)
-        return "{} [{}] .".format(s, ss)
-
-    def __eq__(self, other):
-        if isinstance(other, self.__class__):
-            if self._name != other._name:
-                return False
-            if self._prs != other._prs:
-                return False
-            return True
-        else:
-            return NotImplemented
 
 
 class PropertyResolver:
@@ -116,13 +116,28 @@ class ActivatedObligation:
         self._property = property
 
 
-class Obligation(object):
+class Obligation:
     '''
     Obligation is not stateful itself, but activated data rules are.
     There is no grouping of data rules, so it makes no sense to "merge" two data rules: two data rules that are exactly the same should have one removed. However, it makes sense to merge two activated data rules.
     '''
 
-    # TODO: activated data rules
+    def __init__(self, name: str, property: Optional[Tuple[str, int]] = None, activation_condition: ActivationCondition = Never()):
+        self._name = name
+        self._property = property
+        self._ac = activation_condition
+
+    def __eq__(self, other):
+        if isinstance(other, self.__class__):
+            if self._name != other._name:
+                return False
+            if self._property != other._property:
+                return False
+            if self._ac != other._ac:
+                return False
+            return True
+        else:
+            return NotImplemented
 
     def dump(self) -> str:
         s = "obligation {}".format(self._name)
@@ -130,11 +145,6 @@ class Obligation(object):
             s = "{} {}[{}]".format(s, self._property[0], self._property[1])
         s += " ."
         return s
-
-    def __init__(self, name: str, property: Optional[Tuple[str, int]] = None, activation_condition: ActivationCondition = Never()):
-        self._name = name
-        self._property = property
-        self._ac = activation_condition
 
     def clone(self) -> 'Obligation':
         return self._transfer({})
@@ -159,18 +169,6 @@ class Obligation(object):
                 return ActivatedObligation(self._name)
         return None
 
-    def __eq__(self, other):
-        if isinstance(other, self.__class__):
-            if self._name != other._name:
-                return False
-            if self._property != other._property:
-                return False
-            if self._ac != other._ac:
-                return False
-            return True
-        else:
-            return NotImplemented
-
 
 class DataRuleContainer(PropertyResolver):
 
@@ -194,6 +192,21 @@ class DataRuleContainer(PropertyResolver):
                 new._rules.append(r)
         return new
 
+    def __init__(self, rules: List[Obligation], property_map: Dict[str, PropertyCapsule]):
+        self._rules: List[Obligation] = [r for r in rules]
+        super().__init__(property_map)
+
+    def __eq__(self, other):
+        # TODO: order independent
+        if isinstance(other, self.__class__):
+            if not self._rules == other._rules:
+                return False
+            if not self._pmap == other._pmap:
+                return False
+            return True
+        else:
+            return NotImplemented
+
     def dump(self) -> str:
         skeleton = """rule {} begin
         {}
@@ -207,10 +220,6 @@ class DataRuleContainer(PropertyResolver):
             s += '\n' + s_pr
         return skeleton.format(name, s)
 
-    def __init__(self, rules: List[Obligation], property_map: Dict[str, PropertyCapsule]):
-        self._rules: List[Obligation] = [r for r in rules]
-        super().__init__(property_map)
-
     def clone(self) -> 'DataRuleContainer':
         pmap: Dict[str, PropertyCapsule] = copy.deepcopy(self._pmap)
         rules = [r.clone() for r in self._rules]
@@ -223,17 +232,6 @@ class DataRuleContainer(PropertyResolver):
             if ret:
                 lst.append(ret)
         return lst
-
-    def __eq__(self, other):
-        # TODO: order independent
-        if isinstance(other, self.__class__):
-            if not self._rules == other._rules:
-                return False
-            if not self._pmap == other._pmap:
-                return False
-            return True
-        else:
-            return NotImplemented
 
 
 def RandomRule(must=False) -> str:
@@ -271,7 +269,7 @@ def rule_account(suffix='') -> str:
     '''
 
 
-class FlowRule(object):
+class FlowRule:
     '''
     FlowRule is stateless
     '''
@@ -281,7 +279,7 @@ class FlowRule(object):
         self._conn = connectivity
 
 
-class FlowRuleHandler(object):
+class FlowRuleHandler:
 
     def __init__(self, flow_rule: FlowRule):
         self._rule = flow_rule

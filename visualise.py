@@ -24,7 +24,7 @@ def _clean_name(ref):
     return name
 
 
-class _NameId(object):
+class _NameId:
 
     def __init__(self):
         self.counter = 0
@@ -39,7 +39,7 @@ class _NameId(object):
         return self.map[name]
 
 
-class GraphBuilder(object):
+class GraphBuilder:
 
     def __init__(self, rdf_graph):
         self._rdf_graph = rdf_graph

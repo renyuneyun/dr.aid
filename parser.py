@@ -25,15 +25,11 @@ class VMapping:
 
 
 class MalformedRuleException(Exception):
-
-    def __init__(self, msg=None):
-        super().__init__(msg)
+    pass
 
 
 class NotFoundException(MalformedRuleException):
-
-    def __init__(self, msg=None):
-        super().__init__(msg)
+    pass
 
 
 class UnexpectedTerm(MalformedRuleException):

@@ -43,7 +43,7 @@ class ImportedRule:
 
 
 SOURCE_FUNCTION = {'Source', 'downloadPE', 'Collector', 'COLLECTOR1', 'COLLECTOR2',
-        'NumberProducer'}
+                   'NumberProducer'}
 
 
 def obtain_imported_rules(component_info_list: List[ComponentInfo]) -> List[ImportedRule]:

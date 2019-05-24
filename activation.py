@@ -16,18 +16,17 @@ from .stage import Stage, Imported
 
 class ActivationCondition:
 
-    def is_met(self, current_stage):
-        return NotImplemented
+    def is_met(self, current_stage: Stage) -> bool:
+        raise NotImplementedError
 
 
 class Never(ActivationCondition):
 
-    def is_met(self, current_stage):
+    def is_met(self, current_stage: Stage) -> bool:
         return False
 
 
 class WhenImported(ActivationCondition):
 
-    def is_met(self, current_stage: Stage):
+    def is_met(self, current_stage: Stage) -> bool:
         return isinstance(current_stage, Imported)
-

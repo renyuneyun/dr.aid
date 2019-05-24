@@ -81,7 +81,7 @@ def _rdu(binding, target, safe=False):
             return obj, real
 
 
-class Helper(object):
+class Helper:
 
     def __init__(self, destination):
         self.sparql = SPARQLWrapper(destination)
