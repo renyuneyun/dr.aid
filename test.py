@@ -158,7 +158,7 @@ class TestRuleSerialise(unittest.TestCase):
     def test_data_rule_serialise(self):
         r = Obligation('ru1', ('a', 1))
         s = r.dump()
-        name, property, remaining = parser.read_obligation(s)
+        name, property, activation_condition, remaining = parser.read_obligation(s)
         self.assertFalse(remaining.strip())
         r2 = Obligation(name, property)
         self.assertEqual(r2, r)

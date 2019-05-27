@@ -28,8 +28,8 @@ def main():
 
     service = "http://localhost:3030/data"
 
-    results = propagate_all(service)
-    draw(results)
+    results, activated_obligations = propagate_all(service)
+    draw(results, activated_obligations)
 
 
 def import_rules(rdf_graph, s_helper, components):
@@ -45,7 +45,10 @@ def propagate_all(service):
     assert graphs
 
     results = []
+    activated_obligations = []
     for i, graph in enumerate(graphs):
+
+        obligations = {}
 
         s_helper.set_graph(graph)
 
@@ -62,22 +65,28 @@ def propagate_all(service):
         batches = batches
         for batch in batches:
             import_rules(rdf_graph, s_helper, batch)
-            augmentations = reason.propagate(rdf_graph, batch)
+            augmentations, obs = reason.propagate(rdf_graph, batch)
+            obligations.update(obs)
             ag.apply_augmentation(rdf_graph, augmentations)
 
         a_helper.write_transformed_graph(rdf_graph)
 
         results.append(rdf_graph)
 
-    return results
+        activated_obligations.append(obligations)
+
+    return results, activated_obligations
 
 
-def draw(rdf_graphs):
+def draw(rdf_graphs, activated_obligations=[]):
     from exp import visualise as vis
     for i, rdf_graph in enumerate(rdf_graphs):
         filename = "graph_{}.png".format(i)
-        gb = vis.GraphBuilder(rdf_graph)
-        G = gb.data_flow().rules().build()
+        gb = vis.GraphBuilder(rdf_graph, activated_obligations[i]) \
+                .data_flow() \
+                .rules() \
+                .obligation()
+        G = gb.build()
         vis.draw_to_file(G, filename)
 
     return rdf_graph
@@ -85,4 +94,3 @@ def draw(rdf_graphs):
 
 if __name__ == '__main__':
     main()
-

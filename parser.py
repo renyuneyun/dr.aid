@@ -16,6 +16,7 @@ import re
 from typing import Dict, List, Optional, Tuple, Union
 
 from .rule import Obligation, DataRuleContainer, Property, PropertyCapsule
+from .activation import ActivationCondition, WhenImported
 
 
 @dataclass
@@ -151,12 +152,13 @@ def _parse_title_line(line: str) -> Tuple[str, VMapping, Optional[str]]:
     return title, vmapping, line
 
 
-def read_obligation(line0: str) -> Tuple[str, Optional[Tuple[str, int]], str]:
+def read_obligation(line0: str) -> Tuple[str, Optional[Tuple[str, int]], Optional[ActivationCondition], str]:
     _, line = _next_keyword(line0)
     name, line = _next_keyword(line)
     token, line = _next_token(line)
     property_name = None
     property_order = 0
+    activation_condition = None
     if token != '.':
         property_name = token
         token, line = _next_token(line)
@@ -167,14 +169,19 @@ def read_obligation(line0: str) -> Tuple[str, Optional[Tuple[str, int]], str]:
                 token, line = _next_token(line)
                 if token != ']':
                     raise UnexpectedToken(token, ']')
+            elif token == 'WhenImported':
+                activation_condition = WhenImported()
             else:
                 raise UnexpectedToken(token, '[')
             token, line = _next_token(line)
+    if token == 'WhenImported':
+        activation_condition = WhenImported()
+        token, line = _next_token(line)
     if token == '.':
         if property_name:
-            return name, (property_name, property_order), line
+            return name, (property_name, property_order), activation_condition, line
         else:
-            return name, None, line
+            return name, None, activation_condition, line
     raise TermFinishingNotEncountered(token, line0)
 
 
@@ -194,10 +201,14 @@ def read_property(line0: str) -> Tuple[str, Union[str, List[str]], str]:
     raise TermFinishingNotEncountered(token, line0)
 
 
-def _construct_obligation(name: str, property: Optional[Tuple[str, int]]) -> Obligation:
+def _construct_obligation(name: str, property: Optional[Tuple[str, int]], activation_condition: Optional[ActivationCondition]) -> Obligation:
     if property:
+        if activation_condition:
+            return Obligation(name, property, activation_condition)
         return Obligation(name, property)
     else:
+        if activation_condition:
+            return Obligation(name, activation_condition=activation_condition)
         return Obligation(name)
 
 
@@ -215,7 +226,7 @@ def parse_data_rule(data_rule: str) -> Optional[DataRuleContainer]:
     title, vmapping, remaining = _parse_title_line(starting)
     assert not remaining
 
-    obligations: List[Tuple[str, Optional[Tuple[str, int]]]] = []
+    obligations: List[Tuple[str, Optional[Tuple[str, int]], Optional[ActivationCondition]]] = []
     pmap: Dict[str, PropertyCapsule] = {}
 
     line_remaining = ''
@@ -234,8 +245,8 @@ def parse_data_rule(data_rule: str) -> Optional[DataRuleContainer]:
         if line:
             token, line = _next_keyword(line)
             if token == 'obligation':
-                name, property_ref, line = read_obligation('obligation ' + line)
-                obligations.append((name, property_ref))
+                name, property_ref, activation_condition, line = read_obligation('obligation ' + line)
+                obligations.append((name, property_ref, activation_condition))
             elif token == 'property':
                 name, property_data, line = read_property('property ' + line)
                 if name in pmap:

@@ -41,8 +41,9 @@ class _NameId:
 
 class GraphBuilder:
 
-    def __init__(self, rdf_graph):
+    def __init__(self, rdf_graph, activated_obligations={}):
         self._rdf_graph = rdf_graph
+        self._acob = activated_obligations
 
         self.G = pgv.AGraph(directed=True, rankdir='LR')
 
@@ -106,6 +107,15 @@ class GraphBuilder:
                 connectedNode = self._ni[component, 'imported_rule']
                 sg.add_node(connectedNode, label='imported')
                 self.G.add_edge(ruleNode, connectedNode)
+        return self
+
+    def obligation(self):
+        for component in rh.components(self._rdf_graph):
+            obs = self._acob.get(component)
+            if obs:
+                sg = self._nm[component]
+                obNode = self._ni[sg, 'obligation']
+                sg.add_node(obNode, label=str(obs))
         return self
 
     def build(self):

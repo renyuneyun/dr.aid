@@ -12,7 +12,7 @@
 '''
 
 import logging
-from typing import List
+from typing import Dict, List, Tuple
 
 from networkx import MultiDiGraph
 from rdflib import Graph, URIRef
@@ -21,7 +21,8 @@ from .augmentation import ComponentAugmentation
 from .namespaces import NS
 from . import rdf_helper as rh
 from . import rule as rs
-from .rule import DataRuleContainer
+from .rule import DataRuleContainer, ActivatedObligation
+from .stage import Stage, Imported
 
 
 logger = logging.getLogger("REASONING")
@@ -43,9 +44,18 @@ def graph_into_batches(graph: MultiDiGraph) -> List[List[URIRef]]:
     return ret
 
 
-def propagate(rdf_graph: Graph, component_list: List[URIRef]) -> List[ComponentAugmentation]:
+def on_import(rule: DataRuleContainer) -> List[ActivatedObligation]:
+    return on_stage(rule, Imported())
+
+
+def on_stage(rule: DataRuleContainer, stage: Stage) -> List[ActivatedObligation]:
+    return rule.on_stage(stage)
+
+
+def propagate(rdf_graph: Graph, component_list: List[URIRef]) -> Tuple[List[ComponentAugmentation], Dict[URIRef, List[ActivatedObligation]]]:
     import_port_name = 'imported_rule'
     augmentations = []
+    activated_obligations = {}
     for component in component_list:
         input_rules = {}
         input_ports = []
@@ -72,6 +82,9 @@ def propagate(rdf_graph: Graph, component_list: List[URIRef]) -> List[ComponentA
             assert import_port_name not in input_ports
             input_ports.append(import_port_name)
             input_rules[import_port_name] = imported_rule
+            obs = on_import(imported_rule)
+            if obs:
+                activated_obligations[component] = obs
 
         output_ports = []
         for output_port in rdf_graph.objects(component, NS['mine']['hasOutPort']):
@@ -83,5 +96,5 @@ def propagate(rdf_graph: Graph, component_list: List[URIRef]) -> List[ComponentA
         output_rules = flow_handler.dispatch(input_rules)
         aug = ComponentAugmentation(component, output_rules)
         augmentations.append(aug)
-    return augmentations
+    return (augmentations, activated_obligations)
 

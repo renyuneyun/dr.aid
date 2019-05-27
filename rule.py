@@ -143,6 +143,8 @@ class Obligation:
         s = "obligation {}".format(self._name)
         if self._property:
             s = "{} {}[{}]".format(s, self._property[0], self._property[1])
+        if isinstance(self._ac, WhenImported):
+            s += ' WhenImported'
         s += " ."
         return s
 
@@ -246,16 +248,18 @@ def random_rule(suffix='', must=False) -> str:
     if not rint:
         return ""
     else:
+        activate_on_import = (False, True)[randint(0, 1)]
         if rint == 1:
-            return rule_acknowledge(suffix)
+            return rule_acknowledge('MySource', suffix, activate_on_import)
         else:
             return rule_account(suffix)
 
 
-def rule_acknowledge(source: str, suffix='') -> str:
+def rule_acknowledge(source: str, suffix='', activate_on_import=False) -> str:
+    when = 'WhenImported ' if activate_on_import else ''
     return f'''
     rule Rule0
-        obligation Acknowledge{suffix} source_name .
+        obligation Acknowledge{suffix} source_name {when}.
         property source_name {source} .
     end
     '''
