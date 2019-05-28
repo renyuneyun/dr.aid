@@ -188,9 +188,9 @@ class DataRuleContainer(PropertyResolver):
                 if diff is not None:
                     dmap[pname] = diff
             for r in nxt._rules:
+                r = r._transfer(dmap)
                 if r in new._rules:
                     continue
-                r = r._transfer(dmap)
                 new._rules.append(r)
         return new
 
