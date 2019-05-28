@@ -16,6 +16,12 @@ from .stage import Stage, Imported
 
 class ActivationCondition:
 
+    def __eq__(self, other):
+        if isinstance(other, self.__class__):
+            return True
+        else:
+            return NotImplemented
+
     def is_met(self, current_stage: Stage) -> bool:
         raise NotImplementedError
 
