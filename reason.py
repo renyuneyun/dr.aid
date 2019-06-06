@@ -20,6 +20,7 @@ from rdflib import Graph, URIRef
 from .augmentation import ComponentAugmentation
 from .namespaces import NS
 from . import rdf_helper as rh
+from .rdf_helper import IMPORT_PORT_NAME
 from . import rule as rs
 from .rule import DataRuleContainer, ActivatedObligation
 from .stage import Stage, Imported
@@ -53,21 +54,18 @@ def on_stage(rule: DataRuleContainer, stage: Stage) -> List[ActivatedObligation]
 
 
 def propagate(rdf_graph: Graph, component_list: List[URIRef]) -> Tuple[List[ComponentAugmentation], Dict[URIRef, List[ActivatedObligation]]]:
-    import_port_name = 'imported_rule'
     augmentations = []
     activated_obligations = {}
     for component in component_list:
         input_rules = {}
         input_ports = []
-        for input_port in rdf_graph.subjects(NS['mine']['inputTo'], component):
-            input_port_name = str(next(rdf_graph.objects(input_port, NS['mine']['name'])))
+        for input_port in rh.input_ports(rdf_graph, component):
+            input_port_name = str(rh.name(rdf_graph, input_port))
             input_ports.append(input_port_name)
             rules = []
-            for ci, connection in enumerate(rdf_graph.subjects(NS['mine']['target'], input_port)):
-                rule = None
-                for oi, output_port in enumerate(rdf_graph.subjects(NS['mine']['hasConnection'], connection)):
-                    assert oi == 0  # Every connection has exactly one OutputPort
-                    rule = rh.rule(rdf_graph, output_port)
+            for ci, connection in enumerate(rh.connections_to_port(rdf_graph, input_port)):
+                output_port = rh.one_or_none(rh.output_ports_with_connection(rdf_graph, connection))  # Every connection has exactly one OutputPort (or none)
+                rule = rh.rule(rdf_graph, output_port) if output_port else None
                 if rule:
                     rules.append(rule)
                     logger.debug("%s :: %s: %s", component, input_port_name, rule)
@@ -79,16 +77,16 @@ def propagate(rdf_graph: Graph, component_list: List[URIRef]) -> Tuple[List[Comp
 
         imported_rule = rh.imported_rule(rdf_graph, component)
         if imported_rule:
-            assert import_port_name not in input_ports
-            input_ports.append(import_port_name)
-            input_rules[import_port_name] = imported_rule
+            assert IMPORT_PORT_NAME not in input_ports
+            input_ports.append(IMPORT_PORT_NAME)
+            input_rules[IMPORT_PORT_NAME] = imported_rule
             obs = on_import(imported_rule)
             if obs:
                 activated_obligations[component] = obs
 
         output_ports = []
-        for output_port in rdf_graph.objects(component, NS['mine']['hasOutPort']):
-            out_name = str(next(rdf_graph.objects(output_port, NS['mine']['name'])))
+        for output_port in rh.output_ports(rdf_graph, component):
+            out_name = str(rh.name(rdf_graph, output_port))
             output_ports.append(out_name)
         logger.debug("%s :IN_RULES: %s", component, input_rules)
         flow_rule = rs.DefaultFlow(input_ports, output_ports)

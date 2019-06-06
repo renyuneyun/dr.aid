@@ -80,7 +80,7 @@ class GraphBuilder:
             for output_port in rh.output_ports(self._rdf_graph, component):
                 oportName = rh.name(self._rdf_graph, output_port)
                 oportNode = sg.get_node(self._ni[component, oportName])
-                for connection in rh.connections(self._rdf_graph, output_port):
+                for connection in rh.connections_from_port(self._rdf_graph, output_port):
                     for input_port in rh.connection_targets(self._rdf_graph, connection):
                         iportName = rh.name(self._rdf_graph, input_port)
                         tcomponent = rh.input_to(self._rdf_graph, input_port)

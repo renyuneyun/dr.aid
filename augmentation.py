@@ -21,6 +21,7 @@ from .namespaces import NS
 from . import parser
 from . import rule
 from . import rdf_helper as rh
+from .rdf_helper import IMPORT_PORT_NAME
 from .rule import DataRuleContainer, PortedRules
 from .sparql_helper import ComponentInfo
 
@@ -75,7 +76,7 @@ def apply_imported_rules(graph: Graph, imported_rules: List[ImportedRule]) -> No
         component = imported.id
 
         input_ports = rh.input_ports(graph, component)
-        assert 'imported' not in input_ports
+        assert IMPORT_PORT_NAME not in input_ports
 
         if imported.rule:
             rh.insert_imported_rule(graph, component, imported.rule)
@@ -88,14 +89,12 @@ def apply_augmentation(graph: Graph, augmentations: List[ComponentAugmentation])
     '''
     for aug in augmentations:
         component = aug.id
-        for out_port in graph.objects(component, NS['mine']['hasOutPort']):
-            port_name_ = list(graph.objects(out_port, NS['mine']['name']))
-            assert len(port_name_) == 1
-            port_name = str(port_name_[0])
+        for out_port in rh.output_ports(graph, component):
+            port_name = str(rh.name(graph, out_port))
             if port_name in aug.rules:
                 rule = aug.rules[port_name]
                 if rule:
-                    graph.add((out_port, NS['mine']['rule'], Literal(rule.dump())))
+                    rh.insert_rule(graph, out_port, rule)
             else:
                 logger.warning("OutPort {} not found in {}".format(port_name, component))
 

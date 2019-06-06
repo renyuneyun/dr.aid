@@ -11,13 +11,16 @@
 
 '''
 
-from typing import Optional
+from typing import Iterable, Optional
 
-from rdflib import Literal
+from rdflib import Graph, Literal, URIRef
 
 from .namespaces import NS
 from . import parser
 from .rule import DataRuleContainer
+
+
+IMPORT_PORT_NAME = 'imported_rule'
 
 
 def one(iterator):
@@ -34,48 +37,60 @@ def one_or_none(iterator):
     return lst[0]
 
 
-def name(graph, subject):
+def name(graph: Graph, subject: URIRef) -> URIRef:
     return one(graph.objects(subject, NS['mine']['name']))
 
 
-def components(graph):
+def components(graph: Graph) -> Iterable[URIRef]:
     return graph.subjects(NS['rdf']['type'], NS['s-prov']['Component'])
 
 
-def output_ports(graph, component):
+def output_ports(graph: Graph, component: URIRef) -> Iterable[URIRef]:
     return graph.objects(component, NS['mine']['hasOutPort'])
 
 
-def input_ports(graph, component):
+def input_ports(graph: Graph, component: URIRef) -> Iterable[URIRef]:
     return graph.subjects(NS['mine']['inputTo'], component)
 
 
-def connections(graph, output_port):
+def connections_to_port(graph: Graph, input_port: URIRef) -> Iterable[URIRef]:
+    return graph.subjects(NS['mine']['target'], input_port)
+
+
+def connections_from_port(graph: Graph, output_port: URIRef) -> Iterable[URIRef]:
     return graph.objects(output_port, NS['mine']['hasConnection'])
 
 
-def connection_targets(graph, connection):
+def connection_targets(graph: Graph, connection: URIRef) -> Iterable[URIRef]:
     return graph.objects(connection, NS['mine']['target'])
 
 
-def input_to(graph, input_port):
+def output_ports_with_connection(graph: Graph, connection: URIRef) -> Iterable[URIRef]:
+    return graph.subjects(NS['mine']['hasConnection'], connection)
+
+
+def input_to(graph: Graph, input_port: URIRef) -> URIRef:
     return one(graph.objects(input_port, NS['mine']['inputTo']))
 
 
-def rule_literal(graph, output_port) -> Optional[Literal]:
+def rule_literal(graph: Graph, output_port: URIRef) -> Optional[Literal]:
     return one_or_none(graph.objects(output_port, NS['mine']['rule']))
 
 
-def rule(graph, output_port) -> Optional[DataRuleContainer]:
+def rule(graph: Graph, output_port: URIRef) -> Optional[DataRuleContainer]:
     literal = rule_literal(graph, output_port)
     return parser.parse_data_rule(literal) if literal else None
 
 
-def imported_rule(graph, component) -> Optional[DataRuleContainer]:
+def imported_rule(graph: Graph, component: URIRef) -> Optional[DataRuleContainer]:
     imported_rule_literal = one_or_none(graph.objects(component, NS['mine']['importedRule']))
     return parser.parse_data_rule(imported_rule_literal) if imported_rule_literal else None
 
 
-def insert_imported_rule(graph, component, rule: DataRuleContainer) -> None:
+def insert_imported_rule(graph: Graph, component: URIRef, rule: DataRuleContainer) -> None:
     graph.add((component, NS['mine']['importedRule'], Literal(rule.dump())))
+
+
+def insert_rule(graph: Graph, component: URIRef, rule: DataRuleContainer) -> None:
+    graph.add((component, NS['mine']['rule'], Literal(rule.dump())))
 
