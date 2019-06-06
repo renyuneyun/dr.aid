@@ -42,6 +42,9 @@ class Property:
     def value(self):
         return self._v
 
+    def __repr__(self):
+        return f'{self._v}'
+
 
 class PropertyCapsule:
 
@@ -114,6 +117,9 @@ class ActivatedObligation:
     def __init__(self, name: str, property: Optional[Property] = None):
         self._name = name
         self._property = property
+
+    def __repr__(self):
+        return f'({self._name} {self._property})'
 
 
 class Obligation:
