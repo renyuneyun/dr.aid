@@ -47,8 +47,8 @@ class GraphBuilder:
 
         self.G = pgv.AGraph(directed=True, rankdir='LR')
 
-        self._ni = _NameId()
-        self._nm = {}
+        self._ni = _NameId()  # convert from keys to a unique identifier
+        self._nm = {}  # map from keys to nodes (objects) in graph
 
         self._components()
 
@@ -56,16 +56,16 @@ class GraphBuilder:
         for component in rh.components(self._rdf_graph):
             cid = self._ni[component]
             cluster_name = "cluster{}".format(cid)
-            sg = self.G.add_subgraph(name=cluster_name, label=_clean_name(component))
+            sg = self.G.add_subgraph(name=cluster_name, label=_clean_name(component), style='striped')
             self._nm[component] = sg
-            isg = sg.add_subgraph(rank='same')
+            isg = sg.add_subgraph(rank='source')
             iports = []
             for input_port in rh.input_ports(self._rdf_graph, component):
                 iportName = rh.name(self._rdf_graph, input_port)
                 isg.add_node(self._ni[component, iportName], label=iportName)
                 iports.append(iportName)
             oports = []
-            osg = sg.add_subgraph(rank='same')
+            osg = sg.add_subgraph(rank='sink')
             for output_port in rh.output_ports(self._rdf_graph, component):
                 oportName = rh.name(self._rdf_graph, output_port)
                 osg.add_node(self._ni[component, oportName], label=oportName)
@@ -98,15 +98,15 @@ class GraphBuilder:
                 rule = rh.rule(self._rdf_graph, output_port)
                 if rule:
                     ruleNode = self._ni[component, oportName, rule]
-                    sg.add_node(ruleNode, label=rule.dump())
-                    self.G.add_edge(oportNode, ruleNode)
+                    self.G.add_node(ruleNode, label=rule.dump(), shape='note')
+                    self.G.add_edge(oportNode, ruleNode, arrowhead='none')
             imported_rule = rh.imported_rule(self._rdf_graph, component)
             if imported_rule:
                 ruleNode = self._ni[component, 'imported_rule_data']
-                self.G.add_node(ruleNode, label=imported_rule.dump())
+                self.G.add_node(ruleNode, label=imported_rule.dump(), shape='note')
                 connectedNode = self._ni[component, 'imported_rule']
-                sg.add_node(connectedNode, label='imported')
-                self.G.add_edge(ruleNode, connectedNode)
+                sg.add_node(connectedNode, label='imported', style='dashed', shape='egg')
+                self.G.add_edge(ruleNode, connectedNode, style='tapered', penwidth=7, arrowtail='none', dir='forward', arrowhead='none')
         return self
 
     def obligation(self):
@@ -115,7 +115,7 @@ class GraphBuilder:
             if obs:
                 sg = self._nm[component]
                 obNode = self._ni[sg, 'obligation']
-                sg.add_node(obNode, label=str(obs))
+                sg.add_node(obNode, label=str(obs), shape='folder')
         return self
 
     def build(self):
