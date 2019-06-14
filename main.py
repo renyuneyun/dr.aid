@@ -15,6 +15,7 @@ import logging
 from rdflib.extras.external_graph_libs import rdflib_to_networkx_multidigraph
 
 import exp.augmentation as ag
+import exp.rdf_helper as rh
 import exp.reason as reason
 import exp.sparql_helper as sh
 
@@ -30,6 +31,12 @@ def main():
 
     results, activated_obligations = propagate_all(service)
     draw(results, activated_obligations)
+
+
+def import_flow_rules(graph_id, rdf_graph, s_helper):
+    components = rh.components(rdf_graph)
+    component_info_list = s_helper.get_components_info(components)
+    ag.apply_flow_rules(rdf_graph, graph_id, component_info_list)
 
 
 def import_rules(rdf_graph, s_helper, components):
@@ -53,6 +60,7 @@ def propagate_all(service):
         s_helper.set_graph(graph)
 
         rdf_graph = s_helper.get_graph_dependency_with_port()
+        import_flow_rules(graph, rdf_graph, s_helper)
 
         a_helper = sh.AugmentedGraphHelper(service)
 
@@ -62,7 +70,6 @@ def propagate_all(service):
         component_graph = rdflib_to_networkx_multidigraph(rdf_component_graph)
         batches = reason.graph_into_batches(component_graph)
 
-        batches = batches
         for batch in batches:
             import_rules(rdf_graph, s_helper, batch)
             augmentations, obs = reason.propagate(rdf_graph, batch)
@@ -85,7 +92,8 @@ def draw(rdf_graphs, activated_obligations=[]):
         gb = vis.GraphBuilder(rdf_graph, activated_obligations[i]) \
                 .data_flow() \
                 .rules() \
-                .obligation()
+                .obligation() \
+                .flow_rules()
         G = gb.build()
         vis.draw_to_file(G, filename)
 

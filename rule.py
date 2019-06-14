@@ -288,6 +288,13 @@ class FlowRule:
     def __init__(self, connectivity):
         self._conn = connectivity
 
+    def dump(self) -> str:
+        s = ''
+        for oport in self._conn:
+            for iport in self._conn[oport]:
+                s += "{} -> {}\n".format(iport, oport)
+        return s
+
 
 class FlowRuleHandler:
 

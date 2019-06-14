@@ -17,7 +17,7 @@ from rdflib import Graph, Literal, URIRef
 
 from .namespaces import NS
 from . import parser
-from .rule import DataRuleContainer
+from .rule import DataRuleContainer, FlowRule
 
 
 IMPORT_PORT_NAME = 'imported_rule'
@@ -87,10 +87,20 @@ def imported_rule(graph: Graph, component: URIRef) -> Optional[DataRuleContainer
     return parser.parse_data_rule(imported_rule_literal) if imported_rule_literal else None
 
 
+def flow_rule(graph: Graph, component: URIRef) -> Optional[FlowRule]:
+    flow_rule_literal = one_or_none(graph.objects(component, NS['mine']['flowRule']))
+    flow_rule_str = str(flow_rule_literal) if flow_rule_literal else None
+    return parser.parse_flow_rule(flow_rule_str)
+
+
 def insert_imported_rule(graph: Graph, component: URIRef, rule: DataRuleContainer) -> None:
     graph.add((component, NS['mine']['importedRule'], Literal(rule.dump())))
 
 
 def insert_rule(graph: Graph, component: URIRef, rule: DataRuleContainer) -> None:
     graph.add((component, NS['mine']['rule'], Literal(rule.dump())))
+
+
+def set_flow_rule(graph: Graph, component: URIRef, flow_rule: str) -> None:
+    graph.add((component, NS['mine']['flowRule'], flow_rule))
 

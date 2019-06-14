@@ -15,7 +15,7 @@ from dataclasses import dataclass
 import re
 from typing import Dict, List, Optional, Tuple, Union
 
-from .rule import Obligation, DataRuleContainer, Property, PropertyCapsule
+from .rule import FlowRule, Obligation, DataRuleContainer, Property, PropertyCapsule
 from .activation import ActivationCondition, WhenImported
 
 
@@ -256,3 +256,14 @@ def parse_data_rule(data_rule: str) -> Optional[DataRuleContainer]:
 
     raise NotTerminated(
         "data rule should end with 'end'. Rule: {}".format(lines))
+
+
+def parse_flow_rule(flow_rule: Optional[str]) -> Optional[FlowRule]:
+    if flow_rule is None:
+        return None
+    try:
+        connectivity = eval(flow_rule)
+    except Exception as e:
+        raise MalformedRuleException(e)
+    return FlowRule(connectivity)
+

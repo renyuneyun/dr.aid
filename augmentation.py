@@ -22,8 +22,10 @@ from . import parser
 from . import rule
 from . import rdf_helper as rh
 from .rdf_helper import IMPORT_PORT_NAME
-from .rule import DataRuleContainer, PortedRules
+from .rule import DataRuleContainer, PortedRules, FlowRule
 from .sparql_helper import ComponentInfo
+
+from .synthetic_raw_rules import FLOW_RULES
 
 
 logger = logging.getLogger("AUGM")
@@ -97,4 +99,31 @@ def apply_augmentation(graph: Graph, augmentations: List[ComponentAugmentation])
                     rh.insert_rule(graph, out_port, rule)
             else:
                 logger.warning("OutPort {} not found in {}".format(port_name, component))
+
+
+def apply_flow_rules(graph: Graph, graph_id: str, component_info_list: List[ComponentInfo]) -> None:
+    '''
+
+    Modifies the graph in-place
+    '''
+    handled = set()
+
+    graph_id = URIRef(graph_id)
+    if graph_id in FLOW_RULES:
+        flow_rules = FLOW_RULES[graph_id]
+        for component in rh.components(graph):
+            if component in flow_rules:
+                fr = flow_rules[component]
+                rh.set_flow_rule(graph, component, Literal(fr))
+                handled.add(component)
+
+    g_flow_rules = FLOW_RULES[None]
+    for component_info in component_info_list:
+        component = component_info.id
+        function = component_info.function
+        if component in handled:
+            continue
+        if function in g_flow_rules:
+            fr = g_flow_rules[function]
+            rh.set_flow_rule(graph, component, Literal(fr))
 

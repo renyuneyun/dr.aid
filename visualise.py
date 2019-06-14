@@ -118,6 +118,15 @@ class GraphBuilder:
                 sg.add_node(obNode, label=str(obs), shape='folder')
         return self
 
+    def flow_rules(self):
+        for component in rh.components(self._rdf_graph):
+            rule = rh.flow_rule(self._rdf_graph, component)
+            if rule:
+                sg = self._nm[component]
+                frNodeId = self._ni[component, 'flowRule']
+                sg.add_node(frNodeId, label=rule.dump(), shape='cds')
+        return self
+
     def build(self):
         return self.G
 

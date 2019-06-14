@@ -23,6 +23,7 @@ from . import rdf_helper as rh
 from .rdf_helper import IMPORT_PORT_NAME
 from . import rule as rs
 from .rule import DataRuleContainer, ActivatedObligation
+from .rule import FlowRule, FlowRuleHandler
 from .stage import Stage, Imported
 
 
@@ -51,6 +52,14 @@ def on_import(rule: DataRuleContainer) -> List[ActivatedObligation]:
 
 def on_stage(rule: DataRuleContainer, stage: Stage) -> List[ActivatedObligation]:
     return rule.on_stage(stage)
+
+
+def _flow_rule_handler(graph: Graph, component: URIRef, input_ports: List[URIRef], output_ports: List[URIRef]):
+    flow_rule = rh.flow_rule(graph, component)
+    if not flow_rule:
+        flow_rule = rs.DefaultFlow(input_ports, output_ports)
+    flow_handler = rs.FlowRuleHandler(flow_rule)
+    return flow_handler
 
 
 def propagate(rdf_graph: Graph, component_list: List[URIRef]) -> Tuple[List[ComponentAugmentation], Dict[URIRef, List[ActivatedObligation]]]:
@@ -89,8 +98,7 @@ def propagate(rdf_graph: Graph, component_list: List[URIRef]) -> Tuple[List[Comp
             out_name = str(rh.name(rdf_graph, output_port))
             output_ports.append(out_name)
         logger.debug("%s :IN_RULES: %s", component, input_rules)
-        flow_rule = rs.DefaultFlow(input_ports, output_ports)
-        flow_handler = rs.FlowRuleHandler(flow_rule)
+        flow_handler = _flow_rule_handler(rdf_graph, component, input_ports, output_ports)
         output_rules = flow_handler.dispatch(input_rules)
         aug = ComponentAugmentation(component, output_rules)
         augmentations.append(aug)
