@@ -17,9 +17,9 @@ import logging
 from typing import Dict, List, Optional, Tuple, Union
 from random import randint
 
-from . import activation
-from .activation import ActivationCondition, Never
-from .stage import Stage
+from .proto import activation
+from .proto.activation import ActivationCondition, Never
+from .proto.stage import Stage
 
 
 PortedRules = Dict[str, Optional['DataRuleContainer']]

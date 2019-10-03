@@ -16,7 +16,7 @@ import re
 from typing import Dict, List, Optional, Tuple, Union
 
 from .rule import FlowRule, Obligation, DataRuleContainer, Property, PropertyCapsule
-from .activation import ActivationCondition, is_ac, obtain
+from .proto.activation import ActivationCondition, is_ac, obtain
 
 
 @dataclass
