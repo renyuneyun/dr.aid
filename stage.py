@@ -11,15 +11,19 @@
 
 '''
 
+from owlready2 import Thing
 
-class Stage:
-    pass
+from .ontomix import import_ontology
 
+onto = import_ontology('stage.owl')
 
-class Imported(Stage):
-    pass
+with onto:
+    class Stage(Thing):
+        pass
 
+    class Imported(Thing):
+        pass
 
-class Finished(Stage):
-    pass
+    class Finished(Thing):
+        pass
 

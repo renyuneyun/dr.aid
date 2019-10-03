@@ -12,16 +12,13 @@
 '''
 
 import os
-from owlready2 import *
+from owlready2 import Thing, ClassAtom
 from typing import Optional
 
-from exp.stage import Stage, Imported
+from .ontomix import import_ontology
+from .stage import Stage, Imported
 
-dir_path = os.path.dirname(os.path.realpath(__file__))
-onto_path.append(dir_path)
-
-onto = get_ontology("activation_condition.owl")
-onto.load()
+onto = import_ontology("activation_condition.owl")
 
 with onto:
     class ActivationCondition(Thing):
