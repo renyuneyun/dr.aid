@@ -17,7 +17,8 @@ import logging
 from typing import Dict, List, Optional, Tuple, Union
 from random import randint
 
-from .activation import ActivationCondition, Never, WhenImported
+from . import activation
+from .activation import ActivationCondition, Never
 from .stage import Stage
 
 
@@ -139,7 +140,7 @@ class Obligation:
                 return False
             if self._property != other._property:
                 return False
-            if self._ac != other._ac:
+            if not activation.eq(self._ac, other._ac):
                 return False
             return True
         else:
@@ -149,8 +150,9 @@ class Obligation:
         s = "obligation {}".format(self._name)
         if self._property:
             s = "{} {}[{}]".format(s, self._property[0], self._property[1])
-        if isinstance(self._ac, WhenImported):
-            s += ' WhenImported'
+        ac_dump = activation.dump(self._ac)
+        if ac_dump:
+            s += ' {}'.format(ac_dump)
         s += " ."
         return s
 
@@ -254,7 +256,8 @@ def random_rule(suffix='', must=False) -> str:
     if not rint:
         return ""
     else:
-        activate_on_import = (False, True)[randint(0, 1)]
+        #activate_on_import = (False, True)[randint(0, 1)]
+        activate_on_import = True
         if rint == 1:
             return rule_acknowledge('MySource', suffix, activate_on_import)
         else:

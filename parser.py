@@ -16,7 +16,7 @@ import re
 from typing import Dict, List, Optional, Tuple, Union
 
 from .rule import FlowRule, Obligation, DataRuleContainer, Property, PropertyCapsule
-from .activation import ActivationCondition, WhenImported
+from .activation import ActivationCondition, is_ac, obtain
 
 
 @dataclass
@@ -169,14 +169,15 @@ def read_obligation(line0: str) -> Tuple[str, Optional[Tuple[str, int]], Optiona
                 token, line = _next_token(line)
                 if token != ']':
                     raise UnexpectedToken(token, ']')
-            elif token == 'WhenImported':
-                activation_condition = WhenImported()
+            elif is_ac(token):
+                activation_condition = obtain(token)
             else:
                 raise UnexpectedToken(token, '[')
             token, line = _next_token(line)
-    if token == 'WhenImported':
-        activation_condition = WhenImported()
+    if is_ac(token):
+        activation_condition = obtain(token)
         token, line = _next_token(line)
+
     if token == '.':
         if property_name:
             return name, (property_name, property_order), activation_condition, line

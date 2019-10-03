@@ -11,28 +11,55 @@
 
 '''
 
-from .stage import Stage, Imported
+import os
+from owlready2 import *
+from typing import Optional
 
+from exp.stage import Stage, Imported
 
-class ActivationCondition:
+dir_path = os.path.dirname(os.path.realpath(__file__))
+onto_path.append(dir_path)
 
-    def __eq__(self, other):
-        if isinstance(other, self.__class__):
-            return True
-        else:
-            return NotImplemented
+onto = get_ontology("activation_condition.owl")
+onto.load()
 
-    def is_met(self, current_stage: Stage) -> bool:
-        raise NotImplementedError
+with onto:
+    class ActivationCondition(Thing):
+        def is_met(self, current_stage: Stage) -> bool:
+            raise NotImplementedError
 
+    class Never(Thing):
+        def is_met(self, current_stage: Stage) -> bool:
+            return False
 
-class Never(ActivationCondition):
+    class OnImport(Thing):
+        def is_met(self, current_stage: Stage) -> bool:
+            return isinstance(current_stage, Imported)
 
-    def is_met(self, current_stage: Stage) -> bool:
-        return False
+    class OnAsInput(Thing):
+        pass
 
+    class WhenImported(OnImport):
+        equivalent_to = [OnImport]
 
-class WhenImported(ActivationCondition):
+    def eq(a, b) -> bool:
+        assert a != None
+        assert b != None
+        return isinstance(b, a.__class__)
 
-    def is_met(self, current_stage: Stage) -> bool:
-        return isinstance(current_stage, Imported)
+    def is_ac(name: str) -> bool:
+        clz = onto[name]
+        if clz is None:
+            return False
+        return ActivationCondition in clz.ancestors()
+
+    def obtain(name: str) -> ActivationCondition:
+        return onto[name]()
+
+    def dump(ac: ActivationCondition) -> Optional[str]:
+        if isinstance(ac, Never):
+            return None
+        assert len(ac.is_instance_of) == 1
+        clz = ac.is_instance_of[0]
+        return ClassAtom.get_name(clz)
+
