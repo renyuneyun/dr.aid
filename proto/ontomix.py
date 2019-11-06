@@ -12,7 +12,7 @@
 '''
 
 import os
-from owlready2 import *
+from owlready2 import onto_path, get_ontology
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
 onto_path.append(dir_path)
