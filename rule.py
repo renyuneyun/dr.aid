@@ -129,10 +129,15 @@ class Obligation:
     There is no grouping of data rules, so it makes no sense to "merge" two data rules: two data rules that are exactly the same should have one removed. However, it makes sense to merge two activated data rules.
     '''
 
-    def __init__(self, name: str, property: Optional[Tuple[str, int]] = None, activation_condition: ActivationCondition = Never()):
+    def __init__(self, name: str, property: Optional[Tuple[str, int]] = None, activation_condition: Optional[ActivationCondition] = None):
         self._name = name
         self._property = property
+        if not activation_condition:
+            activation_condition = Never()
         self._ac = activation_condition
+
+    def __repr__(self):
+        return "obligation ({} {}) ({})".format(self._name, self._property, self._ac)
 
     def __eq__(self, other):
         if isinstance(other, self.__class__):
@@ -205,6 +210,12 @@ class DataRuleContainer(PropertyResolver):
     def __init__(self, rules: List[Obligation], property_map: Dict[str, PropertyCapsule]):
         self._rules: List[Obligation] = [r for r in rules]
         super().__init__(property_map)
+
+    def __repr__(self):
+        return "RuleSet(obligations: [{}] ; attributes: [{}])".format(
+                ",".join(map(lambda r: r.__repr__(), self._rules)),
+                ",".join(self._pmap),
+                )
 
     def __eq__(self, other):
         # TODO: order independent
