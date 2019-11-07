@@ -18,7 +18,7 @@ dir_path = os.path.dirname(os.path.realpath(__file__))
 onto_path.append(dir_path)
 
 def import_ontology(name):
-    onto = get_ontology("activation_condition.owl")
+    onto = get_ontology(name)
     onto.load()
     return onto
 

@@ -24,7 +24,7 @@ from .rdf_helper import IMPORT_PORT_NAME
 from . import rule as rs
 from .rule import DataRuleContainer, ActivatedObligation
 from .rule import FlowRule, FlowRuleHandler
-from .proto.stage import Stage, Imported
+from .proto import Stage, Imported
 
 
 logger = logging.getLogger("REASONING")

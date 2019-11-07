@@ -15,7 +15,7 @@ import pytest
 
 from exp import parser
 from exp.rule import Obligation, DataRuleContainer, PropertyCapsule
-from exp.proto.activation import WhenImported
+from exp.proto import WhenImported
 
 
 @pytest.mark.parametrize('name, values', [

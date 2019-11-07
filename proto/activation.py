@@ -18,7 +18,7 @@ from typing import Optional
 from .ontomix import import_ontology
 from .stage import Stage, Imported
 
-onto = import_ontology("activation_condition.owl")
+onto = import_ontology("core.owl")
 
 with onto:
     class ActivationCondition(Thing):

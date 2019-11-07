@@ -15,7 +15,7 @@ from owlready2 import Thing
 
 from .ontomix import import_ontology
 
-onto = import_ontology('stage.owl')
+onto = import_ontology('core.owl')
 
 with onto:
     class Stage(Thing):

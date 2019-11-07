@@ -14,7 +14,7 @@
 import pytest
 
 from exp.rule import Obligation, DataRuleContainer, PropertyCapsule
-from exp.proto.activation import WhenImported
+from exp.proto import WhenImported
 
 
 pc1 = PropertyCapsule('pr1', 'a')

@@ -17,9 +17,13 @@ import logging
 from typing import Dict, List, Optional, Tuple, Union
 from random import randint
 
-from .proto import activation
-from .proto.activation import ActivationCondition, Never
-from .proto.stage import Stage
+from .proto import (
+        ActivationCondition,
+        Never,
+        eq,
+        dump,
+        Stage,
+        )
 
 
 PortedRules = Dict[str, Optional['DataRuleContainer']]
@@ -145,7 +149,7 @@ class Obligation:
                 return False
             if self._property != other._property:
                 return False
-            if not activation.eq(self._ac, other._ac):
+            if not eq(self._ac, other._ac):
                 return False
             return True
         else:
@@ -155,7 +159,7 @@ class Obligation:
         s = "obligation {}".format(self._name)
         if self._property:
             s = "{} {}[{}]".format(s, self._property[0], self._property[1])
-        ac_dump = activation.dump(self._ac)
+        ac_dump = dump(self._ac)
         if ac_dump:
             s += ' {}'.format(ac_dump)
         s += " ."
