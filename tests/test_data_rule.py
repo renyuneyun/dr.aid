@@ -13,15 +13,15 @@
 
 import pytest
 
-from exp.rule import Obligation, DataRuleContainer, PropertyCapsule
+from exp.rule import Obligation, DataRuleContainer, AttributeCapsule
 from exp.proto import WhenImported
 
 
-pc1 = PropertyCapsule('pr1', 'a')
-pc1_2 = PropertyCapsule('pr1', ['b', 'a', 'c'])
-pc_m = PropertyCapsule('pr1', ['a', 'b', 'c'])
+pc1 = AttributeCapsule('pr1', 'a')
+pc1_2 = AttributeCapsule('pr1', ['b', 'a', 'c'])
+pc_m = AttributeCapsule('pr1', ['a', 'b', 'c'])
 
-pc2 = PropertyCapsule('pr2', ['A', 'B', 'C'])
+pc2 = AttributeCapsule('pr2', ['A', 'B', 'C'])
 
 ob1 = (
         Obligation('ob1'),
@@ -49,7 +49,7 @@ def test_property_capsule_clone(pc):
     (pc1, pc1_2, pc_m, [1, -1, 0])
     ])
 def test_property_capsule_merge(pc1, pc2, pc_m, diff):
-    pc_merged, diff1 = PropertyCapsule.merge(pc1, pc2)
+    pc_merged, diff1 = AttributeCapsule.merge(pc1, pc2)
     assert pc_merged == pc_m
     assert tuple(diff1) == tuple(diff)
 

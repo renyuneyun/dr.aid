@@ -23,6 +23,15 @@ from .activation import (
         dump,
         )
 
+from .attribute import (
+        AttributeValue,
+        Attribute,
+        )
+
+from .obligation import (
+        Obligation,
+        )
+
 from .stage import (
         Stage,
         Imported,

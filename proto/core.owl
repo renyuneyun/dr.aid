@@ -67,6 +67,7 @@
 
     <owl:DatatypeProperty rdf:about="http://www.semanticweb.org/ryey/ontologies/2019/9/core#valueData">
         <rdfs:subPropertyOf rdf:resource="http://www.w3.org/2002/07/owl#topDataProperty"/>
+        <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
         <rdfs:domain rdf:resource="http://www.semanticweb.org/ryey/ontologies/2019/9/core#AttributeValue"/>
     </owl:DatatypeProperty>
     

@@ -15,7 +15,7 @@ from dataclasses import dataclass
 import re
 from typing import Dict, List, Optional, Tuple, Union
 
-from .rule import FlowRule, Obligation, DataRuleContainer, PropertyCapsule
+from .rule import FlowRule, Obligation, DataRuleContainer, AttributeCapsule
 from .proto import ActivationCondition, is_ac, obtain
 
 
@@ -228,7 +228,7 @@ def parse_data_rule(data_rule: str) -> Optional[DataRuleContainer]:
     assert not remaining
 
     obligations: List[Tuple[str, Optional[Tuple[str, int]], Optional[ActivationCondition]]] = []
-    pmap: Dict[str, PropertyCapsule] = {}
+    pmap: Dict[str, AttributeCapsule] = {}
 
     line_remaining = ''
     for line in lines[i+1:]:
@@ -252,7 +252,7 @@ def parse_data_rule(data_rule: str) -> Optional[DataRuleContainer]:
                 name, property_data, line = read_property('property ' + line)
                 if name in pmap:
                     raise UnexpectedTerm(name, "property already defined")
-                pmap[name] = PropertyCapsule(name, property_data)
+                pmap[name] = AttributeCapsule(name, property_data)
             line_remaining = line
 
     raise NotTerminated(

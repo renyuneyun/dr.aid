@@ -23,38 +23,17 @@ from .proto import (
         eq,
         dump,
         Stage,
+        AttributeValue,
         )
 
 
 PortedRules = Dict[str, Optional['DataRuleContainer']]
 
 
-class Property:
-    '''
-    '''
-
-    def __init__(self, value):
-        self._v = value
-
-    def __eq__(self, other):
-        if isinstance(other, self.__class__):
-            if self._v != other._v:
-                return False
-            return True
-        else:
-            return NotImplemented
-
-    def value(self):
-        return self._v
-
-    def __repr__(self):
-        return f'{self._v}'
-
-
-class PropertyCapsule:
+class AttributeCapsule:
 
     @staticmethod
-    def merge(first: 'PropertyCapsule', second: 'PropertyCapsule') -> Tuple['PropertyCapsule', List[int]]:
+    def merge(first: 'AttributeCapsule', second: 'AttributeCapsule') -> Tuple['AttributeCapsule', List[int]]:
         assert first._name == second._name
         new = first.clone()
         diff = []
@@ -69,12 +48,12 @@ class PropertyCapsule:
 
     def __init__(self, name: str, property: Optional[Union[str, List[str]]] = None):
         self._name = name
-        self._prs: List[Property] = []
+        self._prs: List[AttributeValue] = []
         if property:
             if isinstance(property, str):
-                self._prs.append(Property(property))
+                self._prs.append(AttributeValue(property))
             else:
-                self._prs.extend([Property(pr) for pr in property])
+                self._prs.extend([AttributeValue(pr) for pr in property])
 
     def __eq__(self, other):
         if isinstance(other, self.__class__):
@@ -91,25 +70,25 @@ class PropertyCapsule:
         ss = " {}".format(self._prs[0].value())
         if len(self._prs) >= 1:
             for pr in self._prs[1:]:
-                ss += ", {}".format(pr._v)
+                ss += ", {}".format(pr.value())
         return "{} [{}] .".format(s, ss)
 
-    def clone(self) -> 'PropertyCapsule':
-        new = PropertyCapsule(self._name)
+    def clone(self) -> 'AttributeCapsule':
+        new = AttributeCapsule(self._name)
         for pr in self._prs:
             new.add_property(pr)
         return new
 
-    def add_property(self, pr: Property):
+    def add_property(self, pr: AttributeValue):
         self._prs.append(pr)
 
-    def get(self, index: int) -> Property:
+    def get(self, index: int) -> AttributeValue:
         return self._prs[index]
 
 
 class PropertyResolver:
 
-    def __init__(self, property_map: Dict[str, PropertyCapsule]):
+    def __init__(self, property_map: Dict[str, AttributeCapsule]):
         self._pmap = property_map
 
     def resolve(self, property_reference: Tuple[str, int]):
@@ -119,7 +98,7 @@ class PropertyResolver:
 
 class ActivatedObligation:
 
-    def __init__(self, name: str, property: Optional[Property] = None):
+    def __init__(self, name: str, property: Optional[AttributeValue] = None):
         self._name = name
         self._property = property
 
@@ -198,7 +177,7 @@ class DataRuleContainer(PropertyResolver):
             dmap = {}
             for pname, pr in nxt._pmap.items():
                 if pname in new._pmap:
-                    pr, diff = PropertyCapsule.merge(new._pmap[pname], pr)
+                    pr, diff = AttributeCapsule.merge(new._pmap[pname], pr)
                 else:
                     diff = None  # type: ignore
                 new._pmap[pname] = pr
@@ -211,7 +190,7 @@ class DataRuleContainer(PropertyResolver):
                 new._rules.append(r)
         return new
 
-    def __init__(self, rules: List[Obligation], property_map: Dict[str, PropertyCapsule]):
+    def __init__(self, rules: List[Obligation], property_map: Dict[str, AttributeCapsule]):
         self._rules: List[Obligation] = [r for r in rules]
         super().__init__(property_map)
 
@@ -246,7 +225,7 @@ class DataRuleContainer(PropertyResolver):
         return skeleton.format(name, s)
 
     def clone(self) -> 'DataRuleContainer':
-        pmap: Dict[str, PropertyCapsule] = copy.deepcopy(self._pmap)
+        pmap: Dict[str, AttributeCapsule] = copy.deepcopy(self._pmap)
         rules = [r.clone() for r in self._rules]
         return DataRuleContainer(rules, pmap)
 
