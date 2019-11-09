@@ -12,7 +12,6 @@
 '''
 
 
-import copy
 import logging
 from typing import Dict, List, Optional, Tuple, Union
 from random import randint
@@ -24,86 +23,31 @@ from .proto import (
         dump,
         Stage,
         AttributeValue,
+        Attribute,
         )
 
 
 PortedRules = Dict[str, Optional['DataRuleContainer']]
 
 
-class AttributeCapsule:
-
-    @staticmethod
-    def merge(first: 'AttributeCapsule', second: 'AttributeCapsule') -> Tuple['AttributeCapsule', List[int]]:
-        assert first._name == second._name
-        new = first.clone()
-        diff = []
-        for i, pr in enumerate(second._prs):
-            try:
-                index = new._prs.index(pr)
-            except ValueError:
-                index = len(new._prs)
-                new._prs.append(pr)
-            diff.append(index - i)
-        return new, diff
-
-    def __init__(self, name: str, property: Optional[Union[str, List[str]]] = None):
-        self._name = name
-        self._prs: List[AttributeValue] = []
-        if property:
-            if isinstance(property, str):
-                self._prs.append(AttributeValue(property))
-            else:
-                self._prs.extend([AttributeValue(pr) for pr in property])
-
-    def __eq__(self, other):
-        if isinstance(other, self.__class__):
-            if self._name != other._name:
-                return False
-            if self._prs != other._prs:
-                return False
-            return True
-        else:
-            return NotImplemented
-
-    def dump(self) -> str:
-        s = "property {}".format(self._name)
-        ss = " {}".format(self._prs[0].value())
-        if len(self._prs) >= 1:
-            for pr in self._prs[1:]:
-                ss += ", {}".format(pr.value())
-        return "{} [{}] .".format(s, ss)
-
-    def clone(self) -> 'AttributeCapsule':
-        new = AttributeCapsule(self._name)
-        for pr in self._prs:
-            new.add_property(pr)
-        return new
-
-    def add_property(self, pr: AttributeValue):
-        self._prs.append(pr)
-
-    def get(self, index: int) -> AttributeValue:
-        return self._prs[index]
-
-
 class PropertyResolver:
 
-    def __init__(self, property_map: Dict[str, AttributeCapsule]):
-        self._pmap = property_map
+    def __init__(self, attribute_map: Dict[str, Attribute]):
+        self._amap = attribute_map
 
-    def resolve(self, property_reference: Tuple[str, int]):
-        name, index = property_reference
-        return self._pmap[name].get(index)
+    def resolve(self, attribute_reference: Tuple[str, int]):
+        name, index = attribute_reference
+        return self._amap[name].get(index)
 
 
 class ActivatedObligation:
 
-    def __init__(self, name: str, property: Optional[AttributeValue] = None):
+    def __init__(self, name: str, attribute: Optional[AttributeValue] = None):
         self._name = name
-        self._property = property
+        self._attribute = attribute
 
     def __repr__(self):
-        return f'({self._name} {self._property})'
+        return f'({self._name} {self._attribute})'
 
 
 class Obligation:
@@ -112,21 +56,21 @@ class Obligation:
     There is no grouping of data rules, so it makes no sense to "merge" two data rules: two data rules that are exactly the same should have one removed. However, it makes sense to merge two activated data rules.
     '''
 
-    def __init__(self, name: str, property: Optional[Tuple[str, int]] = None, activation_condition: Optional[ActivationCondition] = None):
+    def __init__(self, name: str, attribute: Optional[Tuple[str, int]] = None, activation_condition: Optional[ActivationCondition] = None):
         self._name = name
-        self._property = property
+        self._attribute = attribute
         if not activation_condition:
             activation_condition = Never()
         self._ac = activation_condition
 
     def __repr__(self):
-        return "obligation ({} {}) ({})".format(self._name, self._property, self._ac)
+        return "obligation ({} {}) ({})".format(self._name, self._attribute, self._ac)
 
     def __eq__(self, other):
         if isinstance(other, self.__class__):
             if self._name != other._name:
                 return False
-            if self._property != other._property:
+            if self._attribute != other._attribute:
                 return False
             if not eq(self._ac, other._ac):
                 return False
@@ -136,8 +80,8 @@ class Obligation:
 
     def dump(self) -> str:
         s = "obligation {}".format(self._name)
-        if self._property:
-            s = "{} {}[{}]".format(s, self._property[0], self._property[1])
+        if self._attribute:
+            s = "{} {}[{}]".format(s, self._attribute[0], self._attribute[1])
         ac_dump = dump(self._ac)
         if ac_dump:
             s += ' {}'.format(ac_dump)
@@ -148,21 +92,21 @@ class Obligation:
         return self._transfer({})
 
     def _transfer(self, dmap) -> 'Obligation':
-        if self._property:
-            index = self._property[1]
-            if dmap and self._property[0] in dmap:
-                index += dmap[self._property[0]][index]
-            new_property = (self._property[0], index)
-            return Obligation(self._name, new_property, self._ac)
+        if self._attribute:
+            index = self._attribute[1]
+            if dmap and self._attribute[0] in dmap:
+                index += dmap[self._attribute[0]][index]
+            new_attribute = (self._attribute[0], index)
+            return Obligation(self._name, new_attribute, self._ac)
         return Obligation(self._name, activation_condition=self._ac)
 
     def name(self):
         return self._name
 
-    def on_stage(self, current_stage: Stage, property_resolver: PropertyResolver) -> Optional[ActivatedObligation]:
+    def on_stage(self, current_stage: Stage, attribute_resolver: PropertyResolver) -> Optional[ActivatedObligation]:
         if self._ac.is_met(current_stage):
-            if self._property:
-                return ActivatedObligation(self._name, property_resolver.resolve(self._property))
+            if self._attribute:
+                return ActivatedObligation(self._name, attribute_resolver.resolve(self._attribute))
             else:
                 return ActivatedObligation(self._name)
         return None
@@ -175,12 +119,12 @@ class DataRuleContainer(PropertyResolver):
         new = first.clone()
         for nxt in rest:
             dmap = {}
-            for pname, pr in nxt._pmap.items():
-                if pname in new._pmap:
-                    pr, diff = AttributeCapsule.merge(new._pmap[pname], pr)
+            for pname, pr in nxt._amap.items():
+                if pname in new._amap:
+                    pr, diff = Attribute.merge(new._amap[pname], pr)
                 else:
                     diff = None  # type: ignore
-                new._pmap[pname] = pr
+                new._amap[pname] = pr
                 if diff is not None:
                     dmap[pname] = diff
             for r in nxt._rules:
@@ -190,14 +134,14 @@ class DataRuleContainer(PropertyResolver):
                 new._rules.append(r)
         return new
 
-    def __init__(self, rules: List[Obligation], property_map: Dict[str, AttributeCapsule]):
+    def __init__(self, rules: List[Obligation], attribute_map: Dict[str, Attribute]):
         self._rules: List[Obligation] = [r for r in rules]
-        super().__init__(property_map)
+        super().__init__(attribute_map)
 
     def __repr__(self):
         return "RuleSet(obligations: [{}] ; attributes: [{}])".format(
                 ",".join(map(lambda r: r.__repr__(), self._rules)),
-                ",".join(self._pmap),
+                ",".join(self._amap),
                 )
 
     def __eq__(self, other):
@@ -205,7 +149,7 @@ class DataRuleContainer(PropertyResolver):
         if isinstance(other, self.__class__):
             if not self._rules == other._rules:
                 return False
-            if not self._pmap == other._pmap:
+            if not self._amap == other._amap:
                 return False
             return True
         else:
@@ -218,16 +162,16 @@ class DataRuleContainer(PropertyResolver):
         """
         name = ''
         s_ob = "\n".join([r.dump() for r in self._rules])
-        s_pr = "\n".join([pr.dump() for pr in self._pmap.values()])
+        s_pr = "\n".join([pr.dump() for pr in self._amap.values()])
         s = s_ob
         if s_pr:
             s += '\n' + s_pr
         return skeleton.format(name, s)
 
     def clone(self) -> 'DataRuleContainer':
-        pmap: Dict[str, AttributeCapsule] = copy.deepcopy(self._pmap)
+        amap: Dict[str, Attribute] = {k: v.clone() for (k, v) in self._amap.items()}
         rules = [r.clone() for r in self._rules]
-        return DataRuleContainer(rules, pmap)
+        return DataRuleContainer(rules, amap)
 
     def on_stage(self, current_stage: Stage) -> List[ActivatedObligation]:
         lst = []
@@ -263,7 +207,7 @@ def rule_acknowledge(source: str, suffix='', activate_on_import=False) -> str:
     return f'''
     rule Rule0
         obligation Acknowledge source_name {when}.
-        property source_name {source}{suffix} .
+        attribute source_name {source}{suffix} .
     end
     '''
 
@@ -313,5 +257,5 @@ class FlowRuleHandler:
 def DefaultFlow(input_ports: List[str], output_ports: List[str]) -> FlowRule:
     connectivity = {}
     for output_port in output_ports:
-        connectivity[output_port] = copy.copy(input_ports)
+        connectivity[output_port] = [p for p in input_ports]
     return FlowRule(connectivity)

@@ -15,7 +15,7 @@ from dataclasses import dataclass
 import re
 from typing import Dict, List, Optional, Tuple, Union
 
-from .rule import FlowRule, Obligation, DataRuleContainer, AttributeCapsule
+from .rule import FlowRule, Obligation, DataRuleContainer, Attribute
 from .proto import ActivationCondition, is_ac, obtain
 
 
@@ -156,16 +156,16 @@ def read_obligation(line0: str) -> Tuple[str, Optional[Tuple[str, int]], Optiona
     _, line = _next_keyword(line0)
     name, line = _next_keyword(line)
     token, line = _next_token(line)
-    property_name = None
-    property_order = 0
+    attribute_name = None
+    attribute_order = 0
     activation_condition = None
     if token != '.':
-        property_name = token
+        attribute_name = token
         token, line = _next_token(line)
         if token != '.':
             if token == '[':
                 token, line = _next_token(line)
-                property_order = int(token)
+                attribute_order = int(token)
                 token, line = _next_token(line)
                 if token != ']':
                     raise UnexpectedToken(token, ']')
@@ -179,34 +179,34 @@ def read_obligation(line0: str) -> Tuple[str, Optional[Tuple[str, int]], Optiona
         token, line = _next_token(line)
 
     if token == '.':
-        if property_name:
-            return name, (property_name, property_order), activation_condition, line
+        if attribute_name:
+            return name, (attribute_name, attribute_order), activation_condition, line
         else:
             return name, None, activation_condition, line
     raise TermFinishingNotEncountered(token, line0)
 
 
-def read_property(line0: str) -> Tuple[str, Union[str, List[str]], str]:
+def read_attribute(line0: str) -> Tuple[str, Union[str, List[str]], str]:
     _, line = _next_keyword(line0)
     name, line = _next_keyword(line)
     token, line = _next_token(line)
     if token == '[':
         content, line = _read_until(line, ']')
         data = content[:-1]
-        property = [r.strip() for r in data.split(',')]
+        attribute = [r.strip() for r in data.split(',')]
     else:
-        property = token  # type: ignore
+        attribute = token  # type: ignore
     token, line = _next_token(line)
     if token == '.':
-        return name, property, line
+        return name, attribute, line
     raise TermFinishingNotEncountered(token, line0)
 
 
-def _construct_obligation(name: str, property: Optional[Tuple[str, int]], activation_condition: Optional[ActivationCondition]) -> Obligation:
-    if property:
+def _construct_obligation(name: str, attribute: Optional[Tuple[str, int]], activation_condition: Optional[ActivationCondition]) -> Obligation:
+    if attribute:
         if activation_condition:
-            return Obligation(name, property, activation_condition)
-        return Obligation(name, property)
+            return Obligation(name, attribute, activation_condition)
+        return Obligation(name, attribute)
     else:
         if activation_condition:
             return Obligation(name, activation_condition=activation_condition)
@@ -228,7 +228,7 @@ def parse_data_rule(data_rule: str) -> Optional[DataRuleContainer]:
     assert not remaining
 
     obligations: List[Tuple[str, Optional[Tuple[str, int]], Optional[ActivationCondition]]] = []
-    pmap: Dict[str, AttributeCapsule] = {}
+    amap: Dict[str, Attribute] = {}
 
     line_remaining = ''
     for line in lines[i+1:]:
@@ -242,17 +242,17 @@ def parse_data_rule(data_rule: str) -> Optional[DataRuleContainer]:
             for pack in obligations:
                 ob = _construct_obligation(*pack)
                 rules.append(ob)
-            return DataRuleContainer(rules, pmap)
+            return DataRuleContainer(rules, amap)
         if line:
             token, line = _next_keyword(line)
             if token == 'obligation':
-                name, property_ref, activation_condition, line = read_obligation('obligation ' + line)
-                obligations.append((name, property_ref, activation_condition))
-            elif token == 'property':
-                name, property_data, line = read_property('property ' + line)
-                if name in pmap:
-                    raise UnexpectedTerm(name, "property already defined")
-                pmap[name] = AttributeCapsule(name, property_data)
+                name, attribute_ref, activation_condition, line = read_obligation('obligation ' + line)
+                obligations.append((name, attribute_ref, activation_condition))
+            elif token == 'attribute':
+                name, attribute_data, line = read_attribute('attribute ' + line)
+                if name in amap:
+                    raise UnexpectedTerm(name, "attribute already defined")
+                amap[name] = Attribute.instantiate(name, attribute_data)
             line_remaining = line
 
     raise NotTerminated(

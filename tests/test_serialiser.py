@@ -14,19 +14,19 @@
 import pytest
 
 from exp import parser
-from exp.rule import Obligation, DataRuleContainer, AttributeCapsule
+from exp.rule import Obligation, DataRuleContainer, Attribute
 from exp.proto import WhenImported
 
 
 @pytest.mark.parametrize('name, values', [
     ("pr1", ("a", "b")),
     ])
-def test_property_serialise(name, values):
-    pr = AttributeCapsule(name, values)
+def test_attribute_serialise(name, values):
+    pr = Attribute.instantiate(name, values)
     s = pr.dump()
-    name, content, remaining = parser.read_property(s)
+    name, content, remaining = parser.read_attribute(s)
     assert not remaining.strip()
-    pr2 = AttributeCapsule(name, content)
+    pr2 = Attribute.instantiate(name, content)
     assert pr == pr2
 
 
@@ -37,19 +37,20 @@ def test_property_serialise(name, values):
 def test_data_rule_serialise(name, attribute, activation_condition):
     r = Obligation(name, attribute, activation_condition)
     s = r.dump()
-    name, property, activation_condition, remaining = parser.read_obligation(s)
+    name, attribute, activation_condition, remaining = parser.read_obligation(s)
     assert not remaining.strip()
-    r2 = Obligation(name, property, activation_condition)
+    r2 = Obligation(name, attribute, activation_condition)
     assert r2 == r
 
 
-@pytest.mark.parametrize('obligations, pmap', [
+@pytest.mark.parametrize('obligations, amap', [
     ([Obligation('ob1', ('pr1', 0)), Obligation('ob2', ('pr1', 1))],
-        {'pr1': AttributeCapsule('pr1', ['1', '2'])}),
+        {'pr1': Attribute.instantiate('pr1', ['1', '2'])}),
     ])
-def test_whole_data_rule_serialise(obligations, pmap):
-    rule = DataRuleContainer(obligations, pmap)
+def test_whole_data_rule_serialise(obligations, amap):
+    rule = DataRuleContainer(obligations, amap)
     s = rule.dump()
+    print(f"serialised: {s}")
     rule2 = parser.parse_data_rule(s)
     assert rule2 == rule
 

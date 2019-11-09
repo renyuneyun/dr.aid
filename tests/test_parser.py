@@ -14,7 +14,7 @@
 import pytest
 
 from exp import parser
-from exp.rule import Obligation, DataRuleContainer, AttributeCapsule
+from exp.rule import Obligation, DataRuleContainer, Attribute
 
 
 @pytest.mark.parametrize('s, rule', [
@@ -35,11 +35,11 @@ def test_simple_obligations(s, rule):
     assert parser.parse_data_rule(s) == rule
 
 
-@pytest.mark.parametrize('s, obligations, pmap', [
+@pytest.mark.parametrize('s, obligations, amap', [
     ('''rule TestRule begin
         obligation ob1 pr1 .
-        property pr1 ddd .
-    end''', [Obligation('ob1', ('pr1', 0))], {'pr1': AttributeCapsule('pr1', 'ddd')}),
+        attribute pr1 ddd .
+    end''', [Obligation('ob1', ('pr1', 0))], {'pr1': Attribute.instantiate('pr1', 'ddd')}),
 
     ('''
     rule TestRule  begin
@@ -48,18 +48,18 @@ def test_simple_obligations(s, rule):
 
         obligation  ob2 pr1.
 
-        property pr1  www  .
+        attribute pr1  www  .
 
-    end''', [Obligation('ob1'), Obligation('ob2', ('pr1', 0))], {'pr1': AttributeCapsule('pr1', 'www')}),
+    end''', [Obligation('ob1'), Obligation('ob2', ('pr1', 0))], {'pr1': Attribute.instantiate('pr1', 'www')}),
 
     ('''rule TestRule begin
         obligation ob1 pr1[0] .
         obligation ob2 pr1[1] .
-        property pr1 [1, 2] .
+        attribute pr1 [1, 2] .
     end
-    ''', [Obligation('ob1', ('pr1', 0)), Obligation('ob2', ('pr1', 1))], {'pr1': AttributeCapsule('pr1', ['1', '2'])}),
+    ''', [Obligation('ob1', ('pr1', 0)), Obligation('ob2', ('pr1', 1))], {'pr1': Attribute.instantiate('pr1', ['1', '2'])}),
     ])
-def test_obligation_with_property(s, obligations, pmap):
-    rule = DataRuleContainer(obligations, pmap)
+def test_obligation_with_attribute(s, obligations, amap):
+    rule = DataRuleContainer(obligations, amap)
     assert parser.parse_data_rule(s) == rule
 
