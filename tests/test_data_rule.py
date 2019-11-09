@@ -13,7 +13,7 @@
 
 import pytest
 
-from exp.rule import Obligation, DataRuleContainer, Attribute
+from exp.rule import ObligationDeclaration, DataRuleContainer, Attribute
 from exp.proto import WhenImported
 
 
@@ -24,12 +24,12 @@ pc_m = Attribute.instantiate('pr1', ['a', 'b', 'c'])
 pc2 = Attribute.instantiate('pr2', ['A', 'B', 'C'])
 
 ob1 = (
-        Obligation('ob1'),
-        Obligation('ob1', ('pr1', 0)),
-        Obligation('ob1', ('pr1', 0), WhenImported()),
+        ObligationDeclaration('ob1'),
+        ObligationDeclaration('ob1', ('pr1', 0)),
+        ObligationDeclaration('ob1', ('pr1', 0), WhenImported()),
         )
-ob2 = Obligation('ob2', ('pr2', 0))
-ob3 = Obligation('ob2', ('pr2', 1))
+ob2 = ObligationDeclaration('ob2', ('pr2', 0))
+ob3 = ObligationDeclaration('ob2', ('pr2', 1))
 
 rule1 = DataRuleContainer([ob1[0], ob1[1], ob2], {'pr1': pc1, 'pr2': pc2})
 rule2 = DataRuleContainer([ob1[0], ob1[1], ob2, ob3], {'pr1': pc1, 'pr2': pc2})

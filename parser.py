@@ -15,7 +15,7 @@ from dataclasses import dataclass
 import re
 from typing import Dict, List, Optional, Tuple, Union
 
-from .rule import FlowRule, Obligation, DataRuleContainer, Attribute
+from .rule import FlowRule, ObligationDeclaration, DataRuleContainer, Attribute
 from .proto import ActivationCondition, is_ac, obtain
 
 
@@ -202,15 +202,15 @@ def read_attribute(line0: str) -> Tuple[str, Union[str, List[str]], str]:
     raise TermFinishingNotEncountered(token, line0)
 
 
-def _construct_obligation(name: str, attribute: Optional[Tuple[str, int]], activation_condition: Optional[ActivationCondition]) -> Obligation:
+def _construct_obligation(name: str, attribute: Optional[Tuple[str, int]], activation_condition: Optional[ActivationCondition]) -> ObligationDeclaration:
     if attribute:
         if activation_condition:
-            return Obligation(name, attribute, activation_condition)
-        return Obligation(name, attribute)
+            return ObligationDeclaration(name, attribute, activation_condition)
+        return ObligationDeclaration(name, attribute)
     else:
         if activation_condition:
-            return Obligation(name, activation_condition=activation_condition)
-        return Obligation(name)
+            return ObligationDeclaration(name, activation_condition=activation_condition)
+        return ObligationDeclaration(name)
 
 
 def parse_data_rule(data_rule: str) -> Optional[DataRuleContainer]:

@@ -50,9 +50,9 @@ class ActivatedObligation:
         return f'({self._name} {self._attribute})'
 
 
-class Obligation:
+class ObligationDeclaration:
     '''
-    Obligation is not stateful itself, but activated data rules are.
+    Obligation declaration is not stateful itself, but activated data rules are.
     There is no grouping of data rules, so it makes no sense to "merge" two data rules: two data rules that are exactly the same should have one removed. However, it makes sense to merge two activated data rules.
     '''
 
@@ -88,17 +88,17 @@ class Obligation:
         s += " ."
         return s
 
-    def clone(self) -> 'Obligation':
+    def clone(self) -> 'ObligationDeclaration':
         return self._transfer({})
 
-    def _transfer(self, dmap) -> 'Obligation':
+    def _transfer(self, dmap) -> 'ObligationDeclaration':
         if self._attribute:
             index = self._attribute[1]
             if dmap and self._attribute[0] in dmap:
                 index += dmap[self._attribute[0]][index]
             new_attribute = (self._attribute[0], index)
-            return Obligation(self._name, new_attribute, self._ac)
-        return Obligation(self._name, activation_condition=self._ac)
+            return ObligationDeclaration(self._name, new_attribute, self._ac)
+        return ObligationDeclaration(self._name, activation_condition=self._ac)
 
     def name(self):
         return self._name
@@ -134,8 +134,8 @@ class DataRuleContainer(PropertyResolver):
                 new._rules.append(r)
         return new
 
-    def __init__(self, rules: List[Obligation], attribute_map: Dict[str, Attribute]):
-        self._rules: List[Obligation] = [r for r in rules]
+    def __init__(self, rules: List[ObligationDeclaration], attribute_map: Dict[str, Attribute]):
+        self._rules: List[ObligationDeclaration] = [r for r in rules]
         super().__init__(attribute_map)
 
     def __repr__(self):
