@@ -13,15 +13,15 @@
 
 import pytest
 
-from exp.rule import ObligationDeclaration, DataRuleContainer, Attribute
+from exp.rule import ObligationDeclaration, DataRuleContainer, AttributeCapsule
 from exp.proto import WhenImported
 
 
-pc1 = Attribute.instantiate('pr1', 'a')
-pc1_2 = Attribute.instantiate('pr1', ['b', 'a', 'c'])
-pc_m = Attribute.instantiate('pr1', ['a', 'b', 'c'])
+pc1 = AttributeCapsule('pr1', 'a')
+pc1_2 = AttributeCapsule('pr1', ['b', 'a', 'c'])
+pc_m = AttributeCapsule('pr1', ['a', 'b', 'c'])
 
-pc2 = Attribute.instantiate('pr2', ['A', 'B', 'C'])
+pc2 = AttributeCapsule('pr2', ['A', 'B', 'C'])
 
 ob1 = (
         ObligationDeclaration('ob1'),
@@ -31,9 +31,9 @@ ob1 = (
 ob2 = ObligationDeclaration('ob2', ('pr2', 0))
 ob3 = ObligationDeclaration('ob2', ('pr2', 1))
 
-rule1 = DataRuleContainer([ob1[0], ob1[1], ob2], {'pr1': pc1, 'pr2': pc2})
-rule2 = DataRuleContainer([ob1[0], ob1[1], ob2, ob3], {'pr1': pc1, 'pr2': pc2})
-rule_m = DataRuleContainer([ob1[0], ob1[1], ob2, ob3], {'pr1': pc1, 'pr2': pc2})
+rule1 = DataRuleContainer([ob1[0], ob1[1], ob2], [pc1, pc2])
+rule2 = DataRuleContainer([ob1[0], ob1[1], ob2, ob3], [pc1, pc2])
+rule_m = DataRuleContainer([ob1[0], ob1[1], ob2, ob3], [pc1, pc2])
 
 
 @pytest.mark.parametrize('pc', [
@@ -49,7 +49,7 @@ def test_attribute_capsule_clone(pc):
     (pc1, pc1_2, pc_m, [1, -1, 0])
     ])
 def test_attribute_capsule_merge(pc1, pc2, pc_m, diff):
-    pc_merged, diff1 = Attribute.merge(pc1, pc2)
+    pc_merged, diff1 = AttributeCapsule.merge(pc1, pc2)
     assert pc_merged == pc_m
     assert tuple(diff1) == tuple(diff)
 

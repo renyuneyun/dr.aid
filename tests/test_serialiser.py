@@ -14,7 +14,7 @@
 import pytest
 
 from exp import parser
-from exp.rule import ObligationDeclaration, DataRuleContainer, Attribute
+from exp.rule import ObligationDeclaration, DataRuleContainer, AttributeCapsule
 from exp.proto import WhenImported
 
 
@@ -22,11 +22,15 @@ from exp.proto import WhenImported
     ("pr1", ("a", "b")),
     ])
 def test_attribute_serialise(name, values):
-    pr = Attribute.instantiate(name, values)
+    pr = AttributeCapsule(name, values)
     s = pr.dump()
-    name, content, remaining = parser.read_attribute(s)
+    try:
+        name, content, remaining = parser.read_attribute(s)
+    except Exception as e:
+        print(s)
+        raise e
     assert not remaining.strip()
-    pr2 = Attribute.instantiate(name, content)
+    pr2 = AttributeCapsule(name, content)
     assert pr == pr2
 
 
@@ -45,7 +49,7 @@ def test_data_rule_serialise(name, attribute, activation_condition):
 
 @pytest.mark.parametrize('obligations, amap', [
     ([ObligationDeclaration('ob1', ('pr1', 0)), ObligationDeclaration('ob2', ('pr1', 1))],
-        {'pr1': Attribute.instantiate('pr1', ['1', '2'])}),
+        [AttributeCapsule('pr1', ['1', '2'])]),
     ])
 def test_whole_data_rule_serialise(obligations, amap):
     rule = DataRuleContainer(obligations, amap)

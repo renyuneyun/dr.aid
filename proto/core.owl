@@ -35,6 +35,7 @@
 
     <owl:ObjectProperty rdf:about="http://www.semanticweb.org/ryey/ontologies/2019/9/core#hasValue">
         <rdfs:subPropertyOf rdf:resource="http://www.w3.org/2002/07/owl#topObjectProperty"/>
+        <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
         <rdfs:domain rdf:resource="http://www.semanticweb.org/ryey/ontologies/2019/9/core#Attribute"/>
         <rdfs:range rdf:resource="http://www.semanticweb.org/ryey/ontologies/2019/9/core#AttributeValue"/>
     </owl:ObjectProperty>
@@ -106,7 +107,7 @@
         <rdfs:subClassOf>
             <owl:Restriction>
                 <owl:onProperty rdf:resource="http://www.semanticweb.org/ryey/ontologies/2019/9/core#hasValue"/>
-                <owl:minQualifiedCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">1</owl:minQualifiedCardinality>
+                <owl:qualifiedCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">1</owl:qualifiedCardinality>
                 <owl:onClass rdf:resource="http://www.semanticweb.org/ryey/ontologies/2019/9/core#AttributeValue"/>
             </owl:Restriction>
         </rdfs:subClassOf>

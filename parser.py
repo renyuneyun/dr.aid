@@ -15,7 +15,7 @@ from dataclasses import dataclass
 import re
 from typing import Dict, List, Optional, Tuple, Union
 
-from .rule import FlowRule, ObligationDeclaration, DataRuleContainer, Attribute
+from .rule import FlowRule, ObligationDeclaration, DataRuleContainer, AttributeCapsule
 from .proto import ActivationCondition, is_ac, obtain
 
 
@@ -228,7 +228,7 @@ def parse_data_rule(data_rule: str) -> Optional[DataRuleContainer]:
     assert not remaining
 
     obligations: List[Tuple[str, Optional[Tuple[str, int]], Optional[ActivationCondition]]] = []
-    amap: Dict[str, Attribute] = {}
+    attribute_capsules: List[AttributeCapsule] = []
 
     line_remaining = ''
     for line in lines[i+1:]:
@@ -242,7 +242,7 @@ def parse_data_rule(data_rule: str) -> Optional[DataRuleContainer]:
             for pack in obligations:
                 ob = _construct_obligation(*pack)
                 rules.append(ob)
-            return DataRuleContainer(rules, amap)
+            return DataRuleContainer(rules, attribute_capsules)
         if line:
             token, line = _next_keyword(line)
             if token == 'obligation':
@@ -250,9 +250,7 @@ def parse_data_rule(data_rule: str) -> Optional[DataRuleContainer]:
                 obligations.append((name, attribute_ref, activation_condition))
             elif token == 'attribute':
                 name, attribute_data, line = read_attribute('attribute ' + line)
-                if name in amap:
-                    raise UnexpectedTerm(name, "attribute already defined")
-                amap[name] = Attribute.instantiate(name, attribute_data)
+                attribute_capsules.append(AttributeCapsule(name, attribute_data))
             line_remaining = line
 
     raise NotTerminated(

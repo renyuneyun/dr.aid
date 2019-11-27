@@ -30,19 +30,76 @@ from .proto import (
 PortedRules = Dict[str, Optional['DataRuleContainer']]
 
 
-class PropertyResolver:
+class AttributeCapsule:
 
-    def __init__(self, attribute_map: Dict[str, Attribute]):
-        self._amap = attribute_map
+    # pylint: disable=protected-access
+    @staticmethod
+    def merge(first: 'AttributeCapsule', second: 'AttributeCapsule') -> Tuple['AttributeCapsule', List[int]]:
+        assert first._name == second._name
+        new = first.clone()
+        diff = []
+        for i, pr in enumerate(second._attrs):
+            try:
+                index = new._attrs.index(pr)
+            except ValueError:
+                index = len(new._attrs)
+                new._attrs.append(pr)
+            diff.append(index - i)
+        return new, diff
 
-    def resolve(self, attribute_reference: Tuple[str, int]):
+    def __init__(self, name: str, raw_attribute: Optional[Union[str, List[str]]] = None, attribute: Optional[List[Attribute]] = None):
+        self._name = name
+        self._attrs = []  # type: List[Attribute]
+        if raw_attribute:
+            if isinstance(raw_attribute, str):
+                self._attrs.append(Attribute.instantiate(name, raw_attribute))
+            else:
+                self._attrs.extend([Attribute.instantiate(name, at) for at in raw_attribute])
+        elif attribute:
+            self._attrs.extend(attribute)
+        else:
+            raise RuntimeError("Trying to instantiate AttributeCapsule without attribute")
+
+    def __repr__(self):
+        return "{}[{}]".format(self._name, ",".join(map(lambda a: a.__repr__(), self._attrs)))
+
+    def __eq__(self, other):
+        if isinstance(other, self.__class__):
+            if not self._name == other._name:
+                return False
+            if not self._attrs == other._attrs:
+                return False
+            return True
+        else:
+            return NotImplemented
+
+    def name(self) -> str:
+        return self._name
+
+    def dump(self) -> str:
+        attr_objs = [at.get().value() for at in self._attrs]
+        attr_strs = [str(at) for at in attr_objs]
+        return "attribute {} [{}].".format(self._name, ", ".join(attr_strs))
+
+    def clone(self) -> 'AttributeCapsule':
+        return AttributeCapsule(self._name, attribute=[a.clone() for a in self._attrs])
+
+    def get(self, index: int) -> Attribute:
+        return self._attrs[index]
+
+class AttributeResolver:
+
+    def __init__(self, attribute_capsule_map: Dict[str, AttributeCapsule]):
+        self._amap = attribute_capsule_map
+
+    def resolve(self, attribute_reference: Tuple[str, int]) -> Attribute:
         name, index = attribute_reference
         return self._amap[name].get(index)
 
 
 class ActivatedObligation:
 
-    def __init__(self, name: str, attribute: Optional[AttributeValue] = None):
+    def __init__(self, name: str, attribute: Optional[Attribute] = None):
         self._name = name
         self._attribute = attribute
 
@@ -103,7 +160,7 @@ class ObligationDeclaration:
     def name(self):
         return self._name
 
-    def on_stage(self, current_stage: Stage, attribute_resolver: PropertyResolver) -> Optional[ActivatedObligation]:
+    def on_stage(self, current_stage: Stage, attribute_resolver: AttributeResolver) -> Optional[ActivatedObligation]:
         if self._ac.is_met(current_stage):
             if self._attribute:
                 return ActivatedObligation(self._name, attribute_resolver.resolve(self._attribute))
@@ -112,8 +169,9 @@ class ObligationDeclaration:
         return None
 
 
-class DataRuleContainer(PropertyResolver):
+class DataRuleContainer(AttributeResolver):
 
+    # pylint: disable=protected-access
     @classmethod
     def merge(cls, first: 'DataRuleContainer', *rest: 'DataRuleContainer') -> 'DataRuleContainer':
         new = first.clone()
@@ -121,12 +179,13 @@ class DataRuleContainer(PropertyResolver):
             dmap = {}
             for pname, pr in nxt._amap.items():
                 if pname in new._amap:
-                    pr, diff = Attribute.merge(new._amap[pname], pr)
+                    pr, diff = AttributeCapsule.merge(new._amap[pname], pr)
                 else:
                     diff = None  # type: ignore
                 new._amap[pname] = pr
                 if diff is not None:
                     dmap[pname] = diff
+            new._attrcaps = [v for v in new._amap.values()]
             for r in nxt._rules:
                 r = r._transfer(dmap)
                 if r in new._rules:
@@ -134,20 +193,23 @@ class DataRuleContainer(PropertyResolver):
                 new._rules.append(r)
         return new
 
-    def __init__(self, rules: List[ObligationDeclaration], attribute_map: Dict[str, Attribute]):
-        self._rules: List[ObligationDeclaration] = [r for r in rules]
-        super().__init__(attribute_map)
+    def __init__(self, rules: List[ObligationDeclaration], attribute_capsules: List[AttributeCapsule]):
+        self._rules: List[ObligationDeclaration] = rules
+        self._attrcaps: List[AttributeCapsule] = attribute_capsules
+        super().__init__({atc.name(): atc for atc in attribute_capsules})
 
     def __repr__(self):
-        return "RuleSet(obligations: [{}] ; attributes: [{}])".format(
-                ",".join(map(lambda r: r.__repr__(), self._rules)),
-                ",".join(self._amap),
+        return "DataRuleContainer(obligations: [{}] ; attributes: [{}])".format(
+                ",".join(map(repr, self._rules)),
+                ",".join(map(repr, self._attrcaps)),
                 )
 
     def __eq__(self, other):
         # TODO: order independent
         if isinstance(other, self.__class__):
             if not self._rules == other._rules:
+                return False
+            if not self._attrcaps == other._attrcaps:
                 return False
             if not self._amap == other._amap:
                 return False
@@ -169,9 +231,9 @@ class DataRuleContainer(PropertyResolver):
         return skeleton.format(name, s)
 
     def clone(self) -> 'DataRuleContainer':
-        amap: Dict[str, Attribute] = {k: v.clone() for (k, v) in self._amap.items()}
         rules = [r.clone() for r in self._rules]
-        return DataRuleContainer(rules, amap)
+        attrcaps = [atc.clone() for atc in self._attrcaps]
+        return DataRuleContainer(rules, attrcaps)
 
     def on_stage(self, current_stage: Stage) -> List[ActivatedObligation]:
         lst = []
@@ -244,9 +306,9 @@ class FlowRuleHandler:
 
     def dispatch(self, rules: Dict[str, DataRuleContainer]) -> PortedRules:
         outs: 'PortedRules' = {}
-        for op in self._rule._conn:
+        for op in self._rule._conn:  # pylint: disable=protected-access
             rules_to_merge = [rules[ip]
-                              for ip in self._rule._conn[op] if ip in rules]
+                              for ip in self._rule._conn[op] if ip in rules]  # pylint: disable=protected-access
             if rules_to_merge:
                 outs[op] = DataRuleContainer.merge(*rules_to_merge)
             else:
