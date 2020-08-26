@@ -23,7 +23,7 @@ from . import rdf_helper as rh
 from .rdf_helper import IMPORT_PORT_NAME
 from . import rule as rs
 from .rule import DataRuleContainer, ActivatedObligation
-from .rule import FlowRule, FlowRuleHandler
+from .rule_handle import FlowRuleHandler
 from .proto import Stage, Imported
 
 
@@ -58,7 +58,7 @@ def _flow_rule_handler(graph: Graph, component: URIRef, input_ports: List[URIRef
     flow_rule = rh.flow_rule(graph, component)
     if not flow_rule:
         flow_rule = rs.DefaultFlow(input_ports, output_ports)
-    flow_handler = rs.FlowRuleHandler(flow_rule)
+    flow_handler = FlowRuleHandler(flow_rule)
     return flow_handler
 
 

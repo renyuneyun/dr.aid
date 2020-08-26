@@ -1,16 +1,3 @@
-#!/usr/bin/env python3
-# -*- coding:utf-8 -*-
-#
-#   Author  :   renyuneyun
-#   E-mail  :   renyuneyun@gmail.com
-#   Date    :   19/04/09 17:26:15
-#   License :   Apache 2.0 (See LICENSE)
-#
-
-'''
-
-'''
-
 
 import logging
 from typing import Dict, List, Optional, Tuple, Union
@@ -282,6 +269,21 @@ def rule_account(suffix='') -> str:
     '''
 
 
+class Propagate:
+    def __init__(self, input_port, output_port):
+        self.input_port = input_port
+        self.output_port = output_port
+
+
+class Delete:
+    def __init__(self, input_port, output_port, name, a_type, value):
+        self.input_port = input_port
+        self.output_port = output_port
+        self.name = name
+        self.type = a_type
+        self.value = value
+
+
 class FlowRule:
     '''
     FlowRule is stateless
@@ -299,25 +301,10 @@ class FlowRule:
         return s
 
 
-class FlowRuleHandler:
-
-    def __init__(self, flow_rule: FlowRule):
-        self._rule = flow_rule
-
-    def dispatch(self, rules: Dict[str, DataRuleContainer]) -> PortedRules:
-        outs: 'PortedRules' = {}
-        for op in self._rule._conn:  # pylint: disable=protected-access
-            rules_to_merge = [rules[ip]
-                              for ip in self._rule._conn[op] if ip in rules]  # pylint: disable=protected-access
-            if rules_to_merge:
-                outs[op] = DataRuleContainer.merge(*rules_to_merge)
-            else:
-                outs[op] = None
-        return outs
-
-
 def DefaultFlow(input_ports: List[str], output_ports: List[str]) -> FlowRule:
     connectivity = {}
-    for output_port in output_ports:
-        connectivity[output_port] = [p for p in input_ports]
+    # for output_port in output_ports:
+    #     connectivity[output_port] = [p for p in input_ports]
+    for input_port in input_ports:
+        connectivity[input_port] = [p for p in output_ports]
     return FlowRule(connectivity)
