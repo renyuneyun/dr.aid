@@ -1,4 +1,4 @@
-from typing import Dict
+from typing import Dict, List
 
 from .rule import DataRuleContainer, FlowRule, PortedRules
 from . import prolog_handle
@@ -20,4 +20,8 @@ class FlowRuleHandler:
         #     else:
         #         outs[op] = None
         # return outs
+
+
+def dispatch_all(graph: 'Graph', batches: List[List['URIRef']], data_rules: Dict[str, DataRuleContainer], flow_rules: Dict[str, FlowRule]):
+    return prolog_handle.dispatch_all(graph, batches, data_rules. flow_rules)
 

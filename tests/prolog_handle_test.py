@@ -34,15 +34,15 @@ flow_rule1 = FlowRule({
 def test_dump_data_rule(drc, port):
     d = prolog_handle.dump_data_rule(drc, port)
     assert d
-    assert d == ''
+    print(d)
 
 @pytest.mark.parametrize('flow_rule', [
     flow_rule1,
     ])
-def test_dump_flow_rule(flow_rule):
-    d = prolog_handle.dump_flow_rule(flow_rule)
+def test_pl_act_flow_rule(flow_rule):
+    d = prolog_handle.pl_act_flow_rule(flow_rule)
     assert d
-    assert d == ''
+    print(d)
 
 @pytest.mark.parametrize('flow_rule', [
     flow_rule1,
@@ -50,7 +50,7 @@ def test_dump_flow_rule(flow_rule):
 def test_query_of_flow_rule(flow_rule):
     d = prolog_handle.query_of_flow_rule(flow_rule)
     assert d
-    assert d == ''
+    print(d)
 
 @pytest.mark.parametrize('data_rules, flow_rule', [
     ({'input1': rule1}, flow_rule1),

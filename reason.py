@@ -23,12 +23,13 @@ from . import rdf_helper as rh
 from .rdf_helper import IMPORT_PORT_NAME
 from . import rule as rs
 from .rule import DataRuleContainer, ActivatedObligation
+from . import rule_handle
 from .rule_handle import FlowRuleHandler
 from .proto import Stage, Imported
 
 
 logger = logging.getLogger("REASONING")
-logger.setLevel(logging.WARNING)
+logger.setLevel(logging.DEBUG)
 
 
 def graph_into_batches(graph: MultiDiGraph) -> List[List[URIRef]]:
@@ -54,10 +55,24 @@ def on_stage(rule: DataRuleContainer, stage: Stage) -> List[ActivatedObligation]
     return rule.on_stage(stage)
 
 
-def _flow_rule_handler(graph: Graph, component: URIRef, input_ports: List[URIRef], output_ports: List[URIRef]):
+def _virtual_port_for_import(component: URIRef) -> str:
+    return f"{str(component)}#{IMPORT_PORT_NAME}"
+
+
+def _get_flow_rule(graph: Graph, component: URIRef, input_ports: List[URIRef], output_ports: List[URIRef]):
     flow_rule = rh.flow_rule(graph, component)
     if not flow_rule:
+        input_ports = list(map(str, input_ports))
+        output_ports = list(map(str, output_ports))
+        # if has_imported_rule:  # We assume only components which do not have inputs or rules will have imported rules
+        # It's no harm to have an extra rule for imported port -- it simply does nothing
+        input_ports.append(_virtual_port_for_import(component))
         flow_rule = rs.DefaultFlow(input_ports, output_ports)
+    return flow_rule
+
+
+def _flow_rule_handler(graph: Graph, component: URIRef, input_ports: List[URIRef], output_ports: List[URIRef]):
+    flow_rule = _get_flow_rule(graph, component, input_ports, output_ports)
     flow_handler = FlowRuleHandler(flow_rule)
     return flow_handler
 
@@ -100,7 +115,71 @@ def propagate(rdf_graph: Graph, component_list: List[URIRef]) -> Tuple[List[Comp
         logger.debug("%s :IN_RULES: %s", component, input_rules)
         flow_handler = _flow_rule_handler(rdf_graph, component, input_ports, output_ports)
         output_rules = flow_handler.dispatch(input_rules)
+        logger.debug("OUTPUT_RULES has %d elements", len(output_rules))
         aug = ComponentAugmentation(component, output_rules)
         augmentations.append(aug)
+    return (augmentations, activated_obligations)
+
+
+def obtain_rules(rdf_graph: Graph, initial_component_list: List[URIRef]) -> 'ComponentPortedRules':
+    '''
+    Get the data rules of all inputs.
+    Currently only initial rules
+    '''
+    component_port_rules = {}
+    imported_rules = {}
+    component_port_rules = imported_rules
+    for component in initial_component_list:
+        # input_rules = {}
+        # for input_port in rh.input_ports(rdf_graph, component):
+        #     input_port_name = str(rh.name(rdf_graph, input_port))
+        #     rules = []
+        #     for ci, connection in enumerate(rh.connections_to_port(rdf_graph, input_port)):
+        #         output_port = rh.one_or_none(rh.output_ports_with_connection(rdf_graph, connection))  # Every connection has exactly one OutputPort (or none)
+        #         rule = rh.rule(rdf_graph, output_port) if output_port else None
+        #         if rule:
+        #             rules.append(rule)
+        #             logger.debug("%s :: %s: %s", component, input_port_name, rule)
+        #     if rules:
+        #         merged_rule = DataRuleContainer.merge(rules[0], *rules[1:])
+        #         input_rules[input_port_name] = merged_rule
+        #     else:
+        #         logger.info("InputPort %s of %s has no rules", input_port_name, component)
+
+        imported_rule = rh.imported_rule(rdf_graph, component)
+        if imported_rule:
+            imported_rules[_virtual_port_for_import(component)] = imported_rule
+            # obs = on_import(imported_rule)
+            # if obs:
+            #     activated_obligations[component] = obs
+
+    return component_port_rules
+
+
+def reason_in_total(rdf_graph: Graph, batches: List[List['URIRef']], initial_component_list: List[URIRef]) -> Tuple[List[ComponentAugmentation], Dict[URIRef, List[ActivatedObligation]]]:
+    component_port_rules = obtain_rules(rdf_graph, initial_component_list)
+    component_flow_rule = {}
+    for component_list in batches:
+        for component in component_list:
+            input_ports = list(rh.input_ports(rdf_graph, component))
+            output_ports = list(rh.output_ports(rdf_graph, component))
+            flow_rule = _get_flow_rule(rdf_graph, component, input_ports, output_ports)
+            component_flow_rule[component] = flow_rule
+    logger.info("{} initial components, {} ported_rules, {} flow_rules", len(initial_component_list), len(component_port_rules), len(component_flow_rule))
+
+    augmentations = []
+    graph_output_rules = rule_handle.dispatch_all(rdf_graph, batches, component_flow_rule)
+    logger.info("{} graph output rules", len(graph_output_rules))
+    for component_list in batches:
+        for component in component_list:
+            output_rules = {}
+            for output_port in rh.output_ports(rdf_graph, component):
+                output_port = str(output_port)
+                if output_port in graph_output_rules:
+                    output_rules[output_port] = graph_output_rules[output_port]
+            if output_rules:
+                aug = ComponentAugmentation(component, output_rules)
+                augmentations.append(aug)
+    activated_obligations = {}
     return (augmentations, activated_obligations)
 

@@ -20,6 +20,7 @@ import exp.reason as reason
 import exp.sparql_helper as sh
 
 logger = logging.getLogger()
+logging.basicConfig(level=logging.DEBUG)
 
 
 def main():
