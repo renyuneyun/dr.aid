@@ -230,6 +230,12 @@ class DataRuleContainer(AttributeResolver):
                 lst.append(ret)
         return lst
 
+    def summary(self) -> str:
+        return "{} obligations, {} attributes)".format(
+                len(self._rules),
+                len(self._attrcaps),
+                )
+
 
 def RandomRule(must=False) -> str:
     return random_rule(str(randint(0, 20)), must)

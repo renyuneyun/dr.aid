@@ -11,7 +11,7 @@ from .proto import (
 from .rule import Attribute, AttributeCapsule, ObligationDeclaration, DataRuleContainer, FlowRule
 from . import rdf_helper as rh
 
-from pyswip import Prolog
+import pyswip
 
 import logging
 logger = logging.getLogger('prolog_handle')
@@ -19,6 +19,9 @@ logger.setLevel(logging.DEBUG)
 
 
 PR_DIR = '.'  # Prolog Reasoning directory
+prolog = pyswip.Prolog()  # pyswip doesn't support launching multiple Prolog instances (said to be the limition of swi-prolog). So I'm using different initial situations for different ones instead
+prolog.consult(f"{PR_DIR}/prolog/flow_rule.pl")
+_uniq_counter = 0
 
 
 def _pl_str(value):
@@ -94,23 +97,34 @@ def query_of_graph_flow_rules(rdf_graph: 'Graph', batches: List[List['URIRef']],
     s = f"do({':'.join(act_seq)}, {situation_in}, {situation_out})"
     return s
 
+def query_of_attribute(sit_out='S1'):
+    return f"attr(N, T, V, H, {sit_out})"
 
-def _parse_result(prolog, q_sit, sit_out='S1'):
-    q_attr = f"{q_sit}, attr(N, T, V, H, {sit_out})"
-    q_ob = f"{q_sit}, obligation(Ob, Attr, Ac, P, {sit_out})"
+def query_of_obligation(sit_out='S1'):
+    return f"obligation(Ob, Attr, Ac, P, {sit_out})"
+
+
+def _parse_attribute(res_iter):
     attr_hist = {}
     ported_attrs = defaultdict(lambda : defaultdict(list))
-    ported_obs = defaultdict(list)
-    for r_attr in prolog.query(q_attr):
+    for r_attr in res_iter:
         hist = r_attr['H']
         port = hist[-1].decode()
         name = r_attr['N'].decode()
         attr = Attribute.instantiate(name, raw_attribute=r_attr['V'].decode())
         index = len(ported_attrs[port][name])
         ported_attrs[port][name].append(attr)
-        attr_hist[tuple(hist)] = (name, index)
-    logger.debug("Retrieved attributes in %d ports: %s", len(ported_attrs), { port: len(attrs) for port, attrs in ported_attrs.items() })
-    for r_ob in prolog.query(q_ob):
+        t_hist = tuple(hist)
+        if t_hist in attr_hist:
+            logger.error("Attribute with history %s already existed. Previous value: %s :: New value: %s. Overriding.", t_hist, attr_hist[t_hist], (name, index))
+        attr_hist[t_hist] = (name, index)
+    logger.debug("Retrieved attributes from %d ports. Summary ({PORT: {ATTR-NAME: #-OF-ATTR}}): %s", len(ported_attrs), { port: {name: len(attrs[name]) for name in attrs} for port, attrs in ported_attrs.items() })
+    # logger.debug("Attribute history: %s", attr_hist)
+    return ported_attrs, attr_hist
+
+def _parse_obligation(res_iter, attr_hist):
+    ported_obs = defaultdict(list)
+    for r_ob in res_iter:
         port = r_ob['P'].decode()
         ob = r_ob['Ob'].decode()
         attr = attr_hist[tuple(r_ob['Attr'])]
@@ -122,7 +136,14 @@ def _parse_result(prolog, q_sit, sit_out='S1'):
             ac = None
         ob = ObligationDeclaration(ob, attr, ac)
         ported_obs[port].append(ob)
-    logger.debug("Retrieved obligations in %d ports: %s", len(ported_obs), { port: len(obs) for port, obs in ported_obs.items() })
+    logger.debug("Retrieved obligations in %d ports. Summary ({PORT: #-OF-OBLIGATIONS}): %s", len(ported_obs), { port: len(obs) for port, obs in ported_obs.items() })
+    return ported_obs
+
+def _parse_result(prolog, q_sit, sit_out='S1'):
+    q_attr = f"{q_sit}, {query_of_attribute(sit_out)}"
+    q_ob = f"{q_sit}, {query_of_obligation(sit_out)}"
+    ported_attrs, attr_hist = _parse_attribute(prolog.query(q_attr))
+    ported_obs = _parse_obligation(prolog.query(q_ob), attr_hist)
     ported_drs = {}
     for port in set(ported_attrs) & set(ported_obs):
         obs = [ob for ob in ported_obs[port] if isinstance(ob, ObligationDeclaration)]
@@ -133,55 +154,34 @@ def _parse_result(prolog, q_sit, sit_out='S1'):
     return ported_drs
 
 def dispatch(data_rules: 'Dict[str, DataRuleContainer]', flow_rule: 'FlowRule') -> 'PortedRules':
+    global _uniq_counter
+    s0 = f"s{_uniq_counter}"
+    _uniq_counter += 1
+
+    # tmp_dir = tempfile.mkdtemp()
     with tempfile.TemporaryDirectory() as tmp_dir:
         reason_file = f"{tmp_dir}/reason_facts.pl"
-        prolog = Prolog()
-        prolog.consult(f"{PR_DIR}/prolog/flow_rule.pl")
+
+        # _rules = ''
         with open(reason_file, 'w') as f:
             for port, data_rule in data_rules.items():
-                s = dump_data_rule(data_rule, port)
+                s = dump_data_rule(data_rule, port, situation=s0)
+                # _rules += s
                 f.write(s)
+        # with open(reason_file, 'r') as f:
+        #     assert _rules == ''.join(f.readlines())
         prolog.consult(reason_file)
-        q_sit = query_of_flow_rule(flow_rule)
+        q_sit = query_of_flow_rule(flow_rule, situation_in=s0)
+
+        # with open(f"{tmp_dir}/query.pl", 'w') as f:
+        #     f.write(q_sit)
+        #     f.write('\n')
+        # logger.info("Prolog facts and query are recorded in: %s", tmp_dir)
+        # logger.info("Rule facts:\n%s", _rules)
+        # logger.info("Action sequence: %s", q_sit)
 
         ported_drs = _parse_result(prolog, q_sit)
         return ported_drs
-        # q_attr = f"{q_sit}, attr(N, T, V, H, {sit_out})"
-        # q_ob = f"{q_sit}, obligation(Ob, Attr, Ac, P, {sit_out})"
-        # attr_hist = {}
-        # ported_attrs = defaultdict(lambda : defaultdict(list))
-        # ported_obs = defaultdict(list)
-        # for r_attr in prolog.query(q_attr):
-        #     # print(r_attr)
-        #     hist = r_attr['H']
-        #     port = hist[-1].value
-        #     name = r_attr['N'].decode()
-        #     attr = Attribute.instantiate(name, raw_attribute=r_attr['V'].decode())
-        #     index = len(ported_attrs[port][name])
-        #     ported_attrs[port][name].append(attr)
-        #     attr_hist[tuple(hist)] = (name, index)
-        # for r_ob in prolog.query(q_ob):
-        #     # print(r_ob)
-        #     port = r_ob['P']
-        #     ob = r_ob['Ob'].decode()
-        #     attr = attr_hist[tuple(r_ob['Attr'])]
-        #     ac = r_ob['Ac'].decode()
-        #     if is_ac(ac):
-        #         ac = obtain(ac)
-        #     else:
-        #         assert ac == 'null'
-        #         ac = None
-        #     ob = ObligationDeclaration(ob, attr, ac)
-        #     ported_obs[port].append(ob)
-        # # print(ported_obs)
-        # ported_drs = {}
-        # for port in set(ported_attrs) & set(ported_obs):
-        #     obs = [ob for ob in ported_obs[port] if isinstance(ob, ObligationDeclaration)]
-        #     attrs = [AttributeCapsule(name, attribute=attrs) for name, attrs in ported_attrs[port].items()]
-        #     data_rule = DataRuleContainer(obs, attrs)
-        #     ported_drs[port] = data_rule
-        # print(ported_drs)
-        # return ported_drs
 
 def dispatch_all(rdf_graph: 'Graph', batches: List[List['URIRef']], data_rules: Dict[str, DataRuleContainer], flow_rules: Dict[str, FlowRule]) -> 'PortedRules':
     with tempfile.TemporaryDirectory() as tmp_dir:

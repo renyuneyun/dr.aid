@@ -29,7 +29,7 @@ from .proto import Stage, Imported
 
 
 logger = logging.getLogger("REASONING")
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.WARN)
 
 
 def graph_into_batches(graph: MultiDiGraph) -> List[List[URIRef]]:
@@ -92,12 +92,13 @@ def propagate(rdf_graph: Graph, component_list: List[URIRef]) -> Tuple[List[Comp
                 rule = rh.rule(rdf_graph, output_port) if output_port else None
                 if rule:
                     rules.append(rule)
-                    logger.debug("%s :: %s: %s", component, input_port_name, rule)
+                    logger.debug("Component %s :: input port %s receives rule, with %s", component, input_port_name, rule.summary())
+                    # logger.debug("%s :: %s: %s", component, input_port_name, rule)
             if rules:
                 merged_rule = DataRuleContainer.merge(rules[0], *rules[1:])
                 input_rules[input_port_name] = merged_rule
             else:
-                logger.info("InputPort %s of %s has no rules", input_port_name, component)
+                logger.info("Component %s :: input port %s receives no rule", component, input_port_name)
 
         imported_rule = rh.imported_rule(rdf_graph, component)
         if imported_rule:
@@ -112,7 +113,7 @@ def propagate(rdf_graph: Graph, component_list: List[URIRef]) -> Tuple[List[Comp
         for output_port in rh.output_ports(rdf_graph, component):
             out_name = str(rh.name(rdf_graph, output_port))
             output_ports.append(out_name)
-        logger.debug("%s :IN_RULES: %s", component, input_rules)
+        logger.debug("Component %s receives input rules from %d ports", component, len(input_rules))
         flow_handler = _flow_rule_handler(rdf_graph, component, input_ports, output_ports)
         output_rules = flow_handler.dispatch(input_rules)
         logger.debug("OUTPUT_RULES has %d elements", len(output_rules))
