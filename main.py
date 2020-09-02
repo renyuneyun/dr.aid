@@ -11,7 +11,6 @@
 
 '''
 
-import logging
 from rdflib.extras.external_graph_libs import rdflib_to_networkx_multidigraph
 
 import exp.augmentation as ag
@@ -19,8 +18,10 @@ import exp.rdf_helper as rh
 import exp.reason as reason
 import exp.sparql_helper as sh
 
-logger = logging.getLogger()
+import logging, coloredlogs
 logging.basicConfig(level=logging.DEBUG)
+coloredlogs.install(level='DEBUG')
+logger = logging.getLogger()
 
 
 def main():
@@ -73,9 +74,15 @@ def propagate_all(service):
 
         for batch in batches:
             import_rules(rdf_graph, s_helper, batch)
-            augmentations, obs = reason.propagate(rdf_graph, batch)
-            obligations.update(obs)
-            ag.apply_augmentation(rdf_graph, augmentations)
+        augmentations, obs = reason.reason_in_total(rdf_graph, batches, batches[0])
+        obligations.update(obs)
+        ag.apply_augmentation(rdf_graph, augmentations)
+
+        # for batch in batches:
+        #     import_rules(rdf_graph, s_helper, batch)
+        #     augmentations, obs = reason.propagate(rdf_graph, batch)
+        #     obligations.update(obs)
+        #     ag.apply_augmentation(rdf_graph, augmentations)
 
         a_helper.write_transformed_graph(rdf_graph)
 

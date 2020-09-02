@@ -10,3 +10,8 @@ tmp/
 
 .env
 .undodir/
+
+Pipfile
+Pipfile.lock
+
+graph_0.png*

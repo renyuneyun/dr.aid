@@ -1,14 +1,15 @@
 from collections import defaultdict
 import tempfile
 
-from typing import List, Dict
+from rdflib import Graph, URIRef
+from typing import List, Dict, Iterable
 
 from .proto import (
         dump,
         is_ac,
         obtain,
         )
-from .rule import Attribute, AttributeCapsule, ObligationDeclaration, DataRuleContainer, FlowRule
+from .rule import Attribute, AttributeCapsule, ObligationDeclaration, DataRuleContainer, FlowRule, PortedRules
 from . import rdf_helper as rh
 
 import pyswip
@@ -24,6 +25,11 @@ prolog.consult(f"{PR_DIR}/prolog/flow_rule.pl")
 _uniq_counter = 0
 
 
+IGNORED_PORTS = [
+        '_d4p_state'
+        ]
+
+
 def _pl_str(value):
     return f'"{value}"'
 
@@ -35,7 +41,8 @@ def dump_data_rule(drc: 'DataRuleContainer', port, situation='s0') -> str:
     for attrcap in drc._attrcaps:
         name = attrcap._name
         for i, attr in enumerate(attrcap._attrs):
-            name = attr.attributeName
+            _name = attr.attributeName
+            assert name == _name
             t = 'str'
             v = attr.hasValue.valueData or attr.hasValue.valueObject
             attr_id = _attr_id_for_prolog(name, i)
@@ -44,12 +51,12 @@ def dump_data_rule(drc: 'DataRuleContainer', port, situation='s0') -> str:
         name = ob._name
         if ob._attribute:
             attr_name, attr_ord = ob._attribute
-            attr = "[{}, {}]".format(_pl_str(_attr_id_for_prolog(attr_name, attr_ord)), _pl_str(port))
+            attr_repr = "[{}, {}]".format(_pl_str(_attr_id_for_prolog(attr_name, attr_ord)), _pl_str(port))
         else:
             continue # TODO: support obligations without attributes
-            attr = 'null'
+            attr_repr = 'null'
         ac = dump(ob._ac) or 'null'
-        s += f"obligation({_pl_str(name)}, {attr}, {_pl_str(ac)}, {_pl_str(port)}, {situation}).\n"
+        s += f"obligation({_pl_str(name)}, {attr_repr}, {_pl_str(ac)}, {_pl_str(port)}, {situation}).\n"
     return s
 
 # def _dump_flow_rule(flow_rule: 'FlowRule') -> List[str]:
@@ -57,11 +64,12 @@ def pl_act_flow_rule(flow_rule: 'FlowRule') -> List[str]:
     lst = []
     for input_port, output_ports in flow_rule._conn.items():
         lst.append(f"pr({_pl_str(input_port)}, [{','.join(map(_pl_str, output_ports))}])")
+    output_ports = set()
+    for ports in flow_rule._conn.values():
+        output_ports.update(ports)
+    lst.extend([f"end({_pl_str(output)})" for output in output_ports])
     #TODO: edit and delete
     return lst
-
-def fin(output_ports: List[str]) -> List[str]:
-    return [f"end({_pl_str(output)})" for output in output_ports]
 
 def pl_act_inter_process_connection(connections: Dict[str, str]) -> List[str]:
     lst = []
@@ -71,29 +79,29 @@ def pl_act_inter_process_connection(connections: Dict[str, str]) -> List[str]:
 
 
 def query_of_flow_rule(flow_rule: 'FlowRule', situation_in='s0', situation_out='S1') -> str:
-    output_ports = set()
-    for ports in flow_rule._conn.values():
-        output_ports.update(ports)
     act_seq = pl_act_flow_rule(flow_rule)
-    act_seq.extend(fin(output_ports))
     s = f"do({':'.join(act_seq)}, {situation_in}, {situation_out})"
     return s
 
-def query_of_graph_flow_rules(rdf_graph: 'Graph', batches: List[List['URIRef']], flow_rules: Dict[str, 'FlowRule'], situation_in='s0', situation_out='S1') -> str:
+def query_of_graph_flow_rules(rdf_graph: 'Graph', batches: List[List['URIRef']], flow_rules: Dict[URIRef, 'FlowRule'], situation_in='s0', situation_out='S1') -> str:
     act_seq = []
     for i, component_list in enumerate(batches):
-        next_components = batches[i+1]
+        # next_components = batches[i+1]
         inter_process_connections = {}
         for component in component_list:
-            act_seq.extend(pl_act_flow_rule(flow_rules[str(component)]))
+            act_seq.extend(pl_act_flow_rule(flow_rules[component]))
             for output_port in rh.output_ports(rdf_graph, component):
                 connections = list(rh.connections_from_port(rdf_graph, output_port))
-                assert len(connections) == 1
-                connection = connections[0]
-                input_port = rh.one_or_none(rh.connection_targets(rdf_graph, connection))
-                inter_process_connections[str(output_port)] = str(input_port)
+                if len(connections) > 1:
+                    logger.warning("Output port %s of component %s has %d (>1) output connections: %s. Connections to `d4p_state` will be discarded, but other unexpected ones will cause problems.", output_port, component, len(connections), connections)
+                for connection in connections:
+                    input_port = rh.one(rh.connection_targets(rdf_graph, connection))
+                    input_name = str(rh.name(rdf_graph, input_port))
+                    if input_name in IGNORED_PORTS:
+                        continue
+                    inter_process_connections[str(output_port)] = str(input_port)
         act_seq.extend(pl_act_inter_process_connection(inter_process_connections))
-    logger.debug("Action sequence: {}", act_seq)
+    logger.debug("Action sequence: %s", act_seq)
     s = f"do({':'.join(act_seq)}, {situation_in}, {situation_out})"
     return s
 
@@ -154,7 +162,7 @@ def _parse_result(prolog, q_sit, sit_out='S1'):
     return ported_drs
 
 def dispatch(data_rules: 'Dict[str, DataRuleContainer]', flow_rule: 'FlowRule') -> 'PortedRules':
-    global _uniq_counter
+    global prolog, _uniq_counter
     s0 = f"s{_uniq_counter}"
     _uniq_counter += 1
 
@@ -183,19 +191,24 @@ def dispatch(data_rules: 'Dict[str, DataRuleContainer]', flow_rule: 'FlowRule') 
         ported_drs = _parse_result(prolog, q_sit)
         return ported_drs
 
-def dispatch_all(rdf_graph: 'Graph', batches: List[List['URIRef']], data_rules: Dict[str, DataRuleContainer], flow_rules: Dict[str, FlowRule]) -> 'PortedRules':
+def dispatch_all(rdf_graph: Graph, batches: List[List[URIRef]], component_data_rules: Dict[URIRef, Dict[str, DataRuleContainer]], flow_rules: Dict[str, FlowRule]) -> PortedRules:
+    global prolog, _uniq_counter
+    s0 = f"s{_uniq_counter}"
+    _uniq_counter += 1
     with tempfile.TemporaryDirectory() as tmp_dir:
         reason_file = f"{tmp_dir}/reason_facts.pl"
-        prolog = Prolog()
-        prolog.consult(f"{PR_DIR}/prolog/flow_rule.pl")
-        logger.info("Writing facts to file {}", reason_file)
+        logger.info("Writing facts to file %s", reason_file)
+        _rules = ''
         with open(reason_file, 'w') as f:
-            for port, data_rule in data_rules.items():
-                s = dump_data_rule(data_rule, port)
-                f.write(s)
-        logger.info("loading file {}", reason_file)
+            for component, data_rules in component_data_rules.items():
+                for port, data_rule in data_rules.items():
+                    s = dump_data_rule(data_rule, port, situation=s0)
+                    _rules += s
+                    f.write(s)
+        logger.debug("Facts:\n%s", _rules)
+        logger.info("loading file %s", reason_file)
         prolog.consult(reason_file)
-        q_sit = query_of_graph_flow_rules(rdf_graph, batches, flow_rule)
+        q_sit = query_of_graph_flow_rules(rdf_graph, batches, flow_rules, situation_in=s0)
         logger.info('querying and collecting results')
         ported_drs = _parse_result(prolog, q_sit)
         return ported_drs
