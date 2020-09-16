@@ -78,18 +78,21 @@ def pl_act_inter_process_connection(connections: Dict[str, str]) -> List[str]:
     return lst
 
 
-def query_of_flow_rule(flow_rule: 'FlowRule', situation_in='s0', situation_out='S1') -> str:
+def query_of_flow_rule(flow_rule: 'FlowRule', situation_in='s0') -> str:
+    situation_out='S1'
     act_seq = pl_act_flow_rule(flow_rule)
     s = f"do({':'.join(act_seq)}, {situation_in}, {situation_out})"
-    return s
+    return s, situation_out
 
-def query_of_graph_flow_rules(rdf_graph: 'Graph', batches: List[List['URIRef']], flow_rules: Dict[URIRef, 'FlowRule'], situation_in='s0', situation_out='S1') -> str:
-    act_seq = []
+def query_of_graph_flow_rules(rdf_graph: 'Graph', batches: List[List['URIRef']], flow_rules: Dict[URIRef, 'FlowRule'], situation_in='s0') -> str:
+    act_seq_list = []
     for i, component_list in enumerate(batches):
         # next_components = batches[i+1]
         inter_process_connections = {}
         for component in component_list:
-            act_seq.extend(pl_act_flow_rule(flow_rules[component]))
+            act_seq = pl_act_flow_rule(flow_rules[component])
+            if act_seq:  # TODO: What if no output?
+                act_seq_list.append(act_seq)
             for output_port in rh.output_ports(rdf_graph, component):
                 connections = list(rh.connections_from_port(rdf_graph, output_port))
                 if len(connections) > 1:
@@ -100,16 +103,27 @@ def query_of_graph_flow_rules(rdf_graph: 'Graph', batches: List[List['URIRef']],
                     if input_name in IGNORED_PORTS:
                         continue
                     inter_process_connections[str(output_port)] = str(input_port)
-        act_seq.extend(pl_act_inter_process_connection(inter_process_connections))
-    logger.debug("Action sequence: %s", act_seq)
-    s = f"do({':'.join(act_seq)}, {situation_in}, {situation_out})"
-    return s
+        act_seq_inter_process = pl_act_inter_process_connection(inter_process_connections)
+        if act_seq_inter_process:
+            act_seq_list.append(act_seq_inter_process)
+    logger.debug("Action sequence: %s", act_seq_list)
+    s_list = []
+    situation_count = 0
+    situation_previous = 's0'
+    for act_seq in act_seq_list:
+        situation_count += 1
+        situation_now = 'S' + str(situation_count)
+        s = f"do({':'.join(act_seq)}, {situation_previous}, {situation_now})"
+        situation_previous = situation_now
+        s_list.append(s)
+    s = f"{',!,'.join(s_list)}"
+    return s, situation_previous
 
-def query_of_attribute(sit_out='S1'):
-    return f"attr(N, T, V, H, {sit_out})"
+def query_of_attribute(situation_out='S1'):
+    return f"attr(N, T, V, H, {situation_out})"
 
-def query_of_obligation(sit_out='S1'):
-    return f"obligation(Ob, Attr, Ac, P, {sit_out})"
+def query_of_obligation(situation_out='S1'):
+    return f"obligation(Ob, Attr, Ac, P, {situation_out})"
 
 
 def _parse_attribute(res_iter):
@@ -147,9 +161,9 @@ def _parse_obligation(res_iter, attr_hist):
     logger.debug("Retrieved obligations in %d ports. Summary ({PORT: #-OF-OBLIGATIONS}): %s", len(ported_obs), { port: len(obs) for port, obs in ported_obs.items() })
     return ported_obs
 
-def _parse_result(prolog, q_sit, sit_out='S1'):
-    q_attr = f"{q_sit}, {query_of_attribute(sit_out)}"
-    q_ob = f"{q_sit}, {query_of_obligation(sit_out)}"
+def _parse_result(prolog, q_sit, situation_out):
+    q_attr = f"{q_sit}, !, {query_of_attribute(situation_out)}"
+    q_ob = f"{q_sit}, !, {query_of_obligation(situation_out)}"
     ported_attrs, attr_hist = _parse_attribute(prolog.query(q_attr))
     ported_obs = _parse_obligation(prolog.query(q_ob), attr_hist)
     ported_drs = {}
@@ -161,55 +175,54 @@ def _parse_result(prolog, q_sit, sit_out='S1'):
     logger.debug("Recomposed data rules has %d elements", len(ported_drs))
     return ported_drs
 
+def _do_prolog_common(data_rules_facts, q_sit, situation_out):
+    global prolog
+
+    tmp_dir = tempfile.mkdtemp()
+    # with tempfile.TemporaryDirectory() as tmp_dir:
+    reason_file = f"{tmp_dir}/reason_facts.pl"
+
+    with open(reason_file, 'w') as f:
+        f.write(data_rules_facts)
+    prolog.consult(reason_file)
+
+    with open(f"{tmp_dir}/query.pl", 'w') as f:
+        f.write(q_sit)
+        f.write('\n')
+    logger.info("Prolog facts and query are recorded in: %s", tmp_dir)
+    logger.debug("Rule facts:\n%s", data_rules_facts)
+    logger.debug("Action sequence: %s", q_sit)
+
+    ported_drs = _parse_result(prolog, q_sit, situation_out)
+    return ported_drs
+
 def dispatch(data_rules: 'Dict[str, DataRuleContainer]', flow_rule: 'FlowRule') -> 'PortedRules':
-    global prolog, _uniq_counter
+    global _uniq_counter
     s0 = f"s{_uniq_counter}"
     _uniq_counter += 1
 
-    # tmp_dir = tempfile.mkdtemp()
-    with tempfile.TemporaryDirectory() as tmp_dir:
-        reason_file = f"{tmp_dir}/reason_facts.pl"
+    data_rule_facts = ''
+    for port, data_rule in data_rules.items():
+        s = dump_data_rule(data_rule, port, situation=s0)
+        data_rule_facts += s
 
-        # _rules = ''
-        with open(reason_file, 'w') as f:
-            for port, data_rule in data_rules.items():
-                s = dump_data_rule(data_rule, port, situation=s0)
-                # _rules += s
-                f.write(s)
-        # with open(reason_file, 'r') as f:
-        #     assert _rules == ''.join(f.readlines())
-        prolog.consult(reason_file)
-        q_sit = query_of_flow_rule(flow_rule, situation_in=s0)
+    q_sit, situation_out = query_of_flow_rule(flow_rule, situation_in=s0)
 
-        # with open(f"{tmp_dir}/query.pl", 'w') as f:
-        #     f.write(q_sit)
-        #     f.write('\n')
-        # logger.info("Prolog facts and query are recorded in: %s", tmp_dir)
-        # logger.info("Rule facts:\n%s", _rules)
-        # logger.info("Action sequence: %s", q_sit)
-
-        ported_drs = _parse_result(prolog, q_sit)
-        return ported_drs
+    ported_drs = _do_prolog_common(data_rule_facts, q_sit, situation_out)
+    return ported_drs
 
 def dispatch_all(rdf_graph: Graph, batches: List[List[URIRef]], component_data_rules: Dict[URIRef, Dict[str, DataRuleContainer]], flow_rules: Dict[str, FlowRule]) -> PortedRules:
-    global prolog, _uniq_counter
+    global _uniq_counter
     s0 = f"s{_uniq_counter}"
     _uniq_counter += 1
-    with tempfile.TemporaryDirectory() as tmp_dir:
-        reason_file = f"{tmp_dir}/reason_facts.pl"
-        logger.info("Writing facts to file %s", reason_file)
-        _rules = ''
-        with open(reason_file, 'w') as f:
-            for component, data_rules in component_data_rules.items():
-                for port, data_rule in data_rules.items():
-                    s = dump_data_rule(data_rule, port, situation=s0)
-                    _rules += s
-                    f.write(s)
-        logger.debug("Facts:\n%s", _rules)
-        logger.info("loading file %s", reason_file)
-        prolog.consult(reason_file)
-        q_sit = query_of_graph_flow_rules(rdf_graph, batches, flow_rules, situation_in=s0)
-        logger.info('querying and collecting results')
-        ported_drs = _parse_result(prolog, q_sit)
-        return ported_drs
+
+    data_rule_facts = ''
+    for component, data_rules in component_data_rules.items():
+        for port, data_rule in data_rules.items():
+            s = dump_data_rule(data_rule, port, situation=s0)
+            data_rule_facts += s
+
+    q_sit, situation_out = query_of_graph_flow_rules(rdf_graph, batches, flow_rules, situation_in=s0)
+    ported_drs = _do_prolog_common(data_rule_facts, q_sit, situation_out)
+    return ported_drs
 
