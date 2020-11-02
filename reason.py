@@ -183,10 +183,11 @@ def reason_in_total(rdf_graph: Graph, batches: List[List['URIRef']], initial_com
     for component_list in batches:
         for component in component_list:
             output_rules = {}
-            for output_port in rh.output_ports(rdf_graph, component):
-                output_port = str(output_port)
+            for output_port in rh.output_ports(rdf_graph, component):  # The output port (IRI) node. Will use its name later
+                output_port_name = str(rh.name(rdf_graph, output_port))  # The short name used in the component. The ComponentAugmentation uses the short name.
+                output_port = str(output_port)  # The long name, with component ID, etc.
                 if output_port in graph_output_rules:
-                    output_rules[output_port] = graph_output_rules[output_port]
+                    output_rules[output_port_name] = graph_output_rules[output_port]
             if output_rules:
                 aug = ComponentAugmentation(component, output_rules)
                 augmentations.append(aug)

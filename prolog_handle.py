@@ -46,12 +46,13 @@ def dump_data_rule(drc: 'DataRuleContainer', port, situation='s0') -> str:
             t = 'str'
             v = attr.hasValue.valueData or attr.hasValue.valueObject
             attr_id = _attr_id_for_prolog(name, i)
-            s += f"attr({_pl_str(name)}, {_pl_str(t)}, {_pl_str(v)}, [{_pl_str(attr_id)}, {_pl_str(port)}], {situation}).\n"
+            hist_repr = f"[{_pl_str(port)}, {_pl_str(attr_id)}]"
+            s += f"attr({_pl_str(name)}, {_pl_str(t)}, {_pl_str(v)}, {hist_repr}, {situation}).\n"
     for ob in drc._rules:
         name = ob._name
         if ob._attribute:
             attr_name, attr_ord = ob._attribute
-            attr_repr = "[{}, {}]".format(_pl_str(_attr_id_for_prolog(attr_name, attr_ord)), _pl_str(port))
+            attr_repr = "[{}, {}]".format(_pl_str(port), _pl_str(_attr_id_for_prolog(attr_name, attr_ord)))
         else:
             continue # TODO: support obligations without attributes
             attr_repr = 'null'
@@ -109,13 +110,14 @@ def query_of_graph_flow_rules(rdf_graph: 'Graph', batches: List[List['URIRef']],
     logger.debug("Action sequence: %s", act_seq_list)
     s_list = []
     situation_count = 0
-    situation_previous = 's0'
+    situation_previous = situation_in
     for act_seq in act_seq_list:
         situation_count += 1
         situation_now = 'S' + str(situation_count)
         s = f"do({':'.join(act_seq)}, {situation_previous}, {situation_now})"
         situation_previous = situation_now
         s_list.append(s)
+
     s = f"{',!,'.join(s_list)}"
     return s, situation_previous
 
@@ -131,7 +133,7 @@ def _parse_attribute(res_iter):
     ported_attrs = defaultdict(lambda : defaultdict(list))
     for r_attr in res_iter:
         hist = r_attr['H']
-        port = hist[-1].decode()
+        port = hist[0].decode()
         name = r_attr['N'].decode()
         attr = Attribute.instantiate(name, raw_attribute=r_attr['V'].decode())
         index = len(ported_attrs[port][name])
@@ -167,12 +169,12 @@ def _parse_result(prolog, q_sit, situation_out):
     ported_attrs, attr_hist = _parse_attribute(prolog.query(q_attr))
     ported_obs = _parse_obligation(prolog.query(q_ob), attr_hist)
     ported_drs = {}
-    for port in set(ported_attrs) & set(ported_obs):
+    for port in set(ported_attrs.keys()) | set(ported_obs.keys()):
         obs = [ob for ob in ported_obs[port] if isinstance(ob, ObligationDeclaration)]
         attrs = [AttributeCapsule(name, attribute=attrs) for name, attrs in ported_attrs[port].items()]
         data_rule = DataRuleContainer(obs, attrs)
         ported_drs[port] = data_rule
-    logger.debug("Recomposed data rules has %d elements", len(ported_drs))
+    logger.debug("Recomposed data rules contain %d ports: %s", len(ported_drs), ported_drs.keys())
     return ported_drs
 
 def _do_prolog_common(data_rules_facts, q_sit, situation_out):
