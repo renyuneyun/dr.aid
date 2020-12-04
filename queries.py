@@ -139,16 +139,16 @@ P_INVOCATION_OF_COMPONENT_INDIRECT = '''
     }
 '''
 
-P_COMPONENT_TIL_DATA = P_INVOCATION_OF_COMPONENT_INDIRECT + P_INVOCATION_DATA
+# P_COMPONENT_TIL_DATA = P_INVOCATION_OF_COMPONENT_INDIRECT + P_INVOCATION_DATA
 
-def F_DATA_OF_COMPONENT(graph: T_REF, component: str) -> str:
-    body = """
-    ?component a s-prov:Component.
-    FILTER (str(?component) = "{}")
+# def F_DATA_OF_COMPONENT(graph: T_REF, component: str) -> str:
+#     body = """
+#     ?component a s-prov:Component.
+#     FILTER (str(?component) = "{}")
 
-    {body}
-        """
-    return F_QUERY('*', graph, body.format(component, body=P_COMPONENT_TIL_DATA))
+#     {body}
+#         """
+#     return F_QUERY('*', graph, body.format(component, body=P_COMPONENT_TIL_DATA))
 
 
 #T_QUERY_INFLUENCED_DATA = P("""
@@ -167,29 +167,29 @@ def F_DATA_OF_COMPONENT(graph: T_REF, component: str) -> str:
 #""", body=P_COMPONENT_TIL_DATA)
 
 
-INFLUENCED_DATA = DP(T_QUERY,
-        'body',
-        P("""
-    ?component a s-prov:Component .
+# INFLUENCED_DATA = DP(T_QUERY,
+#         'body',
+#         P("""
+#     ?component a s-prov:Component .
 
-    ?data_out a s-prov:Data.
-    FILTER (str(?data_out) = "{}")
+#     ?data_out a s-prov:Data.
+#     FILTER (str(?data_out) = "{}")
 
-    {body}
-        """, body=P_COMPONENT_TIL_DATA),
-        target='*'
-        )
+#     {body}
+#         """, body=P_COMPONENT_TIL_DATA),
+#         target='*'
+#         )
 
-def F_INFLUENCED_DATA(graph: T_REF, data_out: T_REF) -> str:
-    body = """
-    ?component a s-prov:Component .
+# def F_INFLUENCED_DATA(graph: T_REF, data_out: T_REF) -> str:
+#     body = """
+#     ?component a s-prov:Component .
 
-    ?data_out a s-prov:Data.
-    FILTER (str(?data_out) = "{}")
+#     ?data_out a s-prov:Data.
+#     FILTER (str(?data_out) = "{}")
 
-    {body}
-        """
-    return F_QUERY('*', graph, body.format(data_out, body=P_COMPONENT_TIL_DATA))
+#     {body}
+#         """
+#     return F_QUERY('*', graph, body.format(data_out, body=P_COMPONENT_TIL_DATA))
 
 #T_COMPONENT_WITH_DATA = P("""
 #SELECT * WHERE {{
@@ -203,19 +203,19 @@ def F_INFLUENCED_DATA(graph: T_REF, data_out: T_REF) -> str:
 #}}
 #""", body=P_COMPONENT_TIL_DATA)
 
-COMPONENT_AND_DATA = P(T_QUERY, target='*', body="""
-    ?component a s-prov:Component .
+# COMPONENT_AND_DATA = P(T_QUERY, target='*', body="""
+#     ?component a s-prov:Component .
 
-    {body}
-""".format(body=P_COMPONENT_TIL_DATA))
+#     {body}
+# """.format(body=P_COMPONENT_TIL_DATA))
 
-def F_COMPONENT_AND_DATA(graph: T_REF) -> str:
-    body = """
-    ?component a s-prov:Component .
+# def F_COMPONENT_AND_DATA(graph: T_REF) -> str:
+#     body = """
+#     ?component a s-prov:Component .
 
-    {body}
-    """
-    return F_QUERY('*', graph, body.format(body=P_COMPONENT_TIL_DATA))
+#     {body}
+#     """
+#     return F_QUERY('*', graph, body.format(body=P_COMPONENT_TIL_DATA))
 
 
 def F_P_FILTER_COMPONENT_IN(component_list: Iterable) -> str:
@@ -250,7 +250,7 @@ P_COMPONENT_WITHOUT_INPUT_DATA = """
     }
 """
 
-COMPONENT_WITHOUT_INPUT_DATA = P(T_QUERY, target='?component', body=P_COMPONENT_WITHOUT_INPUT_DATA)
+# COMPONENT_WITHOUT_INPUT_DATA = P(T_QUERY, target='?component', body=P_COMPONENT_WITHOUT_INPUT_DATA)
 
 def F_COMPONENT_WITHOUT_INPUT_DATA(graph: T_REF) -> str:
     return F_QUERY('?component', graph, P_COMPONENT_WITHOUT_INPUT_DATA)
@@ -278,17 +278,17 @@ P_COMPONENT_PARS = '''
     FILTER (?pred != rdf:type)
 '''
 
-COMPONENT_PARS = P(T_QUERY, target='DISTINCT ?component ?par ?pred ?obj',
-                   body=P_COMPONENT_PARS)
+# COMPONENT_PARS = P(T_QUERY, target='DISTINCT ?component ?par ?pred ?obj',
+#                    body=P_COMPONENT_PARS)
 
-COMPONENT_PARS_IN = DP(T_QUERY,
-        'body',
-        DP("{body} {filter}",
-            'filter',
-            F_P_FILTER_COMPONENT_IN,
-            body=P_COMPONENT_PARS,
-            ),
-        target='DISTINCT ?component ?par ?pred ?obj')
+# COMPONENT_PARS_IN = DP(T_QUERY,
+#         'body',
+#         DP("{body} {filter}",
+#             'filter',
+#             F_P_FILTER_COMPONENT_IN,
+#             body=P_COMPONENT_PARS,
+#             ),
+#         target='DISTINCT ?component ?par ?pred ?obj')
 
 def F_COMPONENT_PARS_IN(graph, component_list: Iterable) -> str:
     ifilter = F_P_FILTER_COMPONENT_IN(component_list)
@@ -300,8 +300,8 @@ P_COMPONENT_FUNCTION = '''
     ?component s-prov:functionName ?function_name.
 '''
 
-COMPONENT_FUNCTION = P(T_QUERY, target='?component ?function_name',
-                       body=P_COMPONENT_FUNCTION)
+# COMPONENT_FUNCTION = P(T_QUERY, target='?component ?function_name',
+#                        body=P_COMPONENT_FUNCTION)
 
 def F_COMPONENT_FUNCTION(graph: T_REF) -> str:
     return F_QUERY('?component ?function_name', graph, P_COMPONENT_FUNCTION)
@@ -344,51 +344,51 @@ WHERE {{
 }}
 ''')
 
-C_COMPONENT_GRAPH = T_COMPONENT_GRAPH('?g')
+# C_COMPONENT_GRAPH = T_COMPONENT_GRAPH('?g')
 
 
 def F_C_COMPONENT_GRAPH(graph: T_REF) -> str:
     return T_COMPONENT_GRAPH("<{}>".format(graph))
 
 
-C_DATA_DEPENDENCY = '''
-PREFIX : <http://ryey/ns/#>
+# C_DATA_DEPENDENCY = '''
+# PREFIX : <http://ryey/ns/#>
 
-CONSTRUCT {
-  ?component0 a s-prov:Component .
-  ?component0 :hasNextStage ?component1 .
-  ?component0 :hasOutput ?data_out0 .
-#  ?component1 :hasPrevStage ?component0 .
-}
-WHERE {
-  graph ?g {
+# CONSTRUCT {
+#   ?component0 a s-prov:Component .
+#   ?component0 :hasNextStage ?component1 .
+#   ?component0 :hasOutput ?data_out0 .
+# #  ?component1 :hasPrevStage ?component0 .
+# }
+# WHERE {
+#   graph ?g {
 
-    ?component0 a s-prov:Component .
-    ?invocation0 a prov:Activity ;
-                prov:wasAssociatedWith ?component_instance0 .
-    ?component_instance0 a s-prov:ComponentInstance ;
-                        prov:actedOnBehalfOf ?component0 .
+#     ?component0 a s-prov:Component .
+#     ?invocation0 a prov:Activity ;
+#                 prov:wasAssociatedWith ?component_instance0 .
+#     ?component_instance0 a s-prov:ComponentInstance ;
+#                         prov:actedOnBehalfOf ?component0 .
 
-    ?data_out0 prov:qualifiedGeneration ?generation .
-    ?generation prov:activity ?invocation0 .
+#     ?data_out0 prov:qualifiedGeneration ?generation .
+#     ?generation prov:activity ?invocation0 .
 
 
-    OPTIONAL {
-      ?component1 a s-prov:Component .
-      ?invocation1 a prov:Activity ;
-                   prov:wasAssociatedWith ?component_instance1 .
-      ?component_instance1 a s-prov:ComponentInstance ;
-                           prov:actedOnBehalfOf ?component1 .
+#     OPTIONAL {
+#       ?component1 a s-prov:Component .
+#       ?invocation1 a prov:Activity ;
+#                    prov:wasAssociatedWith ?component_instance1 .
+#       ?component_instance1 a s-prov:ComponentInstance ;
+#                            prov:actedOnBehalfOf ?component1 .
 
-      ?invocation1 prov:qualifiedUsage ?usage .
-      ?usage prov:entity ?data_out0 .
+#       ?invocation1 prov:qualifiedUsage ?usage .
+#       ?usage prov:entity ?data_out0 .
 
-      FILTER (?component0 != ?component1)
-    }
+#       FILTER (?component0 != ?component1)
+#     }
 
-  }
-}
-'''
+#   }
+# }
+# '''
 
 T_DATA_DEPENDENCY_WITH_PORT = P('''
 PREFIX : <http://ryey/ns/#>
@@ -462,7 +462,7 @@ WHERE {{
 ''')
 
 
-C_DATA_DEPENDENCY_WITH_PORT = T_DATA_DEPENDENCY_WITH_PORT('?g')
+# C_DATA_DEPENDENCY_WITH_PORT = T_DATA_DEPENDENCY_WITH_PORT('?g')
 
 def F_C_DATA_DEPENDENCY_WITH_PORT(graph: T_REF) -> str:
     return T_DATA_DEPENDENCY_WITH_PORT("<{}>".format(graph))
