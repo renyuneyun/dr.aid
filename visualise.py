@@ -11,9 +11,13 @@
 This module contains useful utils to visualise the graph
 '''
 
+import logging
 import pygraphviz as pgv
 
 from . import rdf_helper as rh
+
+logger = logging.getLogger("VIS")
+logger.setLevel(logging.DEBUG)
 
 
 def _clean_name(ref):
@@ -54,7 +58,8 @@ class GraphBuilder:
 
     def _components(self):
         for component in rh.components(self._rdf_graph):
-            cid = self._ni[component]
+            logger.debug('adding component %s as cluster', component)
+            cid = self._ni[component] # Cluster ID
             cluster_name = "cluster{}".format(cid)
             sg = self.G.add_subgraph(name=cluster_name, label=_clean_name(component), style='striped')
             self._nm[component] = sg
