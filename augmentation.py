@@ -48,7 +48,9 @@ class ImportedRule:
 SOURCE_FUNCTION = {
         'Source', 'downloadPE', 'Collector', 'COLLECTOR1', 'COLLECTOR2',
                    'NumberProducer',
-        # 'arcp://uuid,19bb7653-72fd-4a80-8e4b-44d409346434/workflow/packed.cwl#main/create_environment'
+        'arcp://uuid,19bb7653-72fd-4a80-8e4b-44d409346434/workflow/packed.cwl#main/create_environment',
+        'arcp://uuid,19bb7653-72fd-4a80-8e4b-44d409346434/workflow/packed.cwl#main/create_environment_2',
+        'arcp://uuid,19bb7653-72fd-4a80-8e4b-44d409346434/workflow/packed.cwl#main/create_environment_3',
                    }
 
 

@@ -209,13 +209,21 @@ CONSTRUCT {{
 WHERE {{
   ?component0 a wf4prov:ProcessRun.
   ?mid prov:qualifiedGeneration [prov:activity ?component0].
-  ?component1 prov:qualifiedUsage [prov:entity ?mid].
   ?component1 a prov:Activity.
+  {{
+    ?component1 prov:qualifiedUsage [prov:entity ?mid].
+  }}
+  UNION
+  {{
+    ?component1 prov:qualifiedUsage [prov:entity [prov:hadMember ?mid]].
+  }}
+
 }}
 ''')
 
 
 
+# TODO: remove P() and double brackets -- this does not contain templates / string formatter
 C_DATA_DEPENDENCY_WITH_PORT = P('''
 PREFIX : <http://ryey/ns/#>
 
@@ -243,10 +251,14 @@ WHERE {{
   ?data_out0 prov:qualifiedGeneration [prov:activity ?component0; prov:hadRole ?out_port].
 
   OPTIONAL {{
-    ?component1 prov:qualifiedUsage [prov:entity ?data_out0; prov:hadRole ?in_port].
     ?component1 a wf4prov:ProcessRun.
-
-    FILTER (?component0 != ?component1)
+    {{
+      ?component1 prov:qualifiedUsage [prov:entity ?data_out0; prov:hadRole ?in_port].
+    }}
+    UNION
+    {{
+      ?component1 prov:qualifiedUsage [prov:entity [prov:hadMember ?data_out0]; prov:hadRole ?in_port].
+    }}
   }}
 
   BIND (STRAFTER(STR(?component0), "#") AS ?component0_name)
