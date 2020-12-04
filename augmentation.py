@@ -45,8 +45,10 @@ class ImportedRule:
     rule: DataRuleContainer
 
 
-SOURCE_FUNCTION = {'Source', 'downloadPE', 'Collector', 'COLLECTOR1', 'COLLECTOR2',
-                   'NumberProducer'}
+SOURCE_FUNCTION = {
+        'Source', 'downloadPE', 'Collector', 'COLLECTOR1', 'COLLECTOR2',
+                   'NumberProducer',
+                   }
 
 
 def obtain_imported_rules(component_info_list: List[ComponentInfo]) -> List[ImportedRule]:
@@ -59,6 +61,7 @@ def obtain_imported_rules(component_info_list: List[ComponentInfo]) -> List[Impo
         return False
         #return True
     rules = []
+    logger.debug('component_info_list: %s', component_info_list)
     for component_info in component_info_list:
         if is_originator(component_info):
             irules = parser.parse_data_rule(rule.RandomRule(True))
@@ -98,7 +101,7 @@ def apply_augmentation(graph: Graph, augmentations: List[ComponentAugmentation])
                 if rule:
                     rh.insert_rule(graph, out_port, rule)
             else:
-                logger.warning("OutPort {} not found in {}".format(port_name, component))
+                logger.warning("Augmentation for {} does not contain OutPort {}".format(component, port_name))
 
 
 def apply_flow_rules(graph: Graph, graph_id: str, component_info_list: List[ComponentInfo]) -> None:
