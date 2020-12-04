@@ -28,9 +28,10 @@ def main():
 
     logger.log(99, "Start")
 
-    service = "http://localhost:3030/data"
+    service = "http://127.0.0.1:3030/prov"
+    # service = "http://localhost:3030/data"
 
-    results, activated_obligations = propagate_all(service)
+    results, activated_obligations = propagate_all_cwl(service)
     draw(results, activated_obligations)
 
 
@@ -86,6 +87,46 @@ def propagate_all(service):
     return results, activated_obligations
 
 
+def propagate_all_cwl(service):
+    s_helper = sh.CWLHelper(service)
+
+    results = []
+    activated_obligations = []
+
+    obligations = {}
+
+    graph = ''
+    rdf_graph = s_helper.get_graph_dependency_with_port()
+    logger.debug('rdf_graph: %s', rdf_graph)
+    import_flow_rules(graph, rdf_graph, s_helper)
+
+    a_helper = sh.AugmentedGraphHelper(service)
+
+    logger.log(99, "Finished Initialization")
+
+    rdf_component_graph = s_helper.get_graph_component()
+    component_graph = rdflib_to_networkx_multidigraph(rdf_component_graph)
+    batches = reason.graph_into_batches(component_graph)
+
+    length = sum(len(batch) for batch in batches)
+    logger.debug('total number of nodes in batches: %d', length)
+
+    for batch in batches:
+        logger.debug("batch: %s", batch)
+        import_rules(rdf_graph, s_helper, batch)
+        augmentations, obs = reason.propagate(rdf_graph, batch)
+        obligations.update(obs)
+        ag.apply_augmentation(rdf_graph, augmentations)
+
+    a_helper.write_transformed_graph(rdf_graph)
+
+    results.append(rdf_graph)
+
+    activated_obligations.append(obligations)
+
+    return results, activated_obligations
+
+
 def draw(rdf_graphs, activated_obligations=[]):
     from exp import visualise as vis
     for i, rdf_graph in enumerate(rdf_graphs):
@@ -97,8 +138,6 @@ def draw(rdf_graphs, activated_obligations=[]):
                 .flow_rules()
         G = gb.build()
         vis.draw_to_file(G, filename)
-
-    return rdf_graph
 
 
 if __name__ == '__main__':

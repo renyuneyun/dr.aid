@@ -16,9 +16,11 @@ import logging
 from typing import List, Dict
 
 from rdflib import Graph, URIRef
+import SPARQLWrapper as SW
 from SPARQLWrapper import SPARQLWrapper, JSON, XML
 
 from . import queries as q
+from .import query_cwl as cq
 from .names import T_REF
 from .namespaces import NS
 
@@ -50,7 +52,8 @@ def _q(sparql: SPARQLWrapper, query: str) -> Dict:
 
 def _c(sparql: SPARQLWrapper, query: str) -> Graph:
     sparql.setQuery(query)
-    sparql.setReturnFormat(XML)
+    sparql.setReturnFormat(SW.TURTLE)
+    sparql.setOnlyConneg(True)
     return sparql.query().convert()
 
 
@@ -154,6 +157,55 @@ class SProvHelper(Helper):
 
     def get_graph_component(self) -> Graph:
         return self._c(q.Q(q.F_C_COMPONENT_GRAPH(self.graph)))
+
+
+class CWLHelper(Helper):
+
+    def __init__(self, destination):
+        super().__init__(destination)
+
+    def get_components_info(self, components: List[URIRef]) -> List[ComponentInfo]:
+        def get_components_function(self) -> Dict[URIRef, str]:
+            ret = {}
+            results = self._q(cq.Q(cq.Q_COMPONENT_FUNCTION))
+            for binding in results['results']['bindings']:
+                component = _rdu(binding, 'component')
+                f_name, real = _rd(binding, 'function_name', True)
+                if not real:
+                    logger.warning("no function_name for component {}".format(component))
+                    continue
+                ret[component] = f_name
+            return ret
+
+        component_function = get_components_function(self)
+        info: Dict[URIRef, Dict[str, str]] = {com: {} for com in components}
+        results = self._q(cq.Q(cq.F_COMPONENT_PARS_IN(self.graph, components)))
+        for binding in results['results']['bindings']:
+            component = _rdu(binding, 'component')
+            if component not in info:
+                info[component] = {}
+            par = _rd(binding, 'par')
+            pred = _rd(binding, 'pred')
+            obj = _rd(binding, 'obj')
+            info[component][pred] = obj
+        ret = []
+        for component, par in info.items():
+            function_name = component_function[component]
+            component_info = ComponentInfo(component, function_name, par)
+            ret.append(component_info)
+        return ret
+
+    def get_graph_dependency_with_port(self) -> Graph:
+        results = self._c(cq.Q(cq.C_DATA_DEPENDENCY_WITH_PORT(self.graph)))
+        g = Graph()
+        g.parse(data=results, format="turtle")
+        return g
+
+    def get_graph_component(self) -> Graph:
+        results = self._c(cq.Q(cq.C_COMPONENT_GRAPH(self.graph)))
+        g = Graph()
+        g.parse(data=results, format="turtle")
+        return g
 
 
 class AugmentedGraphHelper(Helper):
