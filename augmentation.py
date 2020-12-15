@@ -28,9 +28,7 @@ from .sparql_helper import ComponentInfo
 from .synthetic_raw_rules import FLOW_RULES
 
 
-logger = logging.getLogger("AUGM")
-logger.setLevel(logging.DEBUG)
-logger.setLevel(logging.WARNING)
+logger = logging.getLogger(__name__)
 
 
 @dataclass

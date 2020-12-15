@@ -16,8 +16,7 @@ import pygraphviz as pgv
 
 from . import rdf_helper as rh
 
-logger = logging.getLogger("VIS")
-logger.setLevel(logging.DEBUG)
+logger = logging.getLogger(__name__)
 
 
 def _clean_name(ref):

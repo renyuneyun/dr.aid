@@ -28,8 +28,7 @@ from .rule_handle import FlowRuleHandler
 from .proto import Stage, Imported
 
 
-logger = logging.getLogger("REASONING")
-logger.setLevel(logging.DEBUG)
+logger = logging.getLogger(__name__)
 
 
 def graph_into_batches(graph: MultiDiGraph) -> List[List[URIRef]]:

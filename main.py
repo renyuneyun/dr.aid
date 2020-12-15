@@ -12,24 +12,52 @@
 '''
 
 import logging
+import logging.config
+
+logging.basicConfig()
+logger = logging.getLogger()
+
+import argparse
 from rdflib.extras.external_graph_libs import rdflib_to_networkx_multidigraph
+import yaml
 
 import exp.augmentation as ag
 import exp.rdf_helper as rh
 import exp.reason as reason
 import exp.sparql_helper as sh
 
-logger = logging.getLogger()
-logging.basicConfig(level=logging.DEBUG)
-
 
 def main():
-    logger.setLevel(logging.DEBUG)
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument('url', help='The URL to the service (SPARQL endpoint), e.g. http://127.0.0.1:3030/prov')
+    parser.add_argument("-v", "--verbosity", action="count", default=0,
+            help='Increase the verbosity of messages. Overrides "logging.yml"')
+    args = parser.parse_args()
+
+    with open('logging.yml','rt') as f:
+        config=yaml.safe_load(f.read())
+    logging.config.dictConfig(config)
+    if args.verbosity:
+        logging_level = logging.DEBUG
+        if args.verbosity == 1:
+            logging_level = logging.CRITICAL
+        elif args.verbosity == 2:
+            logging_level = logging.ERROR
+        elif args.verbosity == 3:
+            logging_level = logging.WARN
+        elif args.verbosity == 4:
+            logging_level = logging.INFO
+        elif args.verbosity == 5:
+            logging_level = logging.DEBUG
+        for handler in logging.getLogger().handlers:
+            handler.setLevel(logging_level)
+        for logger_name in config['loggers']:
+            logging.getLogger(logger_name).setLevel(logging_level)
+
+    service = args.url
 
     logger.log(99, "Start")
-
-    service = "http://127.0.0.1:3030/prov"
-    # service = "http://localhost:3030/data"
 
     results, activated_obligations = propagate_all_cwl(service)
     draw(results, activated_obligations)

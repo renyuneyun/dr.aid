@@ -14,8 +14,7 @@ from . import rdf_helper as rh
 import pyswip
 
 import logging
-logger = logging.getLogger('prolog_handle')
-logger.setLevel(logging.DEBUG)
+logger = logging.getLogger(__name__)
 
 
 PR_DIR = '.'  # Prolog Reasoning directory
