@@ -24,6 +24,7 @@ import yaml
 import exp.augmentation as ag
 import exp.rdf_helper as rh
 import exp.reason as reason
+import exp.setting as setting
 import exp.sparql_helper as sh
 
 
@@ -31,6 +32,9 @@ def main():
 
     parser = argparse.ArgumentParser()
     parser.add_argument('url', help='The URL to the service (SPARQL endpoint), e.g. http://127.0.0.1:3030/prov')
+    parser.add_argument('scheme', choices=['SPROV', 'CWLPROV'],
+            default=setting.SCHEME, nargs='?',
+            help='Set what scheme the target is using. Currently "SPROV" and "CWLPROV" are supported.')
     parser.add_argument("-v", "--verbosity", action="count", default=0,
             help='Increase the verbosity of messages. Overrides "logging.yml"')
     args = parser.parse_args()
@@ -52,14 +56,20 @@ def main():
             logging_level = logging.DEBUG
         for handler in logging.getLogger().handlers:
             handler.setLevel(logging_level)
+        logger.setLevel(logging_level)
         for logger_name in config['loggers']:
             logging.getLogger(logger_name).setLevel(logging_level)
 
     service = args.url
+    setting.SCHEME = args.scheme
 
     logger.log(99, "Start")
 
-    results, activated_obligations = propagate_all_cwl(service)
+    if setting.SCHEME == 'CWLPROV':
+        results, activated_obligations = propagate_all_cwl(service)
+    elif setting.SCHEME == 'SPROV':
+        results, activated_obligations = propagate_all(service)
+
     draw(results, activated_obligations)
 
 
@@ -90,6 +100,7 @@ def propagate_all(service):
         s_helper.set_graph(graph)
 
         rdf_graph = s_helper.get_graph_dependency_with_port()
+        logger.debug('rdf_graph: %s', rdf_graph)
         import_flow_rules(graph, rdf_graph, s_helper)
 
         a_helper = sh.AugmentedGraphHelper(service)

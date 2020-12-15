@@ -20,6 +20,7 @@ import SPARQLWrapper as SW
 from SPARQLWrapper import SPARQLWrapper, JSON, XML
 
 from . import queries as q
+from . import setting
 from .import query_cwl as cq
 from .names import T_REF
 from .namespaces import NS
@@ -51,7 +52,10 @@ def _q(sparql: SPARQLWrapper, query: str) -> Dict:
 
 def _c(sparql: SPARQLWrapper, query: str) -> Graph:
     sparql.setQuery(query)
-    sparql.setReturnFormat(SW.TURTLE)
+    if setting.SCHEME == 'CWLPROV':
+        sparql.setReturnFormat(SW.TURTLE)
+    else:
+        sparql.setReturnFormat(XML)
     sparql.setOnlyConneg(True)
     return sparql.query().convert()
 
