@@ -30,6 +30,12 @@ def _pl_str(value):
 def _attr_id_for_prolog(attr_name, attr_ord):
     return f"{attr_name}{attr_ord}"
 
+_PL_NULL = 'null'  # The string literal which will be interpreted as null (in our semantics) in the prolog reasoner.
+def _is_pl_null(s):
+    if isinstance(s, bytes):
+        s = s.decode()
+    return s == _PL_NULL
+
 def dump_data_rule(drc: 'DataRuleContainer', port, situation='s0') -> str:
     s = ''
     for attrcap in drc._attrcaps:
@@ -46,10 +52,10 @@ def dump_data_rule(drc: 'DataRuleContainer', port, situation='s0') -> str:
             attr_name, attr_ord = ob._attribute
             attr = "[{}, {}]".format(_pl_str(_attr_id_for_prolog(attr_name, attr_ord)), _pl_str(port))
         else:
-            continue # TODO: support obligations without attributes
-            attr = 'null'
-        ac = dump(ob._ac) or 'null'
-        s += f"obligation({_pl_str(name)}, {attr}, {_pl_str(ac)}, {_pl_str(port)}, {situation}).\n"
+            attr = _PL_NULL
+        ac = dump(ob._ac)
+        ac = _pl_str(ac) if ac else _PL_NULL
+        s += f"obligation({_pl_str(name)}, {attr}, {ac}, {_pl_str(port)}, {situation}).\n"
     return s
 
 # def _dump_flow_rule(flow_rule: 'FlowRule') -> List[str]:
@@ -127,13 +133,18 @@ def _parse_obligation(res_iter, attr_hist):
     for r_ob in res_iter:
         port = r_ob['P'].decode()
         ob = r_ob['Ob'].decode()
-        attr = attr_hist[tuple(r_ob['Attr'])]
-        ac = r_ob['Ac'].decode()
-        if is_ac(ac):
-            ac = obtain(ac)
+        raw_attr = r_ob['Attr']
+        if _is_pl_null(raw_attr):
+            attr = None
         else:
-            assert ac == 'null'
+            attr = attr_hist[tuple(raw_attr)]
+        ac = r_ob['Ac']
+        if _is_pl_null(ac):
             ac = None
+        else:
+            ac = ac.decode()
+            assert is_ac(ac)
+            ac = obtain(ac)
         ob = ObligationDeclaration(ob, attr, ac)
         ported_obs[port].append(ob)
     logger.debug("Retrieved obligations in %d ports. Summary ({PORT: #-OF-OBLIGATIONS}): %s", len(ported_obs), { port: len(obs) for port, obs in ported_obs.items() })
@@ -145,7 +156,7 @@ def _parse_result(prolog, q_sit, sit_out='S1'):
     ported_attrs, attr_hist = _parse_attribute(prolog.query(q_attr))
     ported_obs = _parse_obligation(prolog.query(q_ob), attr_hist)
     ported_drs = {}
-    for port in set(ported_attrs) & set(ported_obs):
+    for port in set(ported_attrs) | set(ported_obs):
         obs = [ob for ob in ported_obs[port] if isinstance(ob, ObligationDeclaration)]
         attrs = [AttributeCapsule(name, attribute=attrs) for name, attrs in ported_attrs[port].items()]
         data_rule = DataRuleContainer(obs, attrs)

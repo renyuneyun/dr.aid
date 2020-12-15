@@ -111,10 +111,11 @@ def propagate_all_cwl(service):
     length = sum(len(batch) for batch in batches)
     logger.debug('total number of nodes in batches: %d', length)
 
-    for batch in batches:
-        logger.debug("batch: %s", batch)
+    for i, batch in enumerate(batches):
+        logger.debug("batch %d: %s", i, batch)
         import_rules(rdf_graph, s_helper, batch)
         augmentations, obs = reason.propagate(rdf_graph, batch)
+        logger.debug('augmentations: %s', augmentations)
         obligations.update(obs)
         ag.apply_augmentation(rdf_graph, augmentations)
 

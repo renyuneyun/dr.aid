@@ -29,7 +29,7 @@ from .proto import Stage, Imported
 
 
 logger = logging.getLogger("REASONING")
-logger.setLevel(logging.WARN)
+logger.setLevel(logging.DEBUG)
 
 
 def graph_into_batches(graph: MultiDiGraph) -> List[List[URIRef]]:
