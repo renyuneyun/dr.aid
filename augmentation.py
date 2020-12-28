@@ -93,8 +93,10 @@ def apply_augmentation(graph: Graph, augmentations: List[ComponentAugmentation])
 
     Modifies the graph in-place
     '''
+    logger.debug(f"Augmentation has {len(augmentations)} components")
     for aug in augmentations:
         component = aug.id
+        logger.debug(f"Augmentation for component {component}: {augmentations}")
         for out_port in rh.output_ports(graph, component):
             port_name = str(rh.name(graph, out_port))
             if port_name in aug.rules:

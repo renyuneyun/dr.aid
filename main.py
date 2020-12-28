@@ -11,10 +11,11 @@
 
 '''
 
-import logging
+import logging, coloredlogs
 import logging.config
 
 logging.basicConfig()
+coloredlogs.install(level='DEBUG')
 logger = logging.getLogger()
 
 import argparse
@@ -35,6 +36,9 @@ def main():
     parser.add_argument('scheme', choices=['SPROV', 'CWLPROV'],
             default=setting.SCHEME, nargs='?',
             help='Set what scheme the target is using. Currently "SPROV" and "CWLPROV" are supported.')
+    parser.add_argument('--aio', action='store_true',
+            help='Perform ALl-In-One reasoning, rather than reason about one component at a time.')
+    parser.set_defaults(aio=False)
     parser.add_argument("-v", "--verbosity", action="count", default=0,
             help='Increase the verbosity of messages. Overrides "logging.yml"')
     args = parser.parse_args()
@@ -62,6 +66,7 @@ def main():
 
     service = args.url
     setting.SCHEME = args.scheme
+    setting.AIO = args.aio
 
     logger.log(99, "Start")
 
@@ -111,11 +116,18 @@ def propagate_all(service):
         component_graph = rdflib_to_networkx_multidigraph(rdf_component_graph)
         batches = reason.graph_into_batches(component_graph)
 
-        for batch in batches:
-            import_rules(rdf_graph, s_helper, batch)
-            augmentations, obs = reason.propagate(rdf_graph, batch)
+        if setting.AIO:
+            for batch in batches:
+                import_rules(rdf_graph, s_helper, batch)
+            augmentations, obs = reason.reason_in_total(rdf_graph, batches, batches[0])
             obligations.update(obs)
             ag.apply_augmentation(rdf_graph, augmentations)
+        else:
+            for batch in batches:
+                import_rules(rdf_graph, s_helper, batch)
+                augmentations, obs = reason.propagate(rdf_graph, batch)
+                obligations.update(obs)
+                ag.apply_augmentation(rdf_graph, augmentations)
 
         a_helper.write_transformed_graph(rdf_graph)
 
@@ -150,13 +162,20 @@ def propagate_all_cwl(service):
     length = sum(len(batch) for batch in batches)
     logger.debug('total number of nodes in batches: %d', length)
 
-    for i, batch in enumerate(batches):
-        logger.debug("batch %d: %s", i, batch)
-        import_rules(rdf_graph, s_helper, batch)
-        augmentations, obs = reason.propagate(rdf_graph, batch)
-        logger.debug('augmentations: %s', augmentations)
+    if setting.AIO:
+        for batch in batches:
+            import_rules(rdf_graph, s_helper, batch)
+        augmentations, obs = reason.reason_in_total(rdf_graph, batches, batches[0])
         obligations.update(obs)
         ag.apply_augmentation(rdf_graph, augmentations)
+    else:
+        for i, batch in enumerate(batches):
+            logger.debug("batch %d: %s", i, batch)
+            import_rules(rdf_graph, s_helper, batch)
+            augmentations, obs = reason.propagate(rdf_graph, batch)
+            logger.debug('augmentations: %s', augmentations)
+            obligations.update(obs)
+            ag.apply_augmentation(rdf_graph, augmentations)
 
     a_helper.write_transformed_graph(rdf_graph)
 

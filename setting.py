@@ -7,3 +7,5 @@ The settings, shared among all modules.
 
 SCHEME = 'CWLPROV'
 
+AIO = False
+
