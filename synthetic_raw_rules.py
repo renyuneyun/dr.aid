@@ -1,40 +1,28 @@
-#!/usr/bin/env python3
-# -*- coding:utf-8 -*-
-#
-#   Author  :   renyuneyun
-#   E-mail  :   renyuneyun@gmail.com
-#   Date    :   19/06/12 17:35:04
-#   License :   Apache 2.0 (See LICENSE)
-#
-
 '''
 
 '''
 
-from rdflib import URIRef
+Acknowledgement_UoE = '''rule begin
+obligation acknowledge source OnImport.
+attribute source [UoE].
+end
+'''
+
+Acknowledgement_R = '''rule begin
+obligation acknowledge source OnImport.
+attribute source [Rui].
+end
+'''
 
 
-_G1 = (
-        'http://schema.org#2a3c188f8cd6-19-b9fee0c2-7179-11e9-bd29-0242ac120003',
-        {
-            '123': '{}',
-            }
-        )
+Remove_Source_UoE = '''[
+Propagate("arcp://uuid,19bb7653-72fd-4a80-8e4b-44d409346434/workflow/packed.cwl#main/processfiles_2/cyclone_workflow", ["arcp://uuid,19bb7653-72fd-4a80-8e4b-44d409346434/workflow/packed.cwl#main/processfiles_2/output"]),
+Delete(match_value="UoE"),
+]
+'''
 
-
-_GENERAL_FLOW_RULES = {  # functionName: rule
-        'NumberProducer': '',
-        'Increase': '',
-        'Redispatch': '''{'output0': ['input0', 'input1'], 'output1': ['input0', 'input2'], 'output3': ['input1', 'input2']}''',
-        }
-
-
-FLOW_RULES = {
-        URIRef(g_id): {URIRef(comp): r for comp, r in rules.items()}
-        for g_id, rules in {
-            _G1[0]: _G1[1],
-            }.items()
-        }
-
-FLOW_RULES[None] = _GENERAL_FLOW_RULES
-
+Change_Source_UoE_UK = '''[
+Propagate("arcp://uuid,19bb7653-72fd-4a80-8e4b-44d409346434/workflow/packed.cwl#main/processfiles_3/cyclone_workflow", ["arcp://uuid,19bb7653-72fd-4a80-8e4b-44d409346434/workflow/packed.cwl#main/processfiles_3/output"]),
+Edit("str", "UK", match_value="UoE"),
+]
+'''

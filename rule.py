@@ -1,4 +1,4 @@
-
+from dataclasses import dataclass
 from typing import Dict, List, Optional, Tuple, Union
 from random import randint
 
@@ -11,6 +11,7 @@ from .proto import (
         AttributeValue,
         Attribute,
         )
+from .exception import IllegalCaseError
 
 
 PortedRules = Dict[str, Optional['DataRuleContainer']]
@@ -294,22 +295,54 @@ class FlowRule:
     FlowRule is stateless
     '''
 
-    # TODO: def __init__(self, connectivity, input_ports, output_ports):
-    def __init__(self, connectivity):
-        self._conn = connectivity
+    @dataclass
+    class Propagate:
+        input_port: str
+        output_ports: List[str]
+
+    @dataclass
+    class Edit:
+        new_type: str
+        new_value: str
+        input_port: Optional[str] = None
+        output_port: Optional[str] = None
+        name: Optional[str] = None
+        match_type: Optional[str] = None
+        match_value: Optional[str] = None
+
+    @dataclass
+    class Delete:
+        input_port: Optional[str] = None
+        output_port: Optional[str] = None
+        name: Optional[str] = None
+        match_type: Optional[str] = None
+        match_value: Optional[str] = None
+
+    Action = Union[Propagate, Edit, Delete]
+
+    def __init__(self, actions: List[Action]):
+        self.actions = actions
 
     def dump(self) -> str:
         s = ''
-        for oport in self._conn:
-            for iport in self._conn[oport]:
-                s += "{} -> {}\n".format(iport, oport)
+        for action in self.actions:
+            if isinstance(action, FlowRule.Propagate):
+                s += f"{action.input_port} -> {action.output_ports}\n"
+            elif isinstance(action, FlowRule.Edit):
+                s += f"edit({action.input_port or '*'}, {action.output_port or '*'}, {action.match_type or '*'}, {action.match_value or '*'}, {action.new_type}, {action.new_value})\n"
+            elif isinstance(action, FlowRule.Delete):
+                s += f"delete({action.input_port or '*'}, {action.output_port or '*'}, {action.match_type or '*'}, {action.match_value or '*'})\n"
+            else:
+                raise IllegalCaseError()
         return s
+
+    def __iter__(self):
+        return self.actions.__iter__()
 
 
 def DefaultFlow(input_ports: List[str], output_ports: List[str]) -> FlowRule:
-    connectivity = {}
-    # for output_port in output_ports:
-    #     connectivity[output_port] = [p for p in input_ports]
+    actions = []
     for input_port in input_ports:
-        connectivity[input_port] = [p for p in output_ports]
-    return FlowRule(connectivity)
+        pr = FlowRule.Propagate(input_port, output_ports)
+        actions.append(pr)
+    return FlowRule(actions)

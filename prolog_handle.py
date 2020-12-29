@@ -4,6 +4,7 @@ import tempfile
 from rdflib import Graph, URIRef
 from typing import List, Dict, Iterable
 
+from .exception import IllegalCaseError
 from .proto import (
         dump,
         is_ac,
@@ -31,6 +32,11 @@ IGNORED_PORTS = [
 
 def _pl_str(value):
     return f'"{value}"'
+def _pl_str_act(value):
+    if value is None:
+        return '*'
+    else:
+        return _pl_str(value)
 
 def _attr_id_for_prolog(attr_name, attr_ord):
     return f"{attr_name}{attr_ord}"
@@ -66,15 +72,21 @@ def dump_data_rule(drc: 'DataRuleContainer', port, situation='s0') -> str:
     return s
 
 # def _dump_flow_rule(flow_rule: 'FlowRule') -> List[str]:
-def pl_act_flow_rule(flow_rule: 'FlowRule') -> List[str]:
+def pl_act_flow_rule(flow_rule: FlowRule) -> List[str]:
     lst = []
-    for input_port, output_ports in flow_rule._conn.items():
-        lst.append(f"pr({_pl_str(input_port)}, [{','.join(map(_pl_str, output_ports))}])")
-    output_ports = set()
-    for ports in flow_rule._conn.values():
-        output_ports.update(ports)
+    output_ports = set()  # The output ports need to be identified from the flow rules
+    for action in flow_rule:
+        if isinstance(action, FlowRule.Propagate):
+            o_ports = action.output_ports
+            output_ports.update(o_ports)
+            lst.append(f"pr({_pl_str_act(action.input_port)}, [{','.join(map(_pl_str_act, o_ports))}])")
+        elif isinstance(action, FlowRule.Edit):
+            lst.append(f"edit({_pl_str_act(action.name)}, {_pl_str_act(action.match_type)}, {_pl_str_act(action.match_value)}, {_pl_str_act(action.new_type)}, {_pl_str_act(action.new_value)}, {_pl_str_act(action.input_port)}, {_pl_str_act(action.output_port)})")
+        elif isinstance(action, FlowRule.Delete):
+            lst.append(f"delete({_pl_str_act(action.name)}, {_pl_str_act(action.match_type)}, {_pl_str_act(action.match_value)}, {_pl_str_act(action.input_port)}, {_pl_str_act(action.output_port)})")
+        else:
+            raise IllegalCaseError()
     lst.extend([f"end({_pl_str(output)})" for output in output_ports])
-    #TODO: edit and delete
     return lst
 
 def pl_act_inter_process_connection(connections: Dict[str, str]) -> List[str]:

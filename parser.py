@@ -257,6 +257,10 @@ def parse_data_rule(data_rule: str) -> Optional[DataRuleContainer]:
         "data rule should end with 'end'. Rule: {}".format(lines))
 
 
+Propagate = FlowRule.Propagate
+Edit = FlowRule.Edit
+Delete = FlowRule.Delete
+
 def parse_flow_rule(flow_rule: Optional[str]) -> Optional[FlowRule]:
     if flow_rule is None:
         return None
