@@ -78,10 +78,21 @@ def main():
     try:
         with open(setting.RULE_DB, 'r') as f:
             extra_rules = json.load(f)
-            extra_data_rules = extra_rules['data_rules']
-            extra_flow_rules = extra_rules['flow_rules']
-            setting.INJECTED_DATA_RULE = setting.INJECTED_DATA_RULE + extra_data_rules
-            setting.INJECTED_FLOW_RULE = setting.INJECTED_FLOW_RULE + extra_flow_rules
+            # try:
+            #     extra_data_rules = extra_rules['data_rules']
+            #     setting.INJECTED_DATA_RULE = setting.INJECTED_DATA_RULE | extra_data_rules
+            # except KeyError:
+            #     pass
+            try:
+                extra_imported_rules = extra_rules['imported_rules']
+                setting.INJECTED_IMPORTED_RULE = setting.INJECTED_IMPORTED_RULE | extra_imported_rules
+            except KeyError:
+                pass
+            try:
+                extra_flow_rules = extra_rules['flow_rules']
+                setting.INJECTED_FLOW_RULE[None] = setting.INJECTED_FLOW_RULE[None] | extra_flow_rules
+            except KeyError:
+                pass
     except FileNotFoundError:
         pass
 

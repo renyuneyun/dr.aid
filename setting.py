@@ -6,7 +6,7 @@ SCHEME = 'CWLPROV'
 
 AIO = False
 
-RULE_DB = 'rule_db.json'
+RULE_DB = 'rule-db.json'
 
 
 
@@ -23,8 +23,8 @@ INJECTED_FLOW_RULE = {
             'NumberProducer': '',
             'Increase': '',
             'Redispatch': '''{'output0': ['input0', 'input1'], 'output1': ['input0', 'input2'], 'output3': ['input1', 'input2']}''',
-            'arcp://uuid,19bb7653-72fd-4a80-8e4b-44d409346434/workflow/packed.cwl#main/processfiles_2': rr.Remove_Source_UoE,
-            'arcp://uuid,19bb7653-72fd-4a80-8e4b-44d409346434/workflow/packed.cwl#main/processfiles_3': rr.Change_Source_UoE_UK,
+            # 'arcp://uuid,19bb7653-72fd-4a80-8e4b-44d409346434/workflow/packed.cwl#main/processfiles_2': rr.Remove_Source_UoE,
+            # 'arcp://uuid,19bb7653-72fd-4a80-8e4b-44d409346434/workflow/packed.cwl#main/processfiles_3': rr.Change_Source_UoE_UK,
             },
         URIRef('http://schema.org#2a3c188f8cd6-19-b9fee0c2-7179-11e9-bd29-0242ac120003') : {
             # k1 : {k2 : v}  <==>  graph_id : {component_id: rule_str}
@@ -45,9 +45,9 @@ INJECTED_IMPORTED_RULE = {
         'COLLECTOR1' : None,
         'COLLECTOR2' : None,
         'NumberProducer' : None,
-        'arcp://uuid,19bb7653-72fd-4a80-8e4b-44d409346434/workflow/packed.cwl#main/create_environment' : rr.Acknowledgement_UoE,
-        'arcp://uuid,19bb7653-72fd-4a80-8e4b-44d409346434/workflow/packed.cwl#main/create_environment_2' : rr.Acknowledgement_UoE,
-        'arcp://uuid,19bb7653-72fd-4a80-8e4b-44d409346434/workflow/packed.cwl#main/create_environment_3' : rr.Acknowledgement_UoE,
+        # 'arcp://uuid,19bb7653-72fd-4a80-8e4b-44d409346434/workflow/packed.cwl#main/create_environment' : rr.Acknowledgement_UoE,
+        # 'arcp://uuid,19bb7653-72fd-4a80-8e4b-44d409346434/workflow/packed.cwl#main/create_environment_2' : rr.Acknowledgement_UoE,
+        # 'arcp://uuid,19bb7653-72fd-4a80-8e4b-44d409346434/workflow/packed.cwl#main/create_environment_3' : rr.Acknowledgement_UoE,
         }
 
 # The extra data rules to be injected into the reasoner. It takes precedence of the added rules from the database.
