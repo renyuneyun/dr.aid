@@ -11,7 +11,7 @@ from .proto import (
         obtain,
         )
 from .rule import Attribute, AttributeCapsule, ObligationDeclaration, DataRuleContainer, FlowRule, PortedRules
-from . import rdf_helper as rh
+from .graph_wrapper import GraphWrapper
 
 import pyswip
 
@@ -83,7 +83,7 @@ def pl_act_flow_rule(flow_rule: FlowRule) -> List[str]:
         elif isinstance(action, FlowRule.Edit):
             lst.append(f"edit({_pl_str_act(action.name)}, {_pl_str_act(action.match_type)}, {_pl_str_act(action.match_value)}, {_pl_str_act(action.new_type)}, {_pl_str_act(action.new_value)}, {_pl_str_act(action.input_port)}, {_pl_str_act(action.output_port)})")
         elif isinstance(action, FlowRule.Delete):
-            lst.append(f"delete({_pl_str_act(action.name)}, {_pl_str_act(action.match_type)}, {_pl_str_act(action.match_value)}, {_pl_str_act(action.input_port)}, {_pl_str_act(action.output_port)})")
+            lst.append(f"del({_pl_str_act(action.name)}, {_pl_str_act(action.match_type)}, {_pl_str_act(action.match_value)}, {_pl_str_act(action.input_port)}, {_pl_str_act(action.output_port)})")
         else:
             raise IllegalCaseError()
     lst.extend([f"end({_pl_str(output)})" for output in output_ports])
@@ -102,8 +102,9 @@ def query_of_flow_rule(flow_rule: 'FlowRule', situation_in='s0') -> str:
     s = f"do({':'.join(act_seq)}, {situation_in}, {situation_out})"
     return s, situation_out
 
-def query_of_graph_flow_rules(rdf_graph: 'Graph', batches: List[List['URIRef']], flow_rules: Dict[URIRef, 'FlowRule'], situation_in='s0') -> str:
+def query_of_graph_flow_rules(graph: GraphWrapper, flow_rules: Dict[URIRef, 'FlowRule'], situation_in='s0') -> str:
     act_seq_list = []
+    batches = graph.component_to_batches()
     for i, component_list in enumerate(batches):
         # next_components = batches[i+1]
         inter_process_connections = {}
@@ -111,13 +112,12 @@ def query_of_graph_flow_rules(rdf_graph: 'Graph', batches: List[List['URIRef']],
             act_seq = pl_act_flow_rule(flow_rules[component])
             if act_seq:  # TODO: What if no output?
                 act_seq_list.append(act_seq)
-            for output_port in rh.output_ports(rdf_graph, component):
-                connections = list(rh.connections_from_port(rdf_graph, output_port))
-                if len(connections) > 1:
-                    logger.warning("Output port %s of component %s has %d (>1) output connections: %s. Connections to `d4p_state` will be discarded, but other unexpected ones will cause problems.", output_port, component, len(connections), connections)
-                for connection in connections:
-                    input_port = rh.one(rh.connection_targets(rdf_graph, connection))
-                    input_name = str(rh.name(rdf_graph, input_port))
+            for output_port in graph.output_ports(component):
+                downstream_input_ports = graph.downstream_of_output_port(output_port)
+                if len(downstream_input_ports) > 1:
+                    logger.warning("Output port %s of component %s has %d (>1) output connections: %s. Connections to `d4p_state` will be discarded, but other unexpected ones will cause problems.", output_port, component, len(downstream_input_ports), downstream_input_ports)
+                for input_port in downstream_input_ports:
+                    input_name = graph.name_of_port(input_port)
                     if input_name in IGNORED_PORTS:
                         continue
                     inter_process_connections[str(output_port)] = str(input_port)
@@ -235,7 +235,7 @@ def dispatch(data_rules: 'Dict[str, DataRuleContainer]', flow_rule: 'FlowRule') 
     ported_drs = _do_prolog_common(data_rule_facts, q_sit, situation_out)
     return ported_drs
 
-def dispatch_all(rdf_graph: Graph, batches: List[List[URIRef]], component_data_rules: Dict[URIRef, Dict[str, DataRuleContainer]], flow_rules: Dict[str, FlowRule]) -> PortedRules:
+def dispatch_all(graph: GraphWrapper, component_data_rules: Dict[URIRef, Dict[str, DataRuleContainer]], flow_rules: Dict[str, FlowRule]) -> PortedRules:
     global _uniq_counter
     s0 = f"s{_uniq_counter}"
     _uniq_counter += 1
@@ -246,7 +246,7 @@ def dispatch_all(rdf_graph: Graph, batches: List[List[URIRef]], component_data_r
             s = dump_data_rule(data_rule, port, situation=s0)
             data_rule_facts += s
 
-    q_sit, situation_out = query_of_graph_flow_rules(rdf_graph, batches, flow_rules, situation_in=s0)
+    q_sit, situation_out = query_of_graph_flow_rules(graph, flow_rules, situation_in=s0)
     ported_drs = _do_prolog_common(data_rule_facts, q_sit, situation_out)
     return ported_drs
 

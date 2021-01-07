@@ -14,7 +14,7 @@ This module contains useful utils to visualise the graph
 import logging
 import pygraphviz as pgv
 
-from . import rdf_helper as rh
+from .graph_wrapper import GraphWrapper
 
 logger = logging.getLogger(__name__)
 
@@ -44,8 +44,8 @@ class _NameId:
 
 class GraphBuilder:
 
-    def __init__(self, rdf_graph, activated_obligations={}):
-        self._rdf_graph = rdf_graph
+    def __init__(self, graph, activated_obligations={}):
+        self._graph = graph
         self._acob = activated_obligations
 
         self.G = pgv.AGraph(directed=True, rankdir='LR')
@@ -56,7 +56,7 @@ class GraphBuilder:
         self._components()
 
     def _components(self):
-        for component in rh.components(self._rdf_graph):
+        for component in self._graph.components():
             logger.debug('adding component %s as cluster', component)
             cid = self._ni[component] # Cluster ID
             cluster_name = "cluster{}".format(cid)
@@ -64,14 +64,14 @@ class GraphBuilder:
             self._nm[component] = sg
             isg = sg.add_subgraph(rank='source')
             iports = []
-            for input_port in rh.input_ports(self._rdf_graph, component):
-                iportName = rh.name(self._rdf_graph, input_port)
+            for input_port in self._graph.input_ports(component):
+                iportName = self._graph.name_of_port(input_port)
                 isg.add_node(self._ni[component, iportName], label=iportName)
                 iports.append(iportName)
             oports = []
             osg = sg.add_subgraph(rank='sink')
-            for output_port in rh.output_ports(self._rdf_graph, component):
-                oportName = rh.name(self._rdf_graph, output_port)
+            for output_port in self._graph.output_ports(component):
+                oportName = self._graph.name_of_port(output_port)
                 osg.add_node(self._ni[component, oportName], label=oportName)
                 oports.append(oportName)
             if iports and oports:
@@ -79,32 +79,31 @@ class GraphBuilder:
         return self
 
     def data_flow(self):
-        for component in rh.components(self._rdf_graph):
+        for component in self._graph.components():
             sg = self._nm[component]
-            for output_port in rh.output_ports(self._rdf_graph, component):
-                oportName = rh.name(self._rdf_graph, output_port)
+            for output_port in self._graph.output_ports(component):
+                oportName = self._graph.name_of_port(output_port)
                 oportNode = sg.get_node(self._ni[component, oportName])
-                for connection in rh.connections_from_port(self._rdf_graph, output_port):
-                    for input_port in rh.connection_targets(self._rdf_graph, connection):
-                        iportName = rh.name(self._rdf_graph, input_port)
-                        tcomponent = rh.input_to(self._rdf_graph, input_port)
+                for input_port in self._graph.downstream_of_output_port(output_port):
+                        iportName = self._graph.name_of_port(input_port)
+                        tcomponent = self._graph.component_of_input_port(input_port)
                         tsg = self._nm[tcomponent]
                         iportNode = tsg.get_node(self._ni[tcomponent, iportName])
                         self.G.add_edge(oportNode, iportNode)
         return self
 
     def rules(self):
-        for component in rh.components(self._rdf_graph):
+        for component in self._graph.components():
             sg = self._nm[component]
-            for output_port in rh.output_ports(self._rdf_graph, component):
-                oportName = rh.name(self._rdf_graph, output_port)
+            for output_port in self._graph.output_ports(component):
+                oportName = self._graph.name_of_port(output_port)
                 oportNode = sg.get_node(self._ni[component, oportName])
-                rule = rh.rule(self._rdf_graph, output_port)
+                rule = self._graph.get_data_rule_of_port(output_port)
                 if rule:
                     ruleNode = self._ni[component, oportName, rule]
                     self.G.add_node(ruleNode, label=rule.dump(), shape='note')
                     self.G.add_edge(oportNode, ruleNode, arrowhead='none')
-            imported_rule = rh.imported_rule(self._rdf_graph, component)
+            imported_rule = self._graph.get_imported_rules(component)
             if imported_rule:
                 ruleNode = self._ni[component, 'imported_rule_data']
                 self.G.add_node(ruleNode, label=imported_rule.dump(), shape='note')
@@ -114,7 +113,7 @@ class GraphBuilder:
         return self
 
     def obligation(self):
-        for component in rh.components(self._rdf_graph):
+        for component in self._graph.components():
             obs = self._acob.get(component)
             if obs:
                 sg = self._nm[component]
@@ -123,8 +122,8 @@ class GraphBuilder:
         return self
 
     def flow_rules(self):
-        for component in rh.components(self._rdf_graph):
-            rule = rh.flow_rule(self._rdf_graph, component)
+        for component in self._graph.components():
+            rule = self._graph.get_flow_rule(component, add_default=False)
             if rule:
                 sg = self._nm[component]
                 frNodeId = self._ni[component, 'flowRule']

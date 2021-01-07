@@ -216,13 +216,13 @@ class AugmentedGraphHelper(Helper):
     def __init__(self, destination):
         super().__init__(destination)
 
-    def write_transformed_graph(self, graph: Graph):
+    def write_transformed_graph(self, graph: 'GraphWrapper'):
         '''
         Create / Prune a new graph dedicated to store the old graph + initial rules
         '''
         # TODO
         logger.warning("<write_transformed_graph> Not implemented yet")
-        for s, p, o in graph:
+        for s, p, o in graph.rdf_graph:
             if p == NS['mine']['rule']:
                 logger.info("{} {} {}".format(s, p, o))
 

@@ -25,10 +25,10 @@ from pprint import pformat
 import json
 
 import exp.augmentation as ag
-import exp.rdf_helper as rh
 import exp.reason as reason
 import exp.setting as setting
 import exp.sparql_helper as sh
+import exp.graph_wrapper as gw
 
 
 def main():
@@ -101,25 +101,38 @@ def main():
     if setting.SCHEME == 'CWLPROV':
         results, activated_obligations = propagate_all_cwl(service)
     elif setting.SCHEME == 'SPROV':
-        results, activated_obligations = propagate_all(service)
+        results, activated_obligations = propagate_all_sprov(service)
 
     draw(results, activated_obligations)
 
 
-def inject_flow_rules(graph_id, rdf_graph, s_helper):
-    components = rh.components(rdf_graph)
-    component_info_list = s_helper.get_components_info(components)
-    logger.debug("component_info: %s", pformat(component_info_list))
-    ag.apply_flow_rules(rdf_graph, graph_id, component_info_list)
+def propagate_common(graph_wrapper):
+    obligations = {}
+
+    ag.apply_flow_rules(graph_wrapper)
+    ag.apply_imported_rules(graph_wrapper)
+
+    logger.log(99, "Finished Initialization")
+
+    if setting.AIO:
+        augmentations, obs = reason.reason_in_total(graph_wrapper)
+        obligations.update(obs)
+        ag.apply_augmentation(graph_wrapper, augmentations)
+    else:
+        batches = graph_wrapper.component_to_batches()
+        length = sum(len(batch) for batch in batches)
+        logger.debug('total number of nodes in batches: %d', length)
+        for i, batch in enumerate(batches):
+            logger.debug("batch %d: %s", i, batch)
+            augmentations, obs = reason.propagate(graph_wrapper, batch)
+            logger.debug('augmentations: %s', augmentations)
+            obligations.update(obs)
+            ag.apply_augmentation(graph_wrapper, augmentations)
+
+    return graph_wrapper, obligations
 
 
-def inject_imported_rules(rdf_graph, s_helper, components):
-    component_info_list = s_helper.get_components_info(components)
-    imported_rule_list = ag.obtain_imported_rules(component_info_list)
-    ag.apply_imported_rules(rdf_graph, imported_rule_list)
-
-
-def propagate_all(service):
+def propagate_all_sprov(service):
     s_helper = sh.SProvHelper(service)
 
     graphs = list(s_helper.get_wfe_graphs())
@@ -128,39 +141,13 @@ def propagate_all(service):
     results = []
     activated_obligations = []
     for i, graph in enumerate(graphs):
-
-        obligations = {}
-
-        s_helper.set_graph(graph)
-
-        rdf_graph = s_helper.get_graph_dependency_with_port()
-        logger.debug('rdf_graph: %s', rdf_graph)
-        inject_flow_rules(graph, rdf_graph, s_helper)
+        graph_wrapper = gw.GraphWrapper.from_sprov(s_helper, subgraph=graph)
+        graph_wrapper, obligations = propagate_common(graph_wrapper)
 
         a_helper = sh.AugmentedGraphHelper(service)
+        a_helper.write_transformed_graph(graph_wrapper)
 
-        logger.log(99, "Finished Initialization")
-
-        rdf_component_graph = s_helper.get_graph_component()
-        component_graph = rdflib_to_networkx_multidigraph(rdf_component_graph)
-        batches = reason.graph_into_batches(component_graph)
-
-        if setting.AIO:
-            for batch in batches:
-                inject_imported_rules(rdf_graph, s_helper, batch)
-            augmentations, obs = reason.reason_in_total(rdf_graph, batches, batches[0])
-            obligations.update(obs)
-            ag.apply_augmentation(rdf_graph, augmentations)
-        else:
-            for batch in batches:
-                inject_imported_rules(rdf_graph, s_helper, batch)
-                augmentations, obs = reason.propagate(rdf_graph, batch)
-                obligations.update(obs)
-                ag.apply_augmentation(rdf_graph, augmentations)
-
-        a_helper.write_transformed_graph(rdf_graph)
-
-        results.append(rdf_graph)
+        results.append(graph_wrapper)
 
         activated_obligations.append(obligations)
 
@@ -175,51 +162,24 @@ def propagate_all_cwl(service):
 
     obligations = {}
 
-    graph = ''
-    rdf_graph = s_helper.get_graph_dependency_with_port()
-    logger.debug('rdf_graph: %s', rdf_graph)
-    inject_flow_rules(graph, rdf_graph, s_helper)
+    graph_wrapper = gw.GraphWrapper.from_cwl(s_helper)
+    graph_wrapper, obligations = propagate_common(graph_wrapper)
 
     a_helper = sh.AugmentedGraphHelper(service)
+    a_helper.write_transformed_graph(graph_wrapper)
 
-    logger.log(99, "Finished Initialization")
-
-    rdf_component_graph = s_helper.get_graph_component()
-    component_graph = rdflib_to_networkx_multidigraph(rdf_component_graph)
-    batches = reason.graph_into_batches(component_graph)
-
-    length = sum(len(batch) for batch in batches)
-    logger.debug('total number of nodes in batches: %d', length)
-
-    if setting.AIO:
-        for batch in batches:
-            inject_imported_rules(rdf_graph, s_helper, batch)
-        augmentations, obs = reason.reason_in_total(rdf_graph, batches, batches[0])
-        obligations.update(obs)
-        ag.apply_augmentation(rdf_graph, augmentations)
-    else:
-        for i, batch in enumerate(batches):
-            logger.debug("batch %d: %s", i, batch)
-            inject_imported_rules(rdf_graph, s_helper, batch)
-            augmentations, obs = reason.propagate(rdf_graph, batch)
-            logger.debug('augmentations: %s', augmentations)
-            obligations.update(obs)
-            ag.apply_augmentation(rdf_graph, augmentations)
-
-    a_helper.write_transformed_graph(rdf_graph)
-
-    results.append(rdf_graph)
+    results.append(graph_wrapper)
 
     activated_obligations.append(obligations)
 
     return results, activated_obligations
 
 
-def draw(rdf_graphs, activated_obligations=[]):
+def draw(graphs, activated_obligations=[]):
     from exp import visualise as vis
-    for i, rdf_graph in enumerate(rdf_graphs):
+    for i, graph in enumerate(graphs):
         filename = "graph_{}.png".format(i)
-        gb = vis.GraphBuilder(rdf_graph, activated_obligations[i]) \
+        gb = vis.GraphBuilder(graph, activated_obligations[i]) \
                 .data_flow() \
                 .rules() \
                 .obligation() \

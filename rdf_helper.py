@@ -11,16 +11,14 @@
 
 '''
 
-from typing import Iterable, Optional
-
+import json
 from rdflib import Graph, Literal, URIRef
+from typing import Dict, Iterable, Optional, Tuple
 
 from .namespaces import NS
 from . import parser
 from .rule import DataRuleContainer, FlowRule
-
-
-IMPORT_PORT_NAME = 'imported_rule'
+from .setting import IMPORT_PORT_NAME
 
 
 def one(iterator):
@@ -71,6 +69,16 @@ def output_ports_with_connection(graph: Graph, connection: URIRef) -> Iterable[U
 
 def input_to(graph: Graph, input_port: URIRef) -> URIRef:
     return one(graph.objects(input_port, NS['mine']['inputTo']))
+
+
+def component_info(graph: Graph, component: URIRef) -> Dict[str, str]:
+    info_repr = one(graph.objects(component, NS['mine']['info'])).toPython()
+    return json.loads(info_repr)
+
+
+def put_component_info(graph: Graph, component: URIRef, info: Dict[str, str]) -> None:
+    info_repr = json.dumps(info)
+    graph.add((component, NS['mine']['info'], Literal(info_repr)))
 
 
 def rule_literal(graph: Graph, output_port: URIRef) -> Optional[Literal]:
