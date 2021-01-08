@@ -20,7 +20,6 @@ from rdflib import Graph, URIRef, Literal
 
 from . import parser
 from . import rule
-from . import rdf_helper as rh
 from .rule import DataRuleContainer, PortedRules, FlowRule
 from .sparql_helper import ComponentInfo
 from . import setting
@@ -96,7 +95,7 @@ def apply_flow_rules(graph: GraphWrapper) -> None:
         graph_id = URIRef(graph.graph_id)  # type: ignore
         if graph_id in setting.INJECTED_FLOW_RULE:
             flow_rules = setting.INJECTED_FLOW_RULE[graph_id]
-            for component in rh.components(graph):
+            for component in graph.components():
                 if component in flow_rules:
                     fr = flow_rules[component]
                     pairs[component] = fr
