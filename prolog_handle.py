@@ -6,7 +6,7 @@ from collections import defaultdict
 import tempfile
 
 from rdflib import Graph, URIRef
-from typing import List, Dict, Iterable
+from typing import Dict, Iterable, List, Tuple
 
 from .exception import IllegalCaseError
 from .proto import (
@@ -100,13 +100,13 @@ def pl_act_inter_process_connection(connections: Dict[str, str]) -> List[str]:
     return lst
 
 
-def query_of_flow_rule(flow_rule: 'FlowRule', situation_in='s0') -> str:
+def query_of_flow_rule(flow_rule: 'FlowRule', situation_in='s0') -> Tuple[str, str]:
     situation_out='S1'
     act_seq = pl_act_flow_rule(flow_rule)
     s = f"do({':'.join(act_seq)}, {situation_in}, {situation_out})"
     return s, situation_out
 
-def query_of_graph_flow_rules(graph: GraphWrapper, flow_rules: Dict[URIRef, 'FlowRule'], situation_in='s0') -> str:
+def query_of_graph_flow_rules(graph: GraphWrapper, flow_rules: Dict[URIRef, 'FlowRule'], situation_in='s0') -> Tuple[str, str]:
     act_seq_list = []
     batches = graph.component_to_batches()
     for i, component_list in enumerate(batches):

@@ -13,7 +13,7 @@ This module contains the helper classes for dealing with the RDF endpoint (for p
 
 from dataclasses import dataclass
 import logging
-from typing import List, Dict
+from typing import Dict, List, Optional
 
 from rdflib import Graph, URIRef
 import SPARQLWrapper as SW
@@ -37,7 +37,7 @@ class InitialInfo:
 @dataclass
 class ComponentInfo:
     id: URIRef
-    function: str
+    function: Optional[str]
     par: Dict[str, str]
 
 

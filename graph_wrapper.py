@@ -17,7 +17,7 @@ from . import rdf_helper as rh
 from . import rule as rs
 from . import sparql_helper as sh
 
-from .exception import IllegalCaseError
+from .exception import ForceFailedException, IllegalCaseError
 from .rule import DataRuleContainer, FlowRule, PortedRules
 from .setting import IMPORT_PORT_NAME
 from .sparql_helper import ComponentInfo
@@ -186,13 +186,14 @@ class GraphWrapper:
                 logger.info("Component %s :: input port %s receives no rule", component, input_port_name)
         return input_rules
 
-    def get_flow_rule(self, component: URIRef, add_default=True, ensure_name_uniqueness=True) -> Optional[FlowRule]:
+    def get_flow_rule(self, component: URIRef, force=False, ensure_name_uniqueness=True) -> FlowRule:
         '''
-        If `add_default` is `True`, the return value will always be a valid FlowRule
+        If `force` is `True` and if the specified `component` does not have flow rule defined, an exception will be raised. If `force` is `False` and if the specified `component` does not have flow rule defined, the default flow will be composed and returned.
         If `ensure_name_uniqueness` is `True`, the port identifiers will be converted to the corresponding (graph-globally) unique identifiers. It is no harm to use it everywhere, with the only drawback of (minor) reduced performance.
         '''
         flow_rule = rh.flow_rule(self.rdf_graph, component)
-        if not flow_rule and add_default:
+        if not flow_rule:
+            if force: raise ForceFailedException()
             input_ports = list(map(self.name_of_port, self.input_ports(component)))
             output_ports = list(map(self.name_of_port, self.output_ports(component)))
             # if has_imported_rule:  # We assume only components which do not have inputs or rules will have imported rules

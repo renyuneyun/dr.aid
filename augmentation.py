@@ -14,7 +14,7 @@ It used exist because the graph is exposed as an RDF Graph and all interactions 
 
 from dataclasses import dataclass
 import logging
-from typing import List
+from typing import Dict, List
 
 from rdflib import Graph, URIRef, Literal
 
@@ -43,7 +43,7 @@ class ImportedRule:
     rule: DataRuleContainer
 
 
-def obtain_imported_rules(component_info_list: List[ComponentInfo]) -> List[ImportedRule]:
+def obtain_imported_rules(component_info_list: List[ComponentInfo]) -> Dict[URIRef, DataRuleContainer]:
     '''
     Recogniser
     '''
@@ -61,10 +61,10 @@ def obtain_imported_rules(component_info_list: List[ComponentInfo]) -> List[Impo
                 irules = rule.RandomRule(True)
             else:
                 raise IllegalCaseError()
-            irules = parser.parse_data_rule(irules)
-            assert irules
-            logger.info("component: {} rules: {}ported_rules".format(component_info, irules))
-            rules[component_info.id] = irules
+            rules_obj = parser.parse_data_rule(irules)
+            assert rules_obj
+            logger.info("component: {} rules: {}ported_rules".format(component_info, rules_obj))
+            rules[component_info.id] = rules_obj
     return rules
 
 
@@ -93,7 +93,7 @@ def apply_flow_rules(graph: GraphWrapper) -> None:
             pairs[component] = fr
 
     try:
-        graph_id = URIRef(graph.graph_id)
+        graph_id = URIRef(graph.graph_id)  # type: ignore
         if graph_id in setting.INJECTED_FLOW_RULE:
             flow_rules = setting.INJECTED_FLOW_RULE[graph_id]
             for component in rh.components(graph):

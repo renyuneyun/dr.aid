@@ -18,20 +18,25 @@ from typing import Dict, Iterable, Optional, Tuple
 from .namespaces import NS
 from . import parser
 from .rule import DataRuleContainer, FlowRule
+from .exception import ForceFailedException
 
 
 def one(iterator):
     lst = list(iterator)
-    assert len(lst) == 1
-    return lst[0]
+    if len(lst) == 1:
+        return lst[0]
+    else:
+        raise ForceFailedException()
 
 
 def one_or_none(iterator):
     lst = list(iterator)
     if len(lst) == 0:
         return None
-    assert len(lst) == 1
-    return lst[0]
+    elif len(lst) == 1:
+        return lst[0]
+    else:
+        raise ForceFailedException()
 
 
 def name(graph: Graph, subject: URIRef) -> URIRef:

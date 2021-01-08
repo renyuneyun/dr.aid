@@ -24,7 +24,5 @@ class FlowRuleHandler:
         # return outs
 
 
-# def dispatch_all(graph: Graph, batches: List[List[URIRef]], data_rules: Dict[str, DataRuleContainer], flow_rules: Dict[URIRef, FlowRule]):
-#     return prolog_handle.dispatch_all(graph, batches, data_rules, flow_rules)
-def dispatch_all(graph: GraphWrapper, data_rules: Dict[str, DataRuleContainer], flow_rules: Dict[URIRef, FlowRule]):
+def dispatch_all(graph: GraphWrapper, data_rules: Dict[URIRef, Dict[str, DataRuleContainer]], flow_rules: Dict[URIRef, FlowRule]):
     return prolog_handle.dispatch_all(graph, data_rules, flow_rules)

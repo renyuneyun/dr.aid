@@ -14,6 +14,7 @@ This module contains useful utils to visualise the graph.
 import logging
 import pygraphviz as pgv
 
+from .exception import ForceFailedException
 from .graph_wrapper import GraphWrapper
 
 logger = logging.getLogger(__name__)
@@ -123,11 +124,13 @@ class GraphBuilder:
 
     def flow_rules(self):
         for component in self._graph.components():
-            rule = self._graph.get_flow_rule(component, add_default=False)
-            if rule:
+            try:
+                rule = self._graph.get_flow_rule(component, force=True)
                 sg = self._nm[component]
                 frNodeId = self._ni[component, 'flowRule']
                 sg.add_node(frNodeId, label=rule.dump(), shape='cds')
+            except ForceFailedException:  # We set `force=True`, so raising this exception means the component does not have explicit flow rule associated
+                pass
         return self
 
     def build(self):

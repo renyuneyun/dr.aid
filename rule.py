@@ -331,7 +331,7 @@ class FlowRule:
 
     def __init__(self, actions: List[Action]):
         self.actions = actions
-        self.name_map = None
+        self.name_map = None  # type: Optional[Dict[str, str]]
 
     def set_name_map(self, name_map: Dict[str, str]):
         self.name_map = name_map
@@ -363,7 +363,7 @@ class FlowRule:
 
 
 def DefaultFlow(input_ports: List[str], output_ports: List[str]) -> FlowRule:
-    actions = []
+    actions = []  # type: List[FlowRule.Action]
     for input_port in input_ports:
         pr = FlowRule.Propagate(input_port, output_ports)
         actions.append(pr)

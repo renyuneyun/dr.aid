@@ -17,7 +17,7 @@ from typing import Dict, List, Tuple
 from rdflib import Graph, URIRef
 
 from .augmentation import ComponentAugmentation
-from .rule import DataRuleContainer, ActivatedObligation
+from .rule import DataRuleContainer, ActivatedObligation, PortedRules
 from . import rule_handle
 from .rule_handle import FlowRuleHandler
 from .proto import Stage, Imported
@@ -122,6 +122,6 @@ def reason_in_total(graph: GraphWrapper) -> Tuple[List[ComponentAugmentation], D
         if output_rules:
             aug = ComponentAugmentation(component, output_rules)
             augmentations.append(aug)
-    activated_obligations = {}
+    activated_obligations = {}  # type: Dict[URIRef, List[ActivatedObligation]]
     return (augmentations, activated_obligations)
 
