@@ -11,16 +11,12 @@ RULE_DB = 'rule-db.json'
 
 # Internal configurations. Normally they do not need to change, unless the you know what they are
 
-from rdflib import URIRef
-
 IMPORT_PORT_NAME = 'imported_rule'
-
-def virtual_port_for_import(component: URIRef) -> str:
-    return f"{str(component)}#{IMPORT_PORT_NAME}"
 
 
 # Rule injection
 
+from rdflib import URIRef
 from . import synthetic_raw_rules as rr
 
 # The extra flow rules to be injected into the reasoner. It takes precedence of the added rules from the database.

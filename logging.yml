@@ -22,6 +22,10 @@ loggers:
     exp.augmentation:
         level: WARNING
         propagate: yes
+        
+    exp.graph_wrapper:
+        level: DEBUG
+        propagate: yes
 
     exp.prolog_handle:
         level: DEBUG

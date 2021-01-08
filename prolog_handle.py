@@ -120,7 +120,7 @@ def query_of_graph_flow_rules(graph: GraphWrapper, flow_rules: Dict[URIRef, 'Flo
                     input_name = graph.name_of_port(input_port)
                     if input_name in IGNORED_PORTS:
                         continue
-                    inter_process_connections[str(output_port)] = str(input_port)
+                    inter_process_connections[graph.unique_name_of_port(output_port)] = graph.unique_name_of_port(input_port)
         act_seq_inter_process = pl_act_inter_process_connection(inter_process_connections)
         if act_seq_inter_process:
             act_seq_list.append(act_seq_inter_process)

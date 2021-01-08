@@ -20,7 +20,6 @@ from rdflib import Graph, URIRef, Literal
 from . import parser
 from . import rule
 from . import rdf_helper as rh
-from .rdf_helper import IMPORT_PORT_NAME
 from .rule import DataRuleContainer, PortedRules, FlowRule
 from .sparql_helper import ComponentInfo
 from . import setting

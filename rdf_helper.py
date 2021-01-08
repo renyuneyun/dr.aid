@@ -18,7 +18,6 @@ from typing import Dict, Iterable, Optional, Tuple
 from .namespaces import NS
 from . import parser
 from .rule import DataRuleContainer, FlowRule
-from .setting import IMPORT_PORT_NAME
 
 
 def one(iterator):
@@ -67,8 +66,20 @@ def output_ports_with_connection(graph: Graph, connection: URIRef) -> Iterable[U
     return graph.subjects(NS['mine']['hasConnection'], connection)
 
 
+def is_input_port(graph: Graph, node: URIRef) -> bool:
+    return (node, NS['rdf']['type'], NS['mine']['InputPort']) in graph
+
+
+def is_output_port(graph: Graph, node: URIRef) -> bool:
+    return (node, NS['rdf']['type'], NS['mine']['OutputPort']) in graph
+
+
 def input_to(graph: Graph, input_port: URIRef) -> URIRef:
     return one(graph.objects(input_port, NS['mine']['inputTo']))
+
+
+def output_from(graph: Graph, output_port: URIRef) -> URIRef:
+    return one(graph.subjects(NS['mine']['hasOutPort'], output_port))
 
 
 def component_info(graph: Graph, component: URIRef) -> Dict[str, str]:

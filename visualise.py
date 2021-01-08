@@ -86,7 +86,7 @@ class GraphBuilder:
                 oportNode = sg.get_node(self._ni[component, oportName])
                 for input_port in self._graph.downstream_of_output_port(output_port):
                         iportName = self._graph.name_of_port(input_port)
-                        tcomponent = self._graph.component_of_input_port(input_port)
+                        tcomponent = self._graph.component_of_port(input_port)
                         tsg = self._nm[tcomponent]
                         iportNode = tsg.get_node(self._ni[tcomponent, iportName])
                         self.G.add_edge(oportNode, iportNode)

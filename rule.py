@@ -275,30 +275,24 @@ def rule_account(suffix='') -> str:
     '''
 
 
-class Propagate:
-    def __init__(self, input_port, output_port):
-        self.input_port = input_port
-        self.output_port = output_port
-
-
-class Delete:
-    def __init__(self, input_port, output_port, name, a_type, value):
-        self.input_port = input_port
-        self.output_port = output_port
-        self.name = name
-        self.type = a_type
-        self.value = value
-
-
 class FlowRule:
     '''
     FlowRule is stateless
     '''
 
+    @staticmethod
+    def map_name(name_map, name):
+        return name_map[name] if name in name_map else name
+
     @dataclass
     class Propagate:
         input_port: str
         output_ports: List[str]
+
+        def mapped(self, name_map):
+            input_port = FlowRule.map_name(name_map, self.input_port)
+            output_ports = [FlowRule.map_name(name_map, port) for port in self.output_ports]
+            return FlowRule.Propagate(input_port, output_ports)
 
     @dataclass
     class Edit:
@@ -310,6 +304,11 @@ class FlowRule:
         match_type: Optional[str] = None
         match_value: Optional[str] = None
 
+        def mapped(self, name_map):
+            input_port = FlowRule.map_name(name_map, self.input_port)
+            output_port = FlowRule.map_name(name_map, self.output_port)
+            return FlowRule.Edit(self.new_type, self.new_value, input_port, output_port, self.name, self.match_type, self.match_value)
+
     @dataclass
     class Delete:
         input_port: Optional[str] = None
@@ -318,10 +317,28 @@ class FlowRule:
         match_type: Optional[str] = None
         match_value: Optional[str] = None
 
+        def mapped(self, name_map):
+            input_port = FlowRule.map_name(name_map, self.input_port)
+            output_port = FlowRule.map_name(name_map, self.output_port)
+            return FlowRule.Delete(input_port, output_port, self.name, self.match_type, self.match_value)
+
     Action = Union[Propagate, Edit, Delete]
 
     def __init__(self, actions: List[Action]):
         self.actions = actions
+        self.name_map = None
+
+    def set_name_map(self, name_map: Dict[str, str]):
+        self.name_map = name_map
+
+    def mapped_actions(self) -> List[Action]:
+        '''
+        Returns the actions with name mapped.
+        '''
+        if not self.name_map:
+            return self.actions
+        else:
+            return [action.mapped(self.name_map) for action in self.actions]
 
     def dump(self) -> str:
         s = ''
@@ -337,7 +354,7 @@ class FlowRule:
         return s
 
     def __iter__(self):
-        return self.actions.__iter__()
+        return self.mapped_actions().__iter__()
 
 
 def DefaultFlow(input_ports: List[str], output_ports: List[str]) -> FlowRule:
