@@ -8,7 +8,7 @@
 #
 
 '''
-
+This module contains the queries used by the SProv SPARQL helper, handling the S-Prov schema.
 '''
 
 from functools import partial

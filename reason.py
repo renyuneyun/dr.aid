@@ -8,7 +8,7 @@
 #
 
 '''
-
+This module contains the functions necessary to do the main reasoning -- propagating data rules from input ports to output ports, process the flow rules, and process the whole data-flow graph / workflow.
 '''
 
 import logging

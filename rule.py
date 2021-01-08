@@ -1,3 +1,8 @@
+'''
+This module contains the definitions of the rule classes, and a few helper functions.
+The rule classes contain their serialiser functions, usually called `dump`. See `parser` module for the deserialisers.
+'''
+
 from dataclasses import dataclass
 from typing import Dict, List, Optional, Tuple, Union
 from random import randint

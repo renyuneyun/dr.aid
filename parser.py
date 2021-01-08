@@ -8,7 +8,8 @@
 #
 
 '''
-
+This file contains the parser of the rules (both data rules and flow rules) -- from human-friendly string representation to binary formats / objects.
+The serialiser is defined in the classes.
 '''
 
 from dataclasses import dataclass

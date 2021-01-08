@@ -8,7 +8,7 @@
 #
 
 '''
-
+This module contains the helper functions for dealing with the underlying RDF Graph. Users should use `graph_wrapper.GraphWrapper` instead of directly using the functions provided in this module.
 '''
 
 import json

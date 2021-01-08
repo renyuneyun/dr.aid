@@ -8,7 +8,8 @@
 #
 
 '''
-
+This module contains functions and definitions that are useful for augmenting the original graph.
+It used exist because the graph is exposed as an RDF Graph and all interactions are done directly on it. But since the introduction of `graph_wrapper.GraphWrapper`, there may no longer be a need to have some of the contents here.
 '''
 
 from dataclasses import dataclass

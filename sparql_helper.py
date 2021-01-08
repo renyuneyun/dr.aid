@@ -8,7 +8,7 @@
 #
 
 '''
-
+This module contains the helper classes for dealing with the RDF endpoint (for provenance) through SPARQL queries.
 '''
 
 from dataclasses import dataclass

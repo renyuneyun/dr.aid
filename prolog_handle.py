@@ -1,3 +1,7 @@
+'''
+This module contains the handling functions for interacting with the Prolog reasoner which performs the flow rule through situations calculus formalism and Golog.
+'''
+
 from collections import defaultdict
 import tempfile
 

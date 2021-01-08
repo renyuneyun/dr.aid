@@ -8,7 +8,7 @@
 #
 
 '''
-This module contains useful utils to visualise the graph
+This module contains useful utils to visualise the graph.
 '''
 
 import logging

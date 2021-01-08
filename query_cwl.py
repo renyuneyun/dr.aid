@@ -8,7 +8,7 @@
 #
 
 '''
-
+This module contains the queries used by the CWL SPARQL helper, handling the CWLProv schema.
 '''
 
 from functools import partial
