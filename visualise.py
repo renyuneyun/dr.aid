@@ -27,6 +27,14 @@ def _clean_name(ref):
     name = name[:name.find('_taastrup')]
     return name
 
+def _component_label(graph, ref):
+    function = graph.component_info(ref)[0].function
+    clean_name = _clean_name(ref)
+    if not function:
+        return clean_name
+    else:
+        return f"{clean_name}\n[{function}]"
+
 
 class _NameId:
 
@@ -61,7 +69,7 @@ class GraphBuilder:
             logger.debug('adding component %s as cluster', component)
             cid = self._ni[component] # Cluster ID
             cluster_name = "cluster{}".format(cid)
-            sg = self.G.add_subgraph(name=cluster_name, label=_clean_name(component), style='striped')
+            sg = self.G.add_subgraph(name=cluster_name, label=_component_label(self._graph, component), style='striped')
             self._nm[component] = sg
             isg = sg.add_subgraph(rank='source')
             iports = []
