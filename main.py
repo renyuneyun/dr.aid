@@ -177,9 +177,10 @@ def propagate_all_cwl(service):
 
 def draw(graphs, activated_obligations=[]):
     from exp import visualise as vis
+    print_data = setting.SCHEME == 'CWLPROV'
     for i, graph in enumerate(graphs):
         filename = "graph_{}.png".format(i)
-        gb = vis.GraphBuilder(graph, activated_obligations[i]) \
+        gb = vis.GraphBuilder(graph, activated_obligations[i], print_data=print_data) \
                 .data_flow() \
                 .rules() \
                 .obligation() \

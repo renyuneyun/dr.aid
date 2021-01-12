@@ -97,6 +97,57 @@ def put_component_info(graph: Graph, component: URIRef, info: Dict[str, str]) ->
     graph.add((component, NS['mine']['info'], Literal(info_repr)))
 
 
+def data(graph: Graph) -> Iterable[URIRef]:
+    return graph.objects(predicate=NS['mine']['data'])
+
+
+def data_input_to(graph: Graph, data: URIRef) -> Iterable[URIRef]:
+    '''
+    Return the ports where the data is consumed
+    '''
+    connections = graph.subjects(NS['mine']['data'], data)
+    for connection in connections:
+        input_port = one(graph.objects(connection, NS['mine']['target']))
+        yield input_port
+
+
+def data_output_from(graph: Graph, data: URIRef) -> Optional[URIRef]:
+    '''
+    Return the port where the data is produced from. If it is not produced in this graph, then return `None`.
+    '''
+    connection = one(graph.subjects(NS['mine']['data'], data))
+    output_port = one_or_none(graph.subjects(NS['mine']['hasConnection'], connection))
+    return output_port
+# def data_output_from(graph: Graph, data: URIRef) -> Iterable[URIRef]:
+#     '''
+#     Return the ports where the data is produced from.
+#     '''
+#     for connection in graph.subjects(NS['mine']['data'], data):
+#         output_port = one_or_none(graph.subjects(NS['mine']['hasConnection'], connection))
+#         if output_port:
+#             yield output_port
+
+
+def data_to_port(graph: Graph, input_port: URIRef) -> Iterable[URIRef]:
+    '''
+    Return the data that are consumed by this port.
+    '''
+    for connection in graph.subjects(NS['mine']['target'], input_port):  # The connections that are connected to the port
+        data = one(graph.objects(connection, NS['mine']['data']))
+        yield data
+
+
+def data_from_port(graph: Graph, output_port: URIRef) -> Optional[URIRef]:
+    '''
+    Return the data that are produced by this port.
+    '''
+    connection = one_or_none(graph.objects(output_port, NS['mine']['hasConnection']))  # FIXME: The "connection" is not constructed correctly for the final outputs, so it does not exist here. It needs to be fixed in the SPARQL query first, and then here.
+    if not connection:
+        return None
+    data = one(graph.objects(connection, NS['mine']['data']))
+    return data
+
+
 def rule_literal(graph: Graph, output_port: URIRef) -> Optional[Literal]:
     return one_or_none(graph.objects(output_port, NS['mine']['rule']))
 

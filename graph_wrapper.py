@@ -75,11 +75,20 @@ class GraphWrapper:
     def components(self) -> List[URIRef]:
         return list(rh.components(self.rdf_graph))
 
+    def data(self) -> List[URIRef]:
+        return list(rh.data(self.rdf_graph))
+
     def input_ports(self, component: URIRef) -> List[URIRef]:
         return list(rh.input_ports(self.rdf_graph, component))
 
     def output_ports(self, component: URIRef) -> List[URIRef]:
         return list(rh.output_ports(self.rdf_graph, component))
+
+    def data_from(self, data: URIRef) -> Optional[URIRef]:
+        return rh.data_output_from(self.rdf_graph, data)
+
+    def data_to(self, data: URIRef) -> List[URIRef]:
+        return rh.data_input_to(self.rdf_graph, data)
 
     def upstream_of_input_port(self, input_port: URIRef) -> List[URIRef]:
         '''
@@ -103,6 +112,12 @@ class GraphWrapper:
             input_port = rh.one(rh.connection_targets(self.rdf_graph, connection))
             input_ports.append(input_port)
         return input_ports
+
+    def upstream_data(self, input_port: URIRef) -> List[URIRef]:
+        return list(rh.data_to_port(self.rdf_graph, input_port))
+
+    def downstream_data(self, output_port: URIRef) -> Optional[URIRef]:
+        return rh.data_from_port(self.rdf_graph, output_port)
 
     def component_of_port(self, port: URIRef) -> URIRef:
         if rh.is_input_port(self.rdf_graph, port):
@@ -152,6 +167,10 @@ class GraphWrapper:
         for component, fr in flow_rules.items():
             rh.set_flow_rule(self.rdf_graph, component, Literal(fr))
 
+    def set_data_rules(self, data_rules: Dict[URIRef, DataRuleContainer]) -> None:
+        for data, data_rule in data_rules.items():
+            rh.insert_rule(self.rdf_graph, data, data_rule)
+
     def set_imported_rules(self, imported_rules: Dict[URIRef, DataRuleContainer]) -> None:
         for component, dr in imported_rules.items():
             input_ports = self.input_ports(component)
@@ -163,6 +182,9 @@ class GraphWrapper:
 
     def get_data_rule_of_port(self, port: URIRef) -> Optional[DataRuleContainer]:
         return rh.rule(self.rdf_graph, port)
+
+    def get_data_rule_of_data(self, data: URIRef) -> Optional[DataRuleContainer]:
+        return rh.rule(self.rdf_graph, data)
 
     def get_data_rules(self, component: URIRef, ports: Optional[List[URIRef]]=None, ensure_name_uniqueness=True) -> Dict[URIRef, DataRuleContainer]:
         '''
@@ -178,12 +200,18 @@ class GraphWrapper:
                 rule = self.get_data_rule_of_port(output_port)
                 if rule:
                     rules.append(rule)
-                    logger.debug("Component %s :: input port %s receives rule, with %s", component, input_port_name, rule.summary())
+                    logger.debug("Component %s :: input port %s receives rule (from port), with %s", component, input_port_name, rule.summary())
+            for data in self.upstream_data(input_port):
+                rule = self.get_data_rule_of_data(data)
+                if rule:
+                    rules.append(rule)
+                    logger.debug("Component %s :: input port %s receives rule (from data), with %s", component, input_port_name, rule.summary())
             if rules:
                 merged_rule = DataRuleContainer.merge(rules[0], *rules[1:])
                 input_rules[input_port_name] = merged_rule
             else:
                 logger.info("Component %s :: input port %s receives no rule", component, input_port_name)
+
         return input_rules
 
     def get_flow_rule(self, component: URIRef, force=False, ensure_name_uniqueness=True) -> FlowRule:
@@ -221,7 +249,10 @@ class GraphWrapper:
                 if port_name in ported_rules:
                     rule = ported_rules[port_name]
                     if rule:
-                        rh.insert_rule(self.rdf_graph, out_port, rule)
+                        # rh.insert_rule(self.rdf_graph, out_port, rule)
+                        data = self.downstream_data(out_port)
+                        if data:
+                            self.set_data_rules({data: rule})
                 else:
                     logger.warning("Augmentation for {} does not contain OutPort {}".format(component, port_name))
 

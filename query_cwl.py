@@ -224,6 +224,60 @@ WHERE {{
 
 
 # TODO: remove P() and double brackets -- this does not contain templates / string formatter
+# C_DATA_DEPENDENCY_WITH_PORT = P('''
+# PREFIX : <http://ryey/ns/#>
+
+
+# CONSTRUCT {{
+#   ?component0 a s-prov:Component ;
+#     :hasOutPort ?port_out .
+
+#   ?port_out a :OutputPort ;
+#     :name ?out_port ;
+#     :hasConnection ?connection .
+
+#   ?connection a :Connection ;
+#     :target ?port_in ;
+#     :data ?data_out0 .
+
+#   ?data_out0 a s-prov:Data .
+
+#   ?port_in a :InputPort ;
+#     :name ?in_port ;
+#     :inputTo ?component1 .
+# }}
+# WHERE {{
+#   ?component0 a wf4prov:ProcessRun.
+#   ?data_out0 prov:qualifiedGeneration [prov:activity ?component0; prov:hadRole ?out_port].
+
+#   OPTIONAL {{
+#     ?component1 a wf4prov:ProcessRun.
+#     {{
+#       ?component1 prov:qualifiedUsage [prov:entity ?data_out0; prov:hadRole ?in_port].
+#     }}
+#     UNION
+#     {{
+#       ?component1 prov:qualifiedUsage [prov:entity [prov:hadMember ?data_out0]; prov:hadRole ?in_port].
+#     }}
+#   }}
+
+#   BIND (STRAFTER(STR(?component0), "#") AS ?component0_name)
+#   BIND (STRAFTER(STR(?component1), "#") AS ?component1_name)
+
+#   BIND (IRI(CONCAT("http://ryey/ns/#", CONCAT(STR(?component0_name), CONCAT("=)", STR(?out_port))))) AS ?port_out)
+#   BIND (IRI(CONCAT("http://ryey/ns/#", CONCAT(STR(?component1_name), CONCAT("(=", STR(?in_port))))) AS ?port_in)
+#     BIND (IRI(
+#         CONCAT("http://ryey/ns/#",
+#           CONCAT(
+#             CONCAT(
+#               CONCAT(?component0_name, CONCAT("::", STR(?out_port))),
+#               "::"),
+#             CONCAT(CONCAT(CONCAT("::", STR(?in_port)), "::"), ?component1_name)
+#           )
+#         )
+#       ) AS ?connection)
+# }}
+# ''')
 C_DATA_DEPENDENCY_WITH_PORT = P('''
 PREFIX : <http://ryey/ns/#>
 
@@ -237,8 +291,9 @@ CONSTRUCT {{
     :hasConnection ?connection .
 
   ?connection a :Connection ;
-    :target ?port_in ;
     :data ?data_out0 .
+
+  ?connection :target ?port_in .
 
   ?data_out0 a s-prov:Data .
 
