@@ -26,7 +26,7 @@ def one(iterator):
     if len(lst) == 1:
         return lst[0]
     else:
-        raise ForceFailedException()
+        raise ForceFailedException(lst)
 
 
 def one_or_none(iterator):
@@ -36,7 +36,7 @@ def one_or_none(iterator):
     elif len(lst) == 1:
         return lst[0]
     else:
-        raise ForceFailedException()
+        raise ForceFailedException(lst)
 
 
 def name(graph: Graph, subject: URIRef) -> URIRef:
