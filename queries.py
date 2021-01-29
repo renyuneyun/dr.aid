@@ -442,8 +442,8 @@ WHERE {{
       FILTER (?component0 != ?component1)
     }}
 
-    BIND (STRAFTER(STR(?component0), "#") AS ?component0_name)
-    BIND (STRAFTER(STR(?component1), "#") AS ?component1_name)
+    BIND (IF(REGEX(STR(?component0), "http://[^#]+#"), STRAFTER(STR(?component0), "#"), STR(?component0)) AS ?component0_name)
+    BIND (IF(REGEX(STR(?component1), "http://[^#]+#"), STRAFTER(STR(?component1), "#"), STR(?component1)) AS ?component1_name)
 
     BIND (IRI(CONCAT("http://ryey/ns/#", CONCAT(STR(?component0_name), CONCAT("=)", STR(?out_port))))) AS ?port_out)
     BIND (IRI(CONCAT("http://ryey/ns/#", CONCAT(STR(?component1_name), CONCAT("(=", STR(?in_port))))) AS ?port_in)
