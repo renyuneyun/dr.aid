@@ -96,43 +96,54 @@ class GraphBuilder:
         return sg.get_node(self._ni[component, port_name])
 
     def data_flow(self):
-        if self._print_data:
-            for data in self._graph.data():
-                dataNode = self._ni[data]
-                node = self.G.add_node(dataNode, label=str(data), shape='oval')
-                output_port = self._graph.data_from(data)
-                if output_port:
-                    portNode = self._get_node_port(output_port)
-                    self.G.add_edge(portNode, dataNode)
-                for input_port in self._graph.data_to(data):
-                    portNode = self._get_node_port(input_port)
-                    self.G.add_edge(dataNode, portNode)
+        if self._graph.is_data_streaming():
+            data_list = []
+            data_list.extend(self._graph.data_without_derive())  # The initial data
+            data_list.extend(self._graph.data_without_consume())  # The final output data
         else:
+            data_list = self._graph.data()
+        for data in data_list:
+            dataNode = self._ni[data]
+            node = self.G.add_node(dataNode, label=str(data), shape='oval')
+            output_port = self._graph.data_from(data)
+            if output_port:
+                portNode = self._get_node_port(output_port)
+                self.G.add_edge(portNode, dataNode)
+            for input_port in self._graph.data_to(data):
+                portNode = self._get_node_port(input_port)
+                self.G.add_edge(dataNode, portNode)
+
+        if self._graph.is_data_streaming():
+            # Draw direct links from component A's output port to component B's input port -- this happens when there is no explicit data between them.
             for component in self._graph.components():
                 sg = self._nm[component]
                 for output_port in self._graph.output_ports(component):
                     oportName = self._graph.name_of_port(output_port)
                     oportNode = sg.get_node(self._ni[component, oportName])
                     for input_port in self._graph.downstream_of_output_port(output_port):
-                            iportName = self._graph.name_of_port(input_port)
-                            tcomponent = self._graph.component_of_port(input_port)
-                            tsg = self._nm[tcomponent]
-                            iportNode = tsg.get_node(self._ni[tcomponent, iportName])
-                            self.G.add_edge(oportNode, iportNode)
+                    # for input_port in self._graph.downstream_port(output_port):
+                        iportName = self._graph.name_of_port(input_port)
+                        tcomponent = self._graph.component_of_port(input_port)
+                        tsg = self._nm[tcomponent]
+                        iportNode = tsg.get_node(self._ni[tcomponent, iportName])
+                        self.G.add_edge(oportNode, iportNode)
+
         return self
 
     def rules(self):
         for component in self._graph.components():
             sg = self._nm[component]
-            if not self._print_data:  # If we print data, then there is no need to print the rules with the ports -- just print them with the data
-                for output_port in self._graph.output_ports(component):
-                    oportName = self._graph.name_of_port(output_port)
-                    oportNode = sg.get_node(self._ni[component, oportName])
-                    rule = self._graph.get_data_rule_of_port(output_port)
-                    if rule:
-                        ruleNode = self._ni[component, oportName, rule]
-                        self.G.add_node(ruleNode, label=rule.dump(), shape='note')
-                        self.G.add_edge(oportNode, ruleNode, arrowhead='none')
+
+            # Rules from output ports. This will effectively only annotate data-streaming provenance.
+            for output_port in self._graph.output_ports(component):
+                oportName = self._graph.name_of_port(output_port)
+                oportNode = sg.get_node(self._ni[component, oportName])
+                rule = self._graph.get_data_rule_of_port(output_port)
+                if rule:  # If file-oriented, `rule` will be None
+                    ruleNode = self._ni[component, oportName, rule]
+                    self.G.add_node(ruleNode, label=rule.dump(), shape='note')
+                    self.G.add_edge(oportNode, ruleNode, arrowhead='none')
+
             imported_rule = self._graph.get_imported_rules(component)
             if imported_rule:
                 ruleNode = self._ni[component, 'imported_rule_data']
@@ -141,18 +152,17 @@ class GraphBuilder:
                 sg.add_node(connectedNode, label='imported', style='dashed', shape='egg')
                 self.G.add_edge(ruleNode, connectedNode, style='tapered', penwidth=7, arrowtail='none', dir='forward', arrowhead='none')
 
-        if self._print_data:
-            for data in self._graph.data():
-                rule = self._graph.get_data_rule_of_data(data)
-                if not rule:  # Temporary until sorted out associating data rules with data
-                    output_port = self._graph.data_from(data)
-                    if output_port:
-                        rule = self._graph.get_data_rule_of_port(output_port)
-                if rule:
-                    dataNode = self._ni[data]
-                    ruleNode = self._ni[component, data, rule]
-                    self.G.add_node(ruleNode, label=rule.dump(), shape='note')
-                    self.G.add_edge(dataNode, ruleNode, arrowhead='none')
+        for data in self._graph.data():
+            rule = self._graph.get_data_rule_of_data(data)
+            # if not rule:  # Temporary until sorted out associating data rules with data
+            #     output_port = self._graph.data_from(data)
+            #     if output_port:
+            #         rule = self._graph.get_data_rule_of_port(output_port)
+            if rule:
+                dataNode = self._ni[data]
+                ruleNode = self._ni[component, data, rule]
+                self.G.add_node(ruleNode, label=rule.dump(), shape='note')
+                self.G.add_edge(dataNode, ruleNode, arrowhead='none')
 
         return self
 

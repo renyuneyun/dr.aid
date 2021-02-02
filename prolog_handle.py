@@ -117,7 +117,7 @@ def query_of_graph_flow_rules(graph: GraphWrapper, flow_rules: Dict[URIRef, 'Flo
             if act_seq:  # TODO: What if no output?
                 act_seq_list.append(act_seq)
             for output_port in graph.output_ports(component):
-                downstream_input_ports = graph.downstream_of_output_port(output_port)
+                downstream_input_ports = graph.downstream_port(output_port)
                 if len(downstream_input_ports) > 1:
                     logger.warning("Output port %s of component %s has %d (>1) output connections: %s. Connections to `d4p_state` will be discarded, but other unexpected ones will cause problems.", output_port, component, len(downstream_input_ports), downstream_input_ports)
                 for input_port in downstream_input_ports:

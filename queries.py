@@ -403,10 +403,11 @@ CONSTRUCT {{
     :hasConnection ?connection .
 
   ?connection a :Connection ;
-    :target ?port_in ;
     :data ?data_out0 .
 
   ?data_out0 a s-prov:Data .
+
+  ?connection :target ?port_in .
 
   ?port_in a :InputPort ;
     :name ?in_port ;
@@ -445,6 +446,9 @@ WHERE {{
     BIND (IF(REGEX(STR(?component0), "http://[^#]+#"), STRAFTER(STR(?component0), "#"), STR(?component0)) AS ?component0_name)
     BIND (IF(REGEX(STR(?component1), "http://[^#]+#"), STRAFTER(STR(?component1), "#"), STR(?component1)) AS ?component1_name)
 
+    BIND (COALESCE(?component1_name, "") AS ?component1_name_safe)
+    BIND (COALESCE(?in_port, "") AS ?in_port_safe)
+
     BIND (IRI(CONCAT("http://ryey/ns/#", CONCAT(STR(?component0_name), CONCAT("=)", STR(?out_port))))) AS ?port_out)
     BIND (IRI(CONCAT("http://ryey/ns/#", CONCAT(STR(?component1_name), CONCAT("(=", STR(?in_port))))) AS ?port_in)
       BIND (IRI(
@@ -453,7 +457,7 @@ WHERE {{
               CONCAT(
                 CONCAT(?component0_name, CONCAT("::", STR(?out_port))),
                 "::"),
-              CONCAT(CONCAT(CONCAT("::", STR(?in_port)), "::"), ?component1_name)
+              CONCAT(CONCAT(CONCAT("::", STR(?in_port_safe)), "::"), ?component1_name_safe)
             )
           )
       	) AS ?connection)

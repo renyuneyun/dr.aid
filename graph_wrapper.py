@@ -3,6 +3,7 @@ The wrapper class for the data-flow graph.
 Details about prolog_handle and sparql_handle should be hid by this class.
 '''
 
+import functools
 
 from networkx import MultiDiGraph
 from pprint import pformat
@@ -17,7 +18,7 @@ from . import rdf_helper as rh
 from . import rule as rs
 from . import sparql_helper as sh
 
-from .exception import ForceFailedException, IllegalCaseError
+from .exception import ForceFailedException, IllegalCaseError, IllegalStateError
 from .rule import DataRuleContainer, FlowRule, PortedRules
 from .setting import IMPORT_PORT_NAME
 from .sparql_helper import ComponentInfo
@@ -49,18 +50,32 @@ class GraphWrapper:
 
     @classmethod
     def from_cwl(cls, s_helper):
-        return cls(s_helper)
+        return cls(s_helper, streaming=False)
 
     @classmethod
     def from_sprov(cls, s_helper, subgraph):
         return cls(s_helper, subgraph=subgraph)
 
 
-    def __init__(self, s_helper, subgraph=None):
+    def require_data(f):
+        '''
+        Indicates and checks the function {f} requires data to be explicitly represented
+        '''
+        @functools.wraps(f)
+        def wrapper(self, *args, **kwargs):
+            if self._data_streaming:
+                raise IllegalStateError('This function requires data to be explicitly represented.')
+            ret = f(self, *args, **kwargs)
+            return ret
+        return wrapper
+
+
+    def __init__(self, s_helper, subgraph=None, streaming=True):
         self.s_helper = s_helper
         self.subgraph = subgraph
         if subgraph:  # Currently only used by SProvHelper
             self.s_helper.set_graph(subgraph)
+        self._data_streaming = streaming
         self.rdf_graph = s_helper.get_graph_dependency_with_port()
         logger.debug('rdf_graph: %s', self.rdf_graph)
 
@@ -72,11 +87,28 @@ class GraphWrapper:
             rh.put_component_info(self.rdf_graph, component_info.id, info_dict)
         logger.debug("all_component_info: %s", pformat(components_info))
 
+    def is_data_streaming(self) -> bool:
+        return self._data_streaming
+
     def components(self) -> List[URIRef]:
         return list(rh.components(self.rdf_graph))
 
     def data(self) -> List[URIRef]:
         return list(rh.data(self.rdf_graph))
+
+    def data_without_derive(self) -> List[URIRef]:
+        lst = []
+        for d in self.data():
+            if self.data_from(d) is None:
+                lst.append(d)
+        return lst
+
+    def data_without_consume(self) -> List[URIRef]:
+        lst = []
+        for d in self.data():
+            if len(self.data_to(d)) == 0:
+                lst.append(d)
+        return lst
 
     def input_ports(self, component: URIRef) -> List[URIRef]:
         return list(rh.input_ports(self.rdf_graph, component))
@@ -85,15 +117,34 @@ class GraphWrapper:
         return list(rh.output_ports(self.rdf_graph, component))
 
     def data_from(self, data: URIRef) -> Optional[URIRef]:
-        return rh.data_output_from(self.rdf_graph, data)
+        return rh.data_output_from(self.rdf_graph, data, self._data_streaming)
 
     def data_to(self, data: URIRef) -> List[URIRef]:
-        return rh.data_input_to(self.rdf_graph, data)
+        return list(rh.data_input_to(self.rdf_graph, data, self._data_streaming))
 
     def upstream_of_input_port(self, input_port: URIRef) -> List[URIRef]:
         '''
-        Retrieve the upstream of the input port `input_port`. Currently the upstream is the output port.
-        TODO: Make upstream the data where necessary
+        Retrieve the upstream of the input port `input_port`, may be port if data-streaming, or data if file-oriented.
+        TODO: Make it only one upstream, or handle multiple upstreams in Prolog
+        '''
+        if self._data_streaming:
+            return self.upstream_port(input_port)
+        else:
+            return self.upstream_data(input_port)
+
+    def downstream_of_output_port(self, output_port: URIRef) -> List[URIRef]:
+        '''
+        Similar to `upstream_of_input_port`, but gets the downstream of the `output_port`
+        '''
+        if self._data_streaming:
+            return self.downstream_port(output_port)
+        else:
+            return [self.downstream_data(output_port)]
+
+    def upstream_port(self, input_port: URIRef) -> List[URIRef]:
+        '''
+        Retrieve the upstream port of the input port `input_port`. Currently it assumes data streaming.
+        TODO: Go back to the ports which produced the data (may not be needed)
         TODO: Make it only one upstream, or handle multiple upstreams in Prolog
         '''
         output_ports = []
@@ -103,21 +154,22 @@ class GraphWrapper:
                 output_ports.append(output_port)
         return output_ports
 
-    def downstream_of_output_port(self, output_port: URIRef) -> List[URIRef]:
+    def downstream_port(self, output_port: URIRef) -> List[URIRef]:
         '''
-        Similar to `upstream_of_input_port`, but gets the downstream input ports of the `output_port`
+        Similar to `upstream_port`, but gets the downstream input ports of the `output_port`
         '''
         input_ports = []
         for connection in rh.connections_from_port(self.rdf_graph, output_port):
-            input_port = rh.one(rh.connection_targets(self.rdf_graph, connection))
-            input_ports.append(input_port)
+            input_port = rh.one_or_none(rh.connection_targets(self.rdf_graph, connection))
+            if input_port:
+                input_ports.append(input_port)
         return input_ports
 
     def upstream_data(self, input_port: URIRef) -> List[URIRef]:
-        return list(rh.data_to_port(self.rdf_graph, input_port))
+        return list(rh.data_to_port(self.rdf_graph, input_port, self._data_streaming))
 
     def downstream_data(self, output_port: URIRef) -> Optional[URIRef]:
-        return rh.data_from_port(self.rdf_graph, output_port)
+        return rh.data_from_port(self.rdf_graph, output_port, self._data_streaming)
 
     def component_of_port(self, port: URIRef) -> URIRef:
         if rh.is_input_port(self.rdf_graph, port):
@@ -168,8 +220,8 @@ class GraphWrapper:
             rh.set_flow_rule(self.rdf_graph, component, Literal(fr))
 
     def set_data_rules(self, data_rules: Dict[URIRef, DataRuleContainer]) -> None:
-        for data, data_rule in data_rules.items():
-            rh.insert_rule(self.rdf_graph, data, data_rule)
+        for node, data_rule in data_rules.items():
+            rh.insert_rule(self.rdf_graph, node, data_rule)
 
     def set_imported_rules(self, imported_rules: Dict[URIRef, DataRuleContainer]) -> None:
         for component, dr in imported_rules.items():
@@ -186,6 +238,12 @@ class GraphWrapper:
     def get_data_rule_of_data(self, data: URIRef) -> Optional[DataRuleContainer]:
         return rh.rule(self.rdf_graph, data)
 
+    def get_data_rule(self, node: URIRef) -> Optional[DataRuleContainer]:
+        '''
+        @param node: It may be a data item or a port. Currently no exceptions is raised if otherwise.
+        '''
+        return rh.rule(self.rdf_graph, node)
+
     def get_data_rules(self, component: URIRef, ports: Optional[List[URIRef]]=None, ensure_name_uniqueness=True) -> Dict[URIRef, DataRuleContainer]:
         '''
         @param ensure_name_uniqueness: See also `get_flow_rule`
@@ -197,15 +255,10 @@ class GraphWrapper:
             input_port_name = self.unique_name_of_port(input_port) if ensure_name_uniqueness else self.name_of_port(input_port)
             rules = []
             for output_port in self.upstream_of_input_port(input_port):
-                rule = self.get_data_rule_of_port(output_port)
+                rule = self.get_data_rule(output_port)
                 if rule:
                     rules.append(rule)
-                    logger.debug("Component %s :: input port %s receives rule (from port), with %s", component, input_port_name, rule.summary())
-            for data in self.upstream_data(input_port):
-                rule = self.get_data_rule_of_data(data)
-                if rule:
-                    rules.append(rule)
-                    logger.debug("Component %s :: input port %s receives rule (from data), with %s", component, input_port_name, rule.summary())
+                    logger.debug("Component %s :: input port %s receives rule, with %s", component, input_port_name, rule.summary())
             if rules:
                 merged_rule = DataRuleContainer.merge(rules[0], *rules[1:])
                 input_rules[input_port_name] = merged_rule
@@ -249,10 +302,12 @@ class GraphWrapper:
                 if port_name in ported_rules:
                     rule = ported_rules[port_name]
                     if rule:
-                        # rh.insert_rule(self.rdf_graph, out_port, rule)
-                        data = self.downstream_data(out_port)
-                        if data:
-                            self.set_data_rules({data: rule})
+                        if self._data_streaming:
+                            self.set_data_rules({out_port: rule})
+                        else:
+                            data = self.downstream_data(out_port)
+                            if data:
+                                self.set_data_rules({data: rule})
                 else:
                     logger.warning("Augmentation for {} does not contain OutPort {}".format(component, port_name))
 
