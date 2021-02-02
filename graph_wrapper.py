@@ -96,18 +96,38 @@ class GraphWrapper:
     def data(self) -> List[URIRef]:
         return list(rh.data(self.rdf_graph))
 
-    def data_without_derive(self) -> List[URIRef]:
+    def data_without_derive(self, bundled=False) -> List[URIRef]:
+        '''
+        @param bundled: If set to True, when multiple data belong to the same "bundle" (from the same source to the same target), then only one of them is kept in the result.
+        '''
         lst = []
         for d in self.data():
             if self.data_from(d) is None:
                 lst.append(d)
+        if bundled:
+            mapped = {}
+            for d in lst:
+                targets = set(self.data_to(d))
+                if targets in mapped:
+                    continue
+                mapped[targets] = d
+            lst = list(mapped.values())
         return lst
 
-    def data_without_consume(self) -> List[URIRef]:
+    def data_without_consume(self, bundled=False) -> List[URIRef]:
         lst = []
         for d in self.data():
             if len(self.data_to(d)) == 0:
                 lst.append(d)
+        if bundled:
+            mapped = {}
+            for d in lst:
+                source = self.data_from(d)
+                assert source
+                if source in mapped:
+                    continue
+                mapped[source] = d
+            lst = list(mapped.values())
         return lst
 
     def input_ports(self, component: URIRef) -> List[URIRef]:
@@ -135,6 +155,7 @@ class GraphWrapper:
     def downstream_of_output_port(self, output_port: URIRef) -> List[URIRef]:
         '''
         Similar to `upstream_of_input_port`, but gets the downstream of the `output_port`
+        For file-oriented workflows (e.g. CWLProv), the downstream list contains either 0 or 1 elements.
         '''
         if self._data_streaming:
             return self.downstream_port(output_port)
@@ -233,9 +254,15 @@ class GraphWrapper:
         return rh.imported_rule(self.rdf_graph, component)
 
     def get_data_rule_of_port(self, port: URIRef) -> Optional[DataRuleContainer]:
+        '''
+        May be redundant with other get_data_rule_.
+        '''
         return rh.rule(self.rdf_graph, port)
 
     def get_data_rule_of_data(self, data: URIRef) -> Optional[DataRuleContainer]:
+        '''
+        May be redundant with other get_data_rule_.
+        '''
         return rh.rule(self.rdf_graph, data)
 
     def get_data_rule(self, node: URIRef) -> Optional[DataRuleContainer]:
@@ -246,6 +273,7 @@ class GraphWrapper:
 
     def get_data_rules(self, component: URIRef, ports: Optional[List[URIRef]]=None, ensure_name_uniqueness=True) -> Dict[URIRef, DataRuleContainer]:
         '''
+        Obtains the data rules for every input port of the component. This information is then used to do flow rule reasoning.
         @param ensure_name_uniqueness: See also `get_flow_rule`
         '''
         input_rules = {}
@@ -254,8 +282,8 @@ class GraphWrapper:
         for input_port in ports:
             input_port_name = self.unique_name_of_port(input_port) if ensure_name_uniqueness else self.name_of_port(input_port)
             rules = []
-            for output_port in self.upstream_of_input_port(input_port):
-                rule = self.get_data_rule(output_port)
+            for upstream in self.upstream_of_input_port(input_port):
+                rule = self.get_data_rule(upstream)
                 if rule:
                     rules.append(rule)
                     logger.debug("Component %s :: input port %s receives rule, with %s", component, input_port_name, rule.summary())

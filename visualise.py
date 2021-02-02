@@ -53,7 +53,7 @@ class _NameId:
 
 class GraphBuilder:
 
-    def __init__(self, graph, activated_obligations={}, print_data=False):
+    def __init__(self, graph, activated_obligations={}):
         self._graph = graph
         self._acob = activated_obligations
 
@@ -63,7 +63,6 @@ class GraphBuilder:
         self._nm = {}  # map from keys to nodes (objects) in graph
 
         self._components()
-        self._print_data = print_data
 
     def _components(self):
         for component in self._graph.components():
@@ -98,8 +97,8 @@ class GraphBuilder:
     def data_flow(self):
         if self._graph.is_data_streaming():
             data_list = []
-            data_list.extend(self._graph.data_without_derive())  # The initial data
-            data_list.extend(self._graph.data_without_consume())  # The final output data
+            data_list.extend(self._graph.data_without_derive(bundled=True))  # The initial data
+            data_list.extend(self._graph.data_without_consume(bundled=True))  # The final output data
         else:
             data_list = self._graph.data()
         for data in data_list:
