@@ -16,6 +16,7 @@ logger = logging.getLogger(__name__)
 
 from . import rdf_helper as rh
 from . import rule as rs
+from . import rule_database_helper as rdbh
 from . import sparql_helper as sh
 
 from .exception import ForceFailedException, IllegalCaseError, IllegalStateError
@@ -263,13 +264,20 @@ class GraphWrapper:
         '''
         May be redundant with other get_data_rule_.
         '''
-        return rh.rule(self.rdf_graph, data)
+        rule = rh.rule(self.rdf_graph, data)
+        if rule:
+            return rule
+        graph_id = URIRef(self.subgraph) if self.subgraph else None
+        return rdbh.get_rule_from_link(graph_id, data)
 
     def get_data_rule(self, node: URIRef) -> Optional[DataRuleContainer]:
         '''
         @param node: It may be a data item or a port. Currently no exceptions is raised if otherwise.
         '''
-        return rh.rule(self.rdf_graph, node)
+        if rh.is_data(self.rdf_graph, node):
+            return self.get_data_rule_of_data(node)
+        else:
+            return self.get_data_rule_of_port(node)
 
     def get_data_rules(self, component: URIRef, ports: Optional[List[URIRef]]=None, ensure_name_uniqueness=True) -> Dict[URIRef, DataRuleContainer]:
         '''

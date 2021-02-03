@@ -65,3 +65,6 @@ INJECTED_IMPORTED_RULE = {
 INJECTED_DATA_RULE = {
         }
 
+
+LINK = []
+

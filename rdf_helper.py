@@ -97,6 +97,10 @@ def put_component_info(graph: Graph, component: URIRef, info: Dict[str, str]) ->
     graph.add((component, NS['mine']['info'], Literal(info_repr)))
 
 
+def is_data(graph: Graph, node: URIRef) -> bool:
+    return (node, NS['rdf']['type'], NS['s-prov']['Data']) in graph
+
+
 def data(graph: Graph) -> Iterable[URIRef]:
     # return graph.objects(predicate=NS['mine']['data'])
     return graph.subjects(NS['rdf']['type'], NS['s-prov']['Data'])

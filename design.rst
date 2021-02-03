@@ -72,6 +72,34 @@ Not every element need to present in the database. Anything unexpected may be re
 
 When adding new data rules into the database as a result of the reasoning, it will be added to :code:`{"data_rule": {"": {"uri": {"DATA-ITEM-ID": "DATA-RULE"}}}}` .
 
+Link
+-----
+
+The rule database may optionally specify an extra information for linking between data items. This is useful when data are from different execution traces and the relation can't be easily detected by the system -- but humans (the operators) know that. The below is how to specify it from the root level:
+
+.. code:: json
+
+    {
+    	"link": {
+    		"": {
+    			"SOME-URI": {
+    				"": "SOME-URI",
+    				"GRAPH-ID": "SOME-URI"
+    			}
+    		},
+    		"GRAPH-ID": {
+    			"SOME-URI": {
+    				"": "SOME-URI",
+    				"GRAPH-ID": "SOME-URI"
+    			}
+    		}
+    	}
+    }
+
+Note every data can only have one link, so in the 4th level (:code:`""` and :code:`"GRAPH-ID"`), only one of them can be specified. If both are specified, the bahviour is not guaranteed.
+
+Remember to put the first one (the output) first (as the key) -- this should make future extension easier.
+
 
 Data rule association
 =======================
