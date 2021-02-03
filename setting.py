@@ -44,20 +44,22 @@ INJECTED_FLOW_RULE = {
 # If the value is equivalent to False, then a random rule is applied.
 # If the value is a function, the return value is used as the raw rules, even if it's empty.
 INJECTED_IMPORTED_RULE = {
-        # k:v <==> component_name/function: rule_str
-        'Source' : None,
-        'downloadPE' : None,
-        'Collector' : None,
-        'COLLECTOR1' : None,
-        'COLLECTOR2' : None,
-        'NumberProducer' : None,
-        # 'arcp://uuid,19bb7653-72fd-4a80-8e4b-44d409346434/workflow/packed.cwl#main/create_environment' : rr.Acknowledgement_UoE,
-        # 'arcp://uuid,19bb7653-72fd-4a80-8e4b-44d409346434/workflow/packed.cwl#main/create_environment_2' : rr.Acknowledgement_UoE,
-        # 'arcp://uuid,19bb7653-72fd-4a80-8e4b-44d409346434/workflow/packed.cwl#main/create_environment_3' : rr.Acknowledgement_UoE,
+        None: {
+                # k:v <==> component_name/function: rule_str
+                'Source' : None,
+                'downloadPE' : None,
+                'Collector' : None,
+                'COLLECTOR1' : None,
+                'COLLECTOR2' : None,
+                'NumberProducer' : None,
+                # 'arcp://uuid,19bb7653-72fd-4a80-8e4b-44d409346434/workflow/packed.cwl#main/create_environment' : rr.Acknowledgement_UoE,
+                # 'arcp://uuid,19bb7653-72fd-4a80-8e4b-44d409346434/workflow/packed.cwl#main/create_environment_2' : rr.Acknowledgement_UoE,
+                # 'arcp://uuid,19bb7653-72fd-4a80-8e4b-44d409346434/workflow/packed.cwl#main/create_environment_3' : rr.Acknowledgement_UoE,
+                }
         }
 
 # The extra data rules to be injected into the reasoner. It takes precedence of the added rules from the database.
 # Warning: Only specify the rules of the initial input data or the final output data. If the data object is inside the workflow, the behaviour is not defined.
-# INJECTED_DATA_RULE = {
-#         }
+INJECTED_DATA_RULE = {
+        }
 

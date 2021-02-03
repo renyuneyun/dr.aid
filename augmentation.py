@@ -8,8 +8,8 @@
 #
 
 '''
-This module contains functions and definitions that are useful for augmenting the original graph.
-It used exist because the graph is exposed as an RDF Graph and all interactions are done directly on it. But since the introduction of `graph_wrapper.GraphWrapper`, there may no longer be a need to have some of the contents here.
+This module corresponds to the recogniser. This module contains functions and definitions that are useful for augmenting the original graph.
+It used to exist because the graph is exposed as an RDF Graph and all interactions are done directly on it. But since the introduction of `graph_wrapper.GraphWrapper`, there may no longer be a need to have some of the contents here.
 '''
 
 from dataclasses import dataclass
@@ -36,35 +36,10 @@ class ComponentAugmentation:
     rules: PortedRules
 
 
-@dataclass
-class ImportedRule:
-    id: URIRef
-    rule: DataRuleContainer
-
-
-def obtain_imported_rules(component_info_list: List[ComponentInfo]) -> Dict[URIRef, DataRuleContainer]:
-    '''
-    Recogniser
-    '''
-    rules = {}
-    logger.debug('component_info_list: %s', component_info_list)
-    for component_info in component_info_list:
-        if component_info.function in setting.INJECTED_IMPORTED_RULE:
-            defined_imported_rules = setting.INJECTED_IMPORTED_RULE[component_info.function]
-            if isinstance(defined_imported_rules, str):
-                irules = defined_imported_rules
-            elif callable(defined_imported_rules):
-                irules = defined_imported_rules(component_info)
-                assert isinstance(irules, str)
-            elif not defined_imported_rules:
-                irules = rule.RandomRule(True)
-            else:
-                raise IllegalCaseError()
-            rules_obj = parser.parse_data_rule(irules)
-            assert rules_obj
-            logger.info("component: {} rules: {}ported_rules".format(component_info, rules_obj))
-            rules[component_info.id] = rules_obj
-    return rules
+# @dataclass
+# class ImportedRule:
+#     id: URIRef
+#     rule: DataRuleContainer
 
 
 def apply_imported_rules(graph: GraphWrapper) -> None:
@@ -72,8 +47,52 @@ def apply_imported_rules(graph: GraphWrapper) -> None:
 
     Modifies the graph in-place
     '''
+    def translate_rule_injection(component_info, defined_injected_rule):
+        if isinstance(defined_injected_rule, str):
+            irules = defined_injected_rule
+        elif callable(defined_injected_rule):
+            irules = defined_injected_rule(component_info)
+            assert isinstance(irules, str)
+        elif not defined_injected_rule:
+            irules = rule.RandomRule(True)
+        else:
+            raise IllegalCaseError('Injected rule should be any of str, function, or None')
+        rules_obj = parser.parse_data_rule(irules)
+        return rules_obj
+
+    def obtain_rules(component_info_list: List[ComponentInfo], injected_imported_rule_graph) -> Dict[URIRef, DataRuleContainer]:
+        rules = {}
+        for component_info in component_info_list:
+            component_id = component_info.id
+            function = component_info.function
+            if component_id in injected_imported_rule_graph:
+                defined_imported_rules = injected_imported_rule_graph[component_id]
+            elif function in injected_imported_rule_graph:
+                defined_imported_rules = injected_imported_rule_graph[function]
+            else:
+                continue
+            rules_obj = translate_rule_injection(component_info, defined_imported_rules)
+            assert rules_obj
+            logger.info("component: {} rules: {}ported_rules".format(component_info, rules_obj))
+            rules[component_id] = rules_obj
+        return rules
+
     component_info_list = graph.component_info()
-    imported_rules = obtain_imported_rules(component_info_list)
+    logger.debug('component_info_list: %s', component_info_list)
+    imported_rules = {}
+    try:
+        imported_rules.update(obtain_rules(component_info_list, setting.INJECTED_IMPORTED_RULE[None]))
+    except KeyError:
+        pass
+    try:
+        graph_id = URIRef(graph.graph_id)
+    except AttributeError:
+        pass
+    else:
+        try:
+            imported_rules.update(obtain_rules(component_info_list, setting.INJECTED_IMPORTED_RULE[graph_id]))
+        except KeyError:
+            pass
     graph.set_imported_rules(imported_rules)
 
 
@@ -82,25 +101,38 @@ def apply_flow_rules(graph: GraphWrapper) -> None:
 
     Modifies the graph in-place
     '''
-    g_flow_rules = setting.INJECTED_FLOW_RULE[None]
+    def obtain_rule(component_info_list, injected_rule_graph):
+        rules = {}
+        logger.debug("injected_flow_rule (graph or maybe not): %s", injected_rule_graph)
+        for component_info in component_info_list:
+            component = component_info.id
+            function = component_info.function
+            if function in injected_rule_graph:
+                fr = injected_rule_graph[function]
+                rules[component] = fr
+            if component in injected_rule_graph:
+                fr = injected_rule_graph[component]
+                rules[component] = fr
+        return rules
+
+
     pairs = {}
-    for component_info in graph.component_info():
-        component = component_info.id
-        function = component_info.function
-        if function in g_flow_rules:
-            fr = g_flow_rules[function]
-            pairs[component] = fr
+    component_info_list = graph.component_info()
 
     try:
-        graph_id = URIRef(graph.graph_id)  # type: ignore
-        if graph_id in setting.INJECTED_FLOW_RULE:
-            flow_rules = setting.INJECTED_FLOW_RULE[graph_id]
-            for component in graph.components():
-                if component in flow_rules:
-                    fr = flow_rules[component]
-                    pairs[component] = fr
+        pairs.update(obtain_rule(component_info_list, setting.INJECTED_FLOW_RULE[None]))
+    except KeyError:
+        pass
+
+    try:
+        graph_id = URIRef(graph.graph_id)
     except AttributeError:
         pass
+    else:
+        try:
+            pairs.update(obtain_rule(component_info_list, setting.INJECTED_FLOW_RULE[graph_id]))
+        except KeyError:
+            pass
 
     graph.set_flow_rules(pairs)
 

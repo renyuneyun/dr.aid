@@ -29,6 +29,7 @@ import exp.reason as reason
 import exp.setting as setting
 import exp.sparql_helper as sh
 import exp.graph_wrapper as gw
+import exp.rule_database_helper as rdbh
 
 
 def main():
@@ -74,27 +75,7 @@ def main():
     setting.AIO = args.aio
     setting.RULE_DB = args.rule_db
 
-    # Read the rule database. Not actually used yet, but it should work.
-    try:
-        with open(setting.RULE_DB, 'r') as f:
-            extra_rules = json.load(f)
-            # try:
-            #     extra_data_rules = extra_rules['data_rules']
-            #     setting.INJECTED_DATA_RULE = setting.INJECTED_DATA_RULE | extra_data_rules
-            # except KeyError:
-            #     pass
-            try:
-                extra_imported_rules = extra_rules['imported_rules']
-                setting.INJECTED_IMPORTED_RULE = setting.INJECTED_IMPORTED_RULE | extra_imported_rules
-            except KeyError:
-                pass
-            try:
-                extra_flow_rules = extra_rules['flow_rules']
-                setting.INJECTED_FLOW_RULE[None] = setting.INJECTED_FLOW_RULE[None] | extra_flow_rules
-            except KeyError:
-                pass
-    except FileNotFoundError:
-        pass
+    rdbh.init_default()
 
     logger.log(99, "Start")
 

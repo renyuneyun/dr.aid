@@ -1,11 +1,19 @@
 {
     "imported_rules": {
-        "arcp://uuid,19bb7653-72fd-4a80-8e4b-44d409346434/workflow/packed.cwl#main/create_environment": "rule begin\nobligation acknowledge source OnImport.\nattribute source [UoE].\nend",
-        "arcp://uuid,19bb7653-72fd-4a80-8e4b-44d409346434/workflow/packed.cwl#main/create_environment_2": "rule begin\nobligation acknowledge source OnImport.\nattribute source [UoE].\nend",
-        "arcp://uuid,19bb7653-72fd-4a80-8e4b-44d409346434/workflow/packed.cwl#main/create_environment_3": "rule begin\nobligation acknowledge source OnImport.\nattribute source [UoE].\nend"
+        "": {
+            "function": {
+                "arcp://uuid,19bb7653-72fd-4a80-8e4b-44d409346434/workflow/packed.cwl#main/create_environment": "rule begin\nobligation acknowledge source OnImport.\nattribute source [UoE].\nend",
+                "arcp://uuid,19bb7653-72fd-4a80-8e4b-44d409346434/workflow/packed.cwl#main/create_environment_2": "rule begin\nobligation acknowledge source OnImport.\nattribute source [UoE].\nend",
+                "arcp://uuid,19bb7653-72fd-4a80-8e4b-44d409346434/workflow/packed.cwl#main/create_environment_3": "rule begin\nobligation acknowledge source OnImport.\nattribute source [UoE].\nend"
+            }
+        }
     },
     "flow_rules": {
-        "arcp://uuid,19bb7653-72fd-4a80-8e4b-44d409346434/workflow/packed.cwl#main/processfiles_2": "[\nPropagate('arcp://uuid,19bb7653-72fd-4a80-8e4b-44d409346434/workflow/packed.cwl#main/processfiles_2/cyclone_workflow', ['arcp://uuid,19bb7653-72fd-4a80-8e4b-44d409346434/workflow/packed.cwl#main/processfiles_2/output']),\nDelete(match_value='UoE'),\n]",
-        "arcp://uuid,19bb7653-72fd-4a80-8e4b-44d409346434/workflow/packed.cwl#main/processfiles_3": "[\nPropagate('arcp://uuid,19bb7653-72fd-4a80-8e4b-44d409346434/workflow/packed.cwl#main/processfiles_3/cyclone_workflow', ['arcp://uuid,19bb7653-72fd-4a80-8e4b-44d409346434/workflow/packed.cwl#main/processfiles_3/output']),\nEdit('str', 'UK', match_value='UoE'),\n]"
+        "": {
+            "function": {
+                "arcp://uuid,19bb7653-72fd-4a80-8e4b-44d409346434/workflow/packed.cwl#main/processfiles_2": "[\nPropagate('arcp://uuid,19bb7653-72fd-4a80-8e4b-44d409346434/workflow/packed.cwl#main/processfiles_2/cyclone_workflow', ['arcp://uuid,19bb7653-72fd-4a80-8e4b-44d409346434/workflow/packed.cwl#main/processfiles_2/output']),\nDelete(match_value='UoE'),\n]",
+                "arcp://uuid,19bb7653-72fd-4a80-8e4b-44d409346434/workflow/packed.cwl#main/processfiles_3": "[\nPropagate('arcp://uuid,19bb7653-72fd-4a80-8e4b-44d409346434/workflow/packed.cwl#main/processfiles_3/cyclone_workflow', ['arcp://uuid,19bb7653-72fd-4a80-8e4b-44d409346434/workflow/packed.cwl#main/processfiles_3/output']),\nEdit('str', 'UK', match_value='UoE'),\n]"
+            }
+        }
     }
 }
