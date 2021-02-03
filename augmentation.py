@@ -36,12 +36,6 @@ class ComponentAugmentation:
     rules: PortedRules
 
 
-# @dataclass
-# class ImportedRule:
-#     id: URIRef
-#     rule: DataRuleContainer
-
-
 def apply_imported_rules(graph: GraphWrapper) -> None:
     '''
 
@@ -135,6 +129,47 @@ def apply_flow_rules(graph: GraphWrapper) -> None:
             pass
 
     graph.set_flow_rules(pairs)
+
+
+def apply_data_rules(graph: GraphWrapper) -> None:
+    def translate_rule_injection(injected_rule):
+        if isinstance(injected_rule, str):
+            irules = injected_rule
+        elif not injected_rule:
+            irules = rule.RandomRule(True)
+        else:
+            raise IllegalCaseError('Injected rule should be any of str, function, or None')
+        rules_obj = parser.parse_data_rule(irules)
+        return rules_obj
+    def obtain_rules(data_list, injected_rule_graph):
+        rules = {}
+        for data_id in data_list:
+            if data_id in injected_rule_graph:
+                injected_data_rules = injected_rule_graph[data_id]
+            else:
+                continue
+            rules_obj = translate_rule_injection(injected_data_rules)
+            assert rules_obj
+            logger.info("data: {} rules: {}ported_rules".format(data_id, rules_obj))
+            rules[data_id] = rules_obj
+        return rules
+
+    data_list = graph.data()
+    data_rules = {}
+    try:
+        data_rules.update(obtain_rules(data_list, setting.INJECTED_DATA_RULE[None]))
+    except KeyError:
+        pass
+    try:
+        graph_id = URIRef(graph.graph_id)
+    except AttributeError:
+        pass
+    else:
+        try:
+            data_rules.update(obtain_rules(data_list, setting.INJECTED_DATA_RULE[graph_id]))
+        except KeyError:
+            pass
+    graph.set_data_rules(data_rules)
 
 
 def apply_augmentation(graph: GraphWrapper, augmentations: List[ComponentAugmentation]) -> None:

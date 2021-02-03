@@ -92,6 +92,7 @@ def propagate_common(graph_wrapper):
 
     ag.apply_flow_rules(graph_wrapper)
     ag.apply_imported_rules(graph_wrapper)
+    ag.apply_data_rules(graph_wrapper)
 
     logger.log(99, "Finished Initialization")
 
