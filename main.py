@@ -45,6 +45,9 @@ def main():
     parser.add_argument('--rule-db',
             default=setting.RULE_DB,
             help='The database where the data rules and flow rules are stored. It should be a JSON file.')
+    parser.add_argument('-w', '--write',
+            action='store', nargs='?', default=None, const=True,
+            help='Write the reasoning results into database. Optionally specifies the location it writes to. The default location is the original rule database.')  # See https://stackoverflow.com/questions/21997933/how-to-make-an-optional-value-for-argument-using-argparse
     parser.add_argument("-v", "--verbosity", action="count", default=0,
             help='Increase the verbosity of messages. Overrides "logging.yml"')
     args = parser.parse_args()
@@ -74,6 +77,7 @@ def main():
     setting.SCHEME = args.scheme
     setting.AIO = args.aio
     setting.RULE_DB = args.rule_db
+    setting.DB_WRITE_TO = args.write
 
     rdbh.init_default()
 
@@ -110,6 +114,9 @@ def propagate_common(graph_wrapper):
             logger.debug('augmentations: %s', augmentations)
             obligations.update(obs)
             ag.apply_augmentation(graph_wrapper, augmentations)
+
+    if setting.DB_WRITE_TO:
+        rdbh.update_db_default(graph_wrapper)
 
     return graph_wrapper, obligations
 

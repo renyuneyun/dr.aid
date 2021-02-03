@@ -18,6 +18,7 @@ from rdflib import URIRef
 from . import setting
 
 from .exception import ParseError
+from .graph_wrapper import GraphWrapper
 
 
 def init_default():
@@ -88,4 +89,32 @@ def _parse_imported_rule_graph(section_graph):
     return rules
 
 _parse_flow_rule_graph = _parse_imported_rule_graph  # It works fine because imported rules and flow rules share the same schema, and we are not parsing the rules themselves.
+
+
+def update_db_default(graph: GraphWrapper) -> None:
+    '''
+    Update the database with the new data rules obtained from the reasoner. Note this should be called after performing the reasoning.
+    TODO: Handle data-streaming too.
+    '''
+    if setting.DB_WRITE_TO is None:
+        return
+
+    data_rules = {}
+    for data in graph.data():
+        data_rule = graph.get_data_rule(data)
+        if data_rule:
+            data_rules[str(data)] = data_rule.dump()
+
+    try:
+        filename = setting.RULE_DB if setting.DB_WRITE_TO == True else setting.DB_WRITE_TO
+        db_rules = {}
+        if 'data_rules' not in db_rules:
+            db_rules['data_rules'] = {}
+        if '' not in db_rules['data_rules']:
+            db_rules['data_rules'][''] = {}
+        db_rules['data_rules'][''].update(data_rules)
+        with open(filename, 'w') as f:
+            f.write(json.dumps(db_rules, indent=4))
+    except FileNotFoundError:
+        pass
 

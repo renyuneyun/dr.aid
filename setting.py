@@ -8,6 +8,8 @@ AIO = False
 
 RULE_DB = 'rule-db.json'
 
+DB_WRITE_TO = None
+
 
 # Internal configurations. Normally they do not need to change, unless the you know what they are
 
