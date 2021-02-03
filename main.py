@@ -44,10 +44,10 @@ def main():
     parser.set_defaults(aio=False)
     parser.add_argument('--rule-db',
             default=setting.RULE_DB,
-            help='The database where the data rules and flow rules are stored. It should be a JSON file.')
+            help='The database where the data rules and flow rules are stored. Use comma to separate multiple values. Every database should be a JSON file. If the file does not exist, it will be ignored.')
     parser.add_argument('-w', '--write',
             action='store', nargs='?', default=None, const=True,
-            help='Write the reasoning results into database. Optionally specifies the location it writes to. The default location is the original rule database.')  # See https://stackoverflow.com/questions/21997933/how-to-make-an-optional-value-for-argument-using-argparse
+            help='Write the reasoning results into database. Optionally specifies the location it writes to. The default location is the last rule database.')  # See https://stackoverflow.com/questions/21997933/how-to-make-an-optional-value-for-argument-using-argparse
     parser.add_argument("-v", "--verbosity", action="count", default=0,
             help='Increase the verbosity of messages. Overrides "logging.yml"')
     args = parser.parse_args()
@@ -76,8 +76,9 @@ def main():
     service = args.url
     setting.SCHEME = args.scheme
     setting.AIO = args.aio
-    setting.RULE_DB = args.rule_db
+    setting.RULE_DB = args.rule_db.split(',')
     setting.DB_WRITE_TO = args.write
+
 
     rdbh.init_default()
 

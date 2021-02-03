@@ -6,7 +6,7 @@ SCHEME = 'CWLPROV'
 
 AIO = False
 
-RULE_DB = 'rule-db.json'
+RULE_DB = ['rule-db.json']
 
 DB_WRITE_TO = None
 
