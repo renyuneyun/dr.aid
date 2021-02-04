@@ -104,7 +104,7 @@ def propagate_common(graph_wrapper):
     if setting.AIO:
         augmentations, obs = reason.reason_in_total(graph_wrapper)
         obligations.update(obs)
-        ag.apply_augmentation(graph_wrapper, augmentations)
+        graph_wrapper.apply_augmentation(augmentations)
     else:
         batches = graph_wrapper.component_to_batches()
         length = sum(len(batch) for batch in batches)
@@ -114,7 +114,7 @@ def propagate_common(graph_wrapper):
             augmentations, obs = reason.propagate(graph_wrapper, batch)
             logger.debug('augmentations: %s', augmentations)
             obligations.update(obs)
-            ag.apply_augmentation(graph_wrapper, augmentations)
+            graph_wrapper.apply_augmentation(augmentations)
 
     if setting.DB_WRITE_TO:
         rdbh.update_db_default(graph_wrapper)

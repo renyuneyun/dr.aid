@@ -12,7 +12,6 @@ This module corresponds to the recogniser. This module contains functions and de
 It used to exist because the graph is exposed as an RDF Graph and all interactions are done directly on it. But since the introduction of `graph_wrapper.GraphWrapper`, there may no longer be a need to have some of the contents here.
 '''
 
-from dataclasses import dataclass
 import logging
 from typing import Dict, List
 
@@ -20,7 +19,7 @@ from rdflib import Graph, URIRef, Literal
 
 from . import parser
 from . import rule
-from .rule import DataRuleContainer, PortedRules, FlowRule
+from .rule import DataRuleContainer
 from .sparql_helper import ComponentInfo
 from . import setting
 from .exception import IllegalCaseError
@@ -28,12 +27,6 @@ from .graph_wrapper import GraphWrapper
 
 
 logger = logging.getLogger(__name__)
-
-
-@dataclass
-class ComponentAugmentation:
-    id: URIRef
-    rules: PortedRules
 
 
 def apply_imported_rules(graph: GraphWrapper) -> None:
@@ -79,14 +72,10 @@ def apply_imported_rules(graph: GraphWrapper) -> None:
     except KeyError:
         pass
     try:
-        graph_id = URIRef(graph.graph_id)
-    except AttributeError:
+        graph_id = graph.subgraph
+        imported_rules.update(obtain_rules(component_info_list, setting.INJECTED_IMPORTED_RULE[graph_id]))
+    except KeyError:
         pass
-    else:
-        try:
-            imported_rules.update(obtain_rules(component_info_list, setting.INJECTED_IMPORTED_RULE[graph_id]))
-        except KeyError:
-            pass
     graph.set_imported_rules(imported_rules)
 
 
@@ -119,14 +108,10 @@ def apply_flow_rules(graph: GraphWrapper) -> None:
         pass
 
     try:
-        graph_id = URIRef(graph.graph_id)
-    except AttributeError:
+        graph_id = graph.subgraph
+        pairs.update(obtain_rule(component_info_list, setting.INJECTED_FLOW_RULE[graph_id]))
+    except KeyError:
         pass
-    else:
-        try:
-            pairs.update(obtain_rule(component_info_list, setting.INJECTED_FLOW_RULE[graph_id]))
-        except KeyError:
-            pass
 
     graph.set_flow_rules(pairs)
 
@@ -161,25 +146,9 @@ def apply_data_rules(graph: GraphWrapper) -> None:
     except KeyError:
         pass
     try:
-        graph_id = URIRef(graph.graph_id)
-    except AttributeError:
+        graph_id = graph.subgraph
+        data_rules.update(obtain_rules(data_list, setting.INJECTED_DATA_RULE[graph_id]))
+    except KeyError:
         pass
-    else:
-        try:
-            data_rules.update(obtain_rules(data_list, setting.INJECTED_DATA_RULE[graph_id]))
-        except KeyError:
-            pass
     graph.set_data_rules(data_rules)
 
-
-def apply_augmentation(graph: GraphWrapper, augmentations: List[ComponentAugmentation]) -> None:
-    '''
-
-    Modifies the graph in-place
-    '''
-    logger.debug(f"Augmentation has {len(augmentations)} components")
-    augmentation_dict = {}
-    for aug in augmentations:
-        component = aug.id
-        augmentation_dict[component] = aug.rules
-    graph.apply_augmentation(augmentation_dict)

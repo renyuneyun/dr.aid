@@ -13,13 +13,13 @@ This module contains the helper functions for reading and writing to the additio
 
 import json
 
-from dataclasses import dataclass
 from rdflib import URIRef
-from typing import Optional
 
 from . import setting
 
 from .exception import ParseError
+from .graph_wrapper import GraphWrapper
+from .injection import Link
 
 
 def init_default():
@@ -99,60 +99,23 @@ def _parse_imported_rule_graph(section_graph):
 _parse_flow_rule_graph = _parse_imported_rule_graph  # It works fine because imported rules and flow rules share the same schema, and we are not parsing the rules themselves.
 
 
-@dataclass
-class Link:
-    from_graph: Optional[URIRef]
-    from_uri: URIRef
-    to_graph: Optional[URIRef]
-    to_uri: URIRef
-
-    def new(from_graph, from_uri, to_graph, to_uri):
+def _parse_link(section):
+    def new_link(from_graph, from_uri, to_graph, to_uri):
         from_graph = URIRef(from_graph) if from_graph else None
         from_uri = URIRef(from_uri)
         to_graph = URIRef(to_graph) if to_graph else None
         to_uri = URIRef(to_uri)
         return Link(from_graph, from_uri, to_graph, to_uri)
-
-
-def _parse_link(section):
     links = []
     for from_graph, sec1 in section.items():
         for from_uri, to_section in sec1.items():
             assert len(to_section) == 1
             for to_graph, to_uri in to_section.items():
-                links.append(Link.new(from_graph, from_uri, to_graph, to_uri))
+                links.append(new_link(from_graph, from_uri, to_graph, to_uri))
     return links
 
 
-def find_upstream_in_link(to_graph, to_uri):
-    best_match = None
-    for link in setting.LINK:
-        if link.to_uri == to_uri:
-            if link.to_graph:
-                if link.to_graph == to_graph:
-                    best_match = link
-                else:
-                    continue
-            else:
-                if not best_match:
-                    best_match = link
-    return best_match
-
-def get_rule_from_link(to_graph, to_uri):
-    link = find_upstream_in_link(to_graph, to_uri)
-    if link:
-        try:
-            if link.from_graph in setting.INJECTED_DATA_RULE:
-                return setting.INJECTED_DATA_RULE[link.from_graph][link.from_uri]
-        except KeyError:
-            try:
-                return setting.INJECTED_DATA_RULE[None][link.from_uri]
-            except KeyError:
-                pass
-    return None
-
-
-def update_db_default(graph: 'GraphWrapper') -> None:
+def update_db_default(graph: GraphWrapper) -> None:
     '''
     Update the database with the new data rules obtained from the reasoner. Note this should be called after performing the reasoning.
     TODO: Handle data-streaming too.

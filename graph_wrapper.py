@@ -5,6 +5,7 @@ Details about prolog_handle and sparql_handle should be hid by this class.
 
 import functools
 
+from dataclasses import dataclass
 from networkx import MultiDiGraph
 from pprint import pformat
 from rdflib import Literal, URIRef
@@ -16,13 +17,19 @@ logger = logging.getLogger(__name__)
 
 from . import rdf_helper as rh
 from . import rule as rs
-from . import rule_database_helper as rdbh
+from . import injection
 from . import sparql_helper as sh
 
 from .exception import ForceFailedException, IllegalCaseError, IllegalStateError
 from .rule import DataRuleContainer, FlowRule, PortedRules
 from .setting import IMPORT_PORT_NAME
 from .sparql_helper import ComponentInfo
+
+
+@dataclass
+class ComponentAugmentation:
+    id: URIRef
+    rules: PortedRules
 
 
 K_FUNCTION = 'function'
@@ -268,7 +275,7 @@ class GraphWrapper:
         if rule:
             return rule
         graph_id = URIRef(self.subgraph) if self.subgraph else None
-        return rdbh.get_rule_from_link(graph_id, data)
+        return injection.get_rule_from_link(graph_id, data)
 
     def get_data_rule(self, node: URIRef) -> Optional[DataRuleContainer]:
         '''
@@ -327,7 +334,15 @@ class GraphWrapper:
         return flow_rule
 
 
-    def apply_augmentation(self, augmentations: Dict[URIRef, PortedRules]):
+    def apply_augmentation(self, augmentations: List[ComponentAugmentation]) -> None:
+        logger.debug(f"Augmentation has {len(augmentations)} components")
+        augmentation_dict = {}
+        for aug in augmentations:
+            component = aug.id
+            augmentation_dict[component] = aug.rules
+        self._apply_augmentation(augmentation_dict)
+
+    def _apply_augmentation(self, augmentations: Dict[URIRef, PortedRules]) -> None:
         '''
         @param ensure_name_uniqueness: See `get_flow_rule`
         '''
