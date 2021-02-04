@@ -18,10 +18,6 @@ loggers:
         level: INFO
         handlers: [console]
         propagate: yes
-
-    exp.augmentation:
-        level: WARNING
-        propagate: yes
         
     exp.graph_wrapper:
         level: DEBUG
@@ -33,6 +29,10 @@ loggers:
 
     exp.reason:
         level: DEBUG
+        propagate: yes
+
+    exp.recognizer:
+        level: WARNING
         propagate: yes
 
     exp.sparql_helper:

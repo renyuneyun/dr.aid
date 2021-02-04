@@ -24,7 +24,7 @@ import yaml
 from pprint import pformat
 import json
 
-import exp.augmentation as ag
+import exp.recognizer as rcg
 import exp.reason as reason
 import exp.setting as setting
 import exp.sparql_helper as sh
@@ -95,9 +95,9 @@ def main():
 def propagate_common(graph_wrapper):
     obligations = {}
 
-    ag.apply_flow_rules(graph_wrapper)
-    ag.apply_imported_rules(graph_wrapper)
-    ag.apply_data_rules(graph_wrapper)
+    rcg.apply_flow_rules(graph_wrapper)
+    rcg.apply_imported_rules(graph_wrapper)
+    rcg.apply_data_rules(graph_wrapper)
 
     logger.log(99, "Finished Initialization")
 
