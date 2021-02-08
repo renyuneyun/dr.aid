@@ -33,7 +33,7 @@ def _component_label(graph, ref):
     if not function:
         return clean_name
     else:
-        return f"{clean_name}\n[{function}]"
+        return f"{clean_name}\\n[{function}]"
 
 
 class _NameId:
@@ -140,13 +140,13 @@ class GraphBuilder:
                 rule = self._graph.get_data_rule_of_port(output_port)
                 if rule:  # If file-oriented, `rule` will be None
                     ruleNode = self._ni[component, oportName, rule]
-                    self.G.add_node(ruleNode, label=rule.dump(), shape='note')
+                    self.G.add_node(ruleNode, label=rule.dump().replace('\n', '\\n'), shape='note')
                     self.G.add_edge(oportNode, ruleNode, arrowhead='none')
 
             imported_rule = self._graph.get_imported_rules(component)
             if imported_rule:
                 ruleNode = self._ni[component, 'imported_rule_data']
-                self.G.add_node(ruleNode, label=imported_rule.dump(), shape='note')
+                self.G.add_node(ruleNode, label=imported_rule.dump().replace('\n', '\\n'), shape='note')
                 connectedNode = self._ni[component, 'imported_rule']
                 sg.add_node(connectedNode, label='imported', style='dashed', shape='egg')
                 self.G.add_edge(ruleNode, connectedNode, style='tapered', penwidth=7, arrowtail='none', dir='forward', arrowhead='none')
@@ -160,7 +160,7 @@ class GraphBuilder:
             if rule:
                 dataNode = self._ni[data]
                 ruleNode = self._ni[component, data, rule]
-                self.G.add_node(ruleNode, label=rule.dump(), shape='note')
+                self.G.add_node(ruleNode, label=rule.dump().replace('\n', '\\n'), shape='note')
                 self.G.add_edge(dataNode, ruleNode, arrowhead='none')
 
         return self
@@ -180,7 +180,7 @@ class GraphBuilder:
                 rule = self._graph.get_flow_rule(component, force=True)
                 sg = self._nm[component]
                 frNodeId = self._ni[component, 'flowRule']
-                sg.add_node(frNodeId, label=rule.dump(), shape='cds')
+                sg.add_node(frNodeId, label=rule.dump().replace('\n', '\\n'), shape='cds')
             except ForceFailedException:  # We set `force=True`, so raising this exception means the component does not have explicit flow rule associated
                 pass
         return self
