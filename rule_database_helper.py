@@ -12,6 +12,7 @@ This module contains the helper functions for reading and writing to the additio
 '''
 
 import json
+import logging
 
 from rdflib import URIRef
 
@@ -20,6 +21,9 @@ from . import setting
 from .exception import ParseError
 from .graph_wrapper import GraphWrapper
 from .injection import Link
+
+
+logger = logging.getLogger(__name__)
 
 
 def init_default():
@@ -32,17 +36,17 @@ def init_default():
                 extra_rules = json.load(f)
                 try:
                     extra_data_rules = _segmented_parse(extra_rules['data_rules'], _parse_data_rule_graph)
-                    setting.INJECTED_DATA_RULE = setting.INJECTED_DATA_RULE | extra_data_rules
+                    _merge_injection(setting.INJECTED_DATA_RULE, extra_data_rules)
                 except KeyError:
                     pass
                 try:
                     extra_imported_rules = _segmented_parse(extra_rules['imported_rules'], _parse_imported_rule_graph)
-                    setting.INJECTED_IMPORTED_RULE = setting.INJECTED_IMPORTED_RULE | extra_imported_rules
+                    _merge_injection(setting.INJECTED_IMPORTED_RULE, extra_imported_rules)
                 except KeyError:
                     pass
                 try:
                     extra_flow_rules = _segmented_parse(extra_rules['flow_rules'], _parse_flow_rule_graph)
-                    setting.INJECTED_FLOW_RULE = setting.INJECTED_FLOW_RULE | extra_flow_rules
+                    _merge_injection(setting.INJECTED_FLOW_RULE, extra_flow_rules)
                 except KeyError:
                     pass
 
@@ -53,6 +57,14 @@ def init_default():
                     pass
         except FileNotFoundError:
             pass
+
+def _merge_injection(merge_to, merge_from):
+    for k, v in merge_from.items():
+        if k in merge_to:
+            merge_to[k].update(v)
+        else:
+            merge_to[k] = v
+
 
 def _segmented_parse(section, f_parse_graph):
     rules = {}

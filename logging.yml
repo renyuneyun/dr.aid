@@ -32,7 +32,11 @@ loggers:
         propagate: yes
 
     exp.recognizer:
-        level: WARNING
+        level: DEBUG
+        propagate: yes
+
+    exp.rule_database_helper:
+        level: DEBUG
         propagate: yes
 
     exp.sparql_helper:
