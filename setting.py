@@ -62,9 +62,9 @@ INJECTED_IMPORTED_RULE = {
 
 # The extra data rules to be injected into the reasoner. It takes precedence of the added rules from the database.
 # Warning: Only specify the rules of the initial input data or the final output data. If the data object is inside the workflow, the behaviour is not defined.
-INJECTED_DATA_RULE = {
+INJECTED_DATA_RULE = {  # type: ignore
         }
 
 
-LINK = []
+LINK = []  # type: ignore
 

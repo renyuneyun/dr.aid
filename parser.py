@@ -13,6 +13,8 @@ The serialiser is defined in the classes.
 '''
 
 from dataclasses import dataclass
+import json
+from lark import Lark, Transformer
 import re
 from typing import Dict, List, Optional, Tuple, Union
 
@@ -20,242 +22,144 @@ from .rule import FlowRule, ObligationDeclaration, DataRuleContainer, AttributeC
 from .proto import ActivationCondition, is_ac, obtain
 
 
-@dataclass
-class VMapping:
-    this: str
-    next: str
-
-
 class MalformedRuleException(Exception):
     pass
 
 
-class NotFoundException(MalformedRuleException):
-    pass
+DATA_RULE_SYNTAX = r'''
+data_rule : "begin" data_rule_stmt* "end"
+data_rule_stmt : obligation_decl
+                   | attribute_decl
+obligation_decl : "obligation" "(" obligated_action "," validity_binding "," activation_condition ")" "."
+attribute_decl : "attribute" "(" attribute_name "," attribute_value_field ")" "."
+obligated_action : action_ref action_spec
+validity_binding : "[" attribute_reference ( "," attribute_reference )* "]" | "["  "]"
+activation_condition : activation_condition_ref
+attribute_name : identifier
+attribute_value_field : attribute_value_expr
+                          | "[" attribute_value_expr ("," attribute_value_expr)* "]"
+action_ref : external_identifier
+action_spec : attribute_reference*
+attribute_reference : attribute_name [ "[" INT "]" ]
+activation_condition_ref : external_identifier | "null"
+identifier : CNAME
+attribute_value_expr : attribute_type attribute_value
+external_identifier : identifier | STRING
+attribute_type : external_identifier
+attribute_value : value
+value : INT | NUMBER | STRING
+
+%import common.ESCAPED_STRING   -> STRING
+%import common.CNAME            -> CNAME
+%import common.INT              -> INT
+%import common.SIGNED_NUMBER    -> NUMBER
+%import common.WS
+%ignore WS
+'''
 
 
-class UnexpectedTerm(MalformedRuleException):
-
-    def __init__(self, found, reason):
-        super().__init__(f"<{found}> found but {reason}")
-
-
-class NotTerminated(MalformedRuleException):
-
-    def __init__(self, msg):
-        super().__init__(msg)
-
-
-class UnexpectedToken(MalformedRuleException):
-
-    def __init__(self, found=None, expected=None, msg=None):
-        if not msg:
-            if found and expected:
-                msg = f"<{found}> found but <{expected}> expected"
-            elif found:
-                msg = f"<{found}>"
-        super().__init__(msg)
-
-
-class TermFinishingNotEncountered(UnexpectedToken):
-
-    def __init__(self, found, remaining):
-        super().__init__(msg="<{}> expected but <{}> found (line: <{}>)".format('.', found, remaining))
-
-
-TOKEN_RE = re.compile(r'([^\s\(\)\[\]\.,]+|\(|\)|\[|\]|\.|,)')
-KEYWORD_RE = re.compile(r'[^\s\(\)\[\]\.,]+')
-
-
-def _next_token(s: str, must: bool = True) -> Tuple[str, str]:
-    ma = TOKEN_RE.search(s)
-    if ma:
-        token = ma.group(0)
-        s = s[ma.end():].lstrip()
-    else:
-        if must:
-            raise NotFoundException(
-                "Token expected but nothing found. String: <{}>".format(s))
+class TreeToDataRuleContent(Transformer):
+    def data_rule(self, stmts):
+        obs = []
+        attrs = []
+        for stmt in stmts:
+            if stmt[0] == 1:
+                obs.append(stmt[1])
+            elif stmt[0] == 2:
+                attrs.append(stmt[1])
+        return obs, attrs
+    def data_rule_stmt(self, stmt):
+        (stmt,) = stmt
+        return stmt
+    def obligation_decl(self, items):
+        return (1, items)
+    def attribute_decl(self, items):
+        return (2, items)
+    
+    def obligated_action(self, items):
+        action = items[0]
+        if len(items) > 1:
+            attrs = items[1]
         else:
-            token = ''
-    return token, s
+            attrs = []
+        return (action, attrs)
+    def validity_binding(self, items):
+        return list(items)
+    def activation_condition(self, items):
+        (item,) = items
+        return item
 
-
-def _read_until(s: str, end: str, must: bool = True) -> Tuple[str, str]:
-    assert len(end) == 1
-    if must:
-        i = 0
-        while s[i] != end:
-            i += 1
-            if i >= len(s):
-                raise NotFoundException()
-        return s[:i+1], s[i+1:].lstrip()
-    else:
-        raise NotImplementedError()
-
-
-def _next_paren(s: str, must: bool = True) -> Tuple[str, str]:
-    if must:
-        if s[0] != '(':
-            raise MalformedRuleException(
-                "parenthes expected but not found. string is: <{}>".format(s))
-        return _read_until(s[1:], ')', must)
-    else:
-        raise NotImplementedError()
-
-
-# def _next_square_bracket(s: str, must: bool = True) -> Tuple[str, str]:
-#    if must:
-#        if s[0] != '[':
-#            raise MalformedRuleException("square bracket expected but not found. string is: <{}>".format(s))
-#        return _read_until(s[1:], ']', must)
-#    else:
-#        raise NotImplementedError()
-
-
-def _next_keyword(s: str, must: bool = True) -> Tuple[str, str]:
-    token, s = _next_token(s, must)
-    if KEYWORD_RE.match(token):
-        return token, s
-    else:
-        if must:
-            raise UnexpectedToken(token, 'keyword')
+    def attribute_name(self, items):
+        return items[0]
+    def attribute_value_field(self, items):
+        return items
+    def attribute_value_expr(self, items):
+        return tuple(items)
+    def attribute_type(self, items):
+        return items[0]
+    def attribute_value(self, items):
+        return items[0]
+    
+    def action_ref(self, ref):
+        (ref,) = ref
+        return ref
+    def action_spec(self, items):
+        return list(items)
+    def attribute_reference(self, items):
+        attr_name = items[0]
+        if len(items) == 1:
+            attr_index = 0
         else:
-            return '', s
-
-
-def _parse_title_line(line: str) -> Tuple[str, VMapping, Optional[str]]:
-    line = line[5:].strip()
-    title, line = _next_keyword(line)
-    vthis = None
-    vnext = None
-    i = 0
-    while line and i < 3:
-        token, line = _next_token(line)
-        if token == 'begin':
-            break
-        line = token + line
-        element, line = _next_paren(line)
-        elements = element[1:-1].strip().split(' ')
-        if len(elements) != 2:
-            raise UnexpectedToken(element)
-        key, value = elements
-        if key == 'this':
-            assert not vthis
-            vthis = value.strip()
-        elif key == 'next':
-            assert not vnext
-            vnext = value.strip()
+            attr_index = items[1]
+        return (attr_name, attr_index)
+    def activation_condition_ref(self, ref):
+        if not ref:
+            return None
         else:
-            raise UnexpectedToken(key)
-        i += 1
-    vmapping = VMapping(vthis if vthis else 'this', vnext if vnext else 'next')
-    return title, vmapping, line
+            (ref,) = ref
+            return ref
+    
+    def identifier(self, s):
+        (s,) = s
+        return s
+    def external_identifier(self, s):
+        (s,) = s
+        return s
+    def value(self, value):
+        (value,) = value
+        return value
+    
+    def CNAME(self, s):
+        return s[:]
+    def STRING(self, s):
+        return json.loads(s)
+    def NUMBER(self, n):
+        return float(n)
+    def INT(self, n):
+        return int(n)
 
 
-def read_obligation(line0: str) -> Tuple[str, Optional[Tuple[str, int]], Optional[ActivationCondition], str]:
-    _, line = _next_keyword(line0)
-    name, line = _next_keyword(line)
-    token, line = _next_token(line)
-    attribute_name = None
-    attribute_order = 0
-    activation_condition = None
-    if token != '.':
-        attribute_name = token
-        token, line = _next_token(line)
-        if token != '.':
-            if token == '[':
-                token, line = _next_token(line)
-                attribute_order = int(token)
-                token, line = _next_token(line)
-                if token != ']':
-                    raise UnexpectedToken(token, ']')
-            elif is_ac(token):
-                activation_condition = obtain(token)
-            else:
-                raise UnexpectedToken(token, '[')
-            token, line = _next_token(line)
-    if is_ac(token):
-        activation_condition = obtain(token)
-        token, line = _next_token(line)
-
-    if token == '.':
-        if attribute_name:
-            return name, (attribute_name, attribute_order), activation_condition, line
-        else:
-            return name, None, activation_condition, line
-    raise TermFinishingNotEncountered(token, line0)
-
-
-def read_attribute(line0: str) -> Tuple[str, Union[str, List[str]], str]:
-    _, line = _next_keyword(line0)
-    name, line = _next_keyword(line)
-    token, line = _next_token(line)
-    if token == '[':
-        content, line = _read_until(line, ']')
-        data = content[:-1]
-        attribute = [r.strip() for r in data.split(',')]
-    else:
-        attribute = token  # type: ignore
-    token, line = _next_token(line)
-    if token == '.':
-        return name, attribute, line
-    raise TermFinishingNotEncountered(token, line0)
-
-
-def _construct_obligation(name: str, attribute: Optional[Tuple[str, int]], activation_condition: Optional[ActivationCondition]) -> ObligationDeclaration:
-    if attribute:
-        if activation_condition:
-            return ObligationDeclaration(name, attribute, activation_condition)
-        return ObligationDeclaration(name, attribute)
-    else:
-        if activation_condition:
-            return ObligationDeclaration(name, activation_condition=activation_condition)
-        return ObligationDeclaration(name)
+def call_parser_data_rule(rule: str, part: str = 'data_rule'):
+    data_rule_parser = Lark(DATA_RULE_SYNTAX, start=part)
+    tree = data_rule_parser.parse(rule)
+    return TreeToDataRuleContent().transform(tree)
 
 
 def parse_data_rule(data_rule: str) -> Optional[DataRuleContainer]:
-    if not data_rule:
-        return None
-    lines = list(map(str.strip, data_rule.splitlines(False)))
+    obs, attrs = call_parser_data_rule(data_rule, part='data_rule')
 
-    i = 0
-    while not lines[i] and i < len(lines):
-        i += 1
-    if i >= len(lines):
-        raise MalformedRuleException('no start of rule found')
-    starting = lines[i]
-    title, vmapping, remaining = _parse_title_line(starting)
-    assert not remaining
+    obligations = []
+    attribute_capsules = []
 
-    obligations: List[Tuple[str, Optional[Tuple[str, int]], Optional[ActivationCondition]]] = []
-    attribute_capsules: List[AttributeCapsule] = []
+    for attr in attrs:
+        name, attribute_data = attr
+        attribute_capsules.append(AttributeCapsule.from_raw(name, attribute_data))
 
-    line_remaining = ''
-    for line in lines[i+1:]:
-        if line_remaining:
-            line = line_remaining + ' ' + line
-        if not line:
-            continue
-        line = line.strip()
-        if line == 'end':
-            rules = []
-            for pack in obligations:
-                ob = _construct_obligation(*pack)
-                rules.append(ob)
-            return DataRuleContainer(rules, attribute_capsules)
-        if line:
-            token, line = _next_keyword(line)
-            if token == 'obligation':
-                name, attribute_ref, activation_condition, line = read_obligation('obligation ' + line)
-                obligations.append((name, attribute_ref, activation_condition))
-            elif token == 'attribute':
-                name, attribute_data, line = read_attribute('attribute ' + line)
-                attribute_capsules.append(AttributeCapsule(name, attribute_data))
-            line_remaining = line
+    for pack in obs:
+        ob = ObligationDeclaration.from_raw(*pack)
+        obligations.append(ob)
 
-    raise NotTerminated(
-        "data rule should end with 'end'. Rule: {}".format(lines))
+    return DataRuleContainer(obligations, attribute_capsules)
 
 
 Propagate = FlowRule.Propagate

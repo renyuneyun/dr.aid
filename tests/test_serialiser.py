@@ -19,37 +19,32 @@ from exp.proto import WhenImported
 
 
 @pytest.mark.parametrize('name, values', [
-    ("pr1", ("a", "b")),
+    ("pr1", (('str', "a"), ('str', "b"))),
     ])
 def test_attribute_serialise(name, values):
-    pr = AttributeCapsule(name, values)
+    pr = AttributeCapsule.from_raw(name, values)
     s = pr.dump()
-    try:
-        name, content, remaining = parser.read_attribute(s)
-    except Exception as e:
-        print(s)
-        raise e
-    assert not remaining.strip()
-    pr2 = AttributeCapsule(name, content)
-    assert pr == pr2
+    _, (name, value) = parser.call_parser_data_rule(s, 'attribute_decl')
+    attr_re = AttributeCapsule.from_raw(name, value)
+    assert pr == attr_re
 
 
-@pytest.mark.parametrize('name, attribute, activation_condition', [
-    ('ru1', ('a', 1), None),
-    ('ru1', ('a', 1), WhenImported()),
+@pytest.mark.parametrize('name, validity_binding, activation_condition', [
+    ('ru1', [('a', 1)], None),
+    ('"ru1"', [('a', 1)], None),
+    ('"ru1"', [('a', 1)], WhenImported()),
     ])
-def test_data_rule_serialise(name, attribute, activation_condition):
-    r = ObligationDeclaration(name, attribute, activation_condition)
+def test_data_rule_serialise(name, validity_binding, activation_condition):
+    r = ObligationDeclaration(name, validity_binding, activation_condition)
     s = r.dump()
-    name, attribute, activation_condition, remaining = parser.read_obligation(s)
-    assert not remaining.strip()
-    r2 = ObligationDeclaration(name, attribute, activation_condition)
+    _, (obligated_action, validity_binding, activation_condition_ref) = parser.call_parser_data_rule(s, 'obligation_decl')
+    r2 = ObligationDeclaration.from_raw(obligated_action, validity_binding, activation_condition_ref)
     assert r2 == r
 
 
 @pytest.mark.parametrize('obligations, amap', [
-    ([ObligationDeclaration('ob1', ('pr1', 0)), ObligationDeclaration('ob2', ('pr1', 1))],
-        [AttributeCapsule('pr1', ['1', '2'])]),
+    ([ObligationDeclaration('ob1', [('pr1', 0)]), ObligationDeclaration('ob2', [('pr1', 1)])],
+        [AttributeCapsule.from_raw('pr1', [('str', '1'), ('str', '2')])]),
     ])
 def test_whole_data_rule_serialise(obligations, amap):
     rule = DataRuleContainer(obligations, amap)

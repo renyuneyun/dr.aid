@@ -46,6 +46,7 @@ def _attr_id_for_prolog(attr_name, attr_ord):
     return f"{attr_name}{attr_ord}"
 
 _PL_NULL = 'null'  # The string literal which will be interpreted as null (in our semantics) in the prolog reasoner.
+_PL_EMPTY_LIST = '[]'
 def _is_pl_null(s):
     if isinstance(s, bytes):
         s = s.decode()
@@ -56,19 +57,22 @@ def dump_data_rule(drc: 'DataRuleContainer', port, situation='s0') -> str:
     for attrcap in drc._attrcaps:
         name = attrcap._name
         for i, attr in enumerate(attrcap._attrs):
-            _name = attr.attributeName
+            _name = attr.name
             assert name == _name
-            t = 'str'
-            v = attr.hasValue.valueData or attr.hasValue.valueObject
+            t, v = attr.type, attr.value
+            # t = 'str'
+            # v = attr.hasValue.valueData or attr.hasValue.valueObject
             attr_id = _attr_id_for_prolog(name, i)
             hist_repr = f"[{_pl_str(port)}, {_pl_str(attr_id)}]"
             s += f"attr({_pl_str(name)}, {_pl_str(t)}, {_pl_str(v)}, {hist_repr}, {situation}).\n"
     for ob in drc._rules:
-        name = ob._name
-        if ob._attribute:
-            attr_name, attr_ord = ob._attribute
-            attr_repr = "[{}, {}]".format(_pl_str(port), _pl_str(_attr_id_for_prolog(attr_name, attr_ord)))
+        name = ob.name()
+        # TODO: Support multiple attr references in obligated action & multiple validity bindings
+        if len(ob._validity_binding) == 1:
+            for attr_name, attr_ord in ob._validity_binding:
+                attr_repr = "[{}, {}]".format(_pl_str(port), _pl_str(_attr_id_for_prolog(attr_name, attr_ord)))
         else:
+            assert len(ob._attr_ref) == 0
             attr_repr = _PL_NULL
         ac = dump(ob._ac)
         ac = _pl_str(ac) if ac else _PL_NULL
@@ -156,7 +160,8 @@ def _parse_attribute(res_iter):
         hist = r_attr['H']
         port = hist[0].decode()
         name = r_attr['N'].decode()
-        attr = Attribute.instantiate(name, raw_attribute=r_attr['V'].decode())
+        a_type, a_value = r_attr['T'].decode(), r_attr['V'].decode()
+        attr = Attribute(name, a_type, a_value)
         index = len(ported_attrs[port][name])
         ported_attrs[port][name].append(attr)
         t_hist = tuple(hist)
@@ -176,7 +181,7 @@ def _parse_obligation(res_iter, attr_hist):
         if _is_pl_null(raw_attr):
             attr = None
         else:
-            attr = attr_hist[tuple(raw_attr)]
+            attr = [attr_hist[tuple(raw_attr)]]
         ac = r_ob['Ac']
         if _is_pl_null(ac):
             ac = None
@@ -197,7 +202,7 @@ def _parse_result(prolog, q_sit, situation_out):
     ported_drs = {}
     for port in set(ported_attrs.keys()) | set(ported_obs.keys()):
         obs = [ob for ob in ported_obs[port] if isinstance(ob, ObligationDeclaration)]
-        attrs = [AttributeCapsule(name, attribute=attrs) for name, attrs in ported_attrs[port].items()]
+        attrs = [AttributeCapsule(name, attrs) for name, attrs in ported_attrs[port].items()]
         data_rule = DataRuleContainer(obs, attrs)
         ported_drs[port] = data_rule
     logger.debug("Recomposed data rules contain %d ports: %s", len(ported_drs), ported_drs.keys())

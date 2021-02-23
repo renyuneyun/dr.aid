@@ -15,3 +15,7 @@ Pipfile
 Pipfile.lock
 
 graph_0.png*
+*.png
+*.dot
+
+*.egg-info/

@@ -2,9 +2,9 @@
     "imported_rules": {
         "": {
             "function": {
-                "arcp://uuid,19bb7653-72fd-4a80-8e4b-44d409346434/workflow/packed.cwl#main/create_environment": "rule begin\nobligation acknowledge source OnImport.\nattribute source [UoE].\nend",
-                "arcp://uuid,19bb7653-72fd-4a80-8e4b-44d409346434/workflow/packed.cwl#main/create_environment_2": "rule begin\nobligation acknowledge source OnImport.\nattribute source [UoE].\nend",
-                "arcp://uuid,19bb7653-72fd-4a80-8e4b-44d409346434/workflow/packed.cwl#main/create_environment_3": "rule begin\nobligation acknowledge source OnImport.\nattribute source [UoE].\nend"
+                "arcp://uuid,19bb7653-72fd-4a80-8e4b-44d409346434/workflow/packed.cwl#main/create_environment": "begin\nobligation(acknowledge, [source], OnImport).\nattribute( source, [\"str\" \"UoE\"]).\nend",
+                "arcp://uuid,19bb7653-72fd-4a80-8e4b-44d409346434/workflow/packed.cwl#main/create_environment_2": "begin\nobligation( acknowledge, [source], OnImport).\nattribute(source, [\"str\" \"UoE\"]).\nend",
+                "arcp://uuid,19bb7653-72fd-4a80-8e4b-44d409346434/workflow/packed.cwl#main/create_environment_3": "begin\nobligation( acknowledge, [source], OnImport).\nattribute(source, [\"str\" \"UoE\"]).\nend"
             }
         }
     },

@@ -17,19 +17,19 @@ from exp.rule import ObligationDeclaration, DataRuleContainer, AttributeCapsule
 from exp.proto import WhenImported
 
 
-pc1 = AttributeCapsule('pr1', 'a')
-pc1_2 = AttributeCapsule('pr1', ['b', 'a', 'c'])
-pc_m = AttributeCapsule('pr1', ['a', 'b', 'c'])
+pc1 = AttributeCapsule.from_raw('pr1', [('str', 'a')])
+pc1_2 = AttributeCapsule.from_raw('pr1', [('str', 'b'), ('str', 'a'), ('str', 'c')])
+pc_m = AttributeCapsule.from_raw('pr1', [('str', 'a'), ('str', 'b'), ('str', 'c')])
 
-pc2 = AttributeCapsule('pr2', ['A', 'B', 'C'])
+pc2 = AttributeCapsule.from_raw('pr2', [('str', 'A'), ('str', 'B'), ('str', 'C')])
 
 ob1 = (
         ObligationDeclaration('ob1'),
-        ObligationDeclaration('ob1', ('pr1', 0)),
-        ObligationDeclaration('ob1', ('pr1', 0), WhenImported()),
+        ObligationDeclaration('ob1', [('pr1', 0)]),
+        ObligationDeclaration('ob1', [('pr1', 0)], WhenImported()),
         )
-ob2 = ObligationDeclaration('ob2', ('pr2', 0))
-ob3 = ObligationDeclaration('ob2', ('pr2', 1))
+ob2 = ObligationDeclaration('ob2', [('pr2', 0)])
+ob3 = ObligationDeclaration('ob2', [('pr2', 1)])
 
 rule1 = DataRuleContainer([ob1[0], ob1[1], ob2], [pc1, pc2])
 rule2 = DataRuleContainer([ob1[0], ob1[1], ob2, ob3], [pc1, pc2])

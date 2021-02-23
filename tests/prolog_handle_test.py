@@ -6,10 +6,10 @@ from exp.proto import WhenImported
 
 from exp import prolog_handle
 
-pc1 = AttributeCapsule('name', 'UoE')
-pc1_2 = AttributeCapsule('name', ['UoE', 'University of Earth'])
+pc1 = AttributeCapsule.from_raw('name', [('str', 'UoE')])
+pc1_2 = AttributeCapsule.from_raw('name', [('str', 'UoE'), ('str', 'University of Earth')])
 
-pc2 = AttributeCapsule('sens', '1')
+pc2 = AttributeCapsule.from_raw('sens', [('str', '1')])
 
 ob1 = (
         ObligationDeclaration('credit', ('name', 0)),
@@ -22,10 +22,11 @@ ob2 = ObligationDeclaration('hide', ('sens', 0))
 rule1 = DataRuleContainer([ob1[0], ob2], [pc1, pc2])
 # rule2 = DataRuleContainer([ob1[0], ob1[1], ob2, ob3], [pc1, pc2])
 
-flow_rule1 = FlowRule({
-    'input1': ['output1', 'output2'],
-    'input2': ['output1'],
-    })
+flow_rule1 = FlowRule([
+    FlowRule.Propagate('input1', 'output1'),
+    FlowRule.Propagate('input1', 'output2'),
+    FlowRule.Propagate('input2', 'output1'),
+    ])
 
 
 @pytest.mark.parametrize('drc, port', [
