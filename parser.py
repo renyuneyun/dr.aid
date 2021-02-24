@@ -13,12 +13,13 @@ The serialiser is defined in the classes.
 '''
 
 from dataclasses import dataclass
+from functools import partial
 import json
 from lark import Lark, Transformer
 import re
-from typing import Dict, List, Optional, Tuple, Union
+from typing import Dict, List, Optional, Union, Tuple, Type
 
-from .rule import FlowRule, ObligationDeclaration, DataRuleContainer, AttributeCapsule
+from .rule import FlowRule, Propagate, Edit, Delete, ObligationDeclaration, DataRuleContainer, AttributeCapsule
 from .proto import ActivationCondition, is_ac, obtain
 
 
@@ -26,7 +27,7 @@ class MalformedRuleException(Exception):
     pass
 
 
-DATA_RULE_SYNTAX = r'''
+DATA_RULE_GRAMMAR = r'''
 data_rule : "begin" data_rule_stmt* "end"
 data_rule_stmt : obligation_decl
                    | attribute_decl
@@ -48,6 +49,42 @@ external_identifier : identifier | STRING
 attribute_type : external_identifier
 attribute_value : value
 value : INT | NUMBER | STRING
+
+%import common.ESCAPED_STRING   -> STRING
+%import common.CNAME            -> CNAME
+%import common.INT              -> INT
+%import common.SIGNED_NUMBER    -> NUMBER
+%import common.WS
+%ignore WS
+'''
+
+
+FLOW_RULE_GRAMMAR = r'''
+flow_rule : flow_rule_stmt*
+flow_rule_stmt : propagate_stmt
+                 | edit_stmt
+                 | delete_stmt
+propagate_stmt : input_port "->" output_port ([","] output_port)*
+edit_stmt : "edit" "(" port_matcher "," attr_matcher "," attr_data_new ")"
+delete_stmt : "delete" "(" port_matcher "," attr_matcher ")"
+input_port : port
+output_port : port
+port_matcher : input_port_may "," output_port_may
+attr_matcher : attr_name_may "," attr_type_may "," attr_value_may
+attr_data_new : attr_type "," attr_value
+port : identifier | STRING
+input_port_may : input_port | SYM_ANY
+output_port_may : output_port | SYM_ANY
+attr_name_may : attr_name | SYM_ANY
+attr_type_may : attr_type | SYM_ANY
+attr_value_may : attr_value | SYM_ANY
+attr_type : STRING
+attr_value : value
+identifier : CNAME
+attr_name : identifier
+value : INT | NUMBER | STRING
+
+SYM_ANY : "*"
 
 %import common.ESCAPED_STRING   -> STRING
 %import common.CNAME            -> CNAME
@@ -139,10 +176,96 @@ class TreeToDataRuleContent(Transformer):
         return int(n)
 
 
+class TreeToFlowRuleContent(Transformer):
+    def _only(self, item):
+        (item,) = item
+        return item
+    def _multi(self, items):
+        return tuple(items)
+    
+    def flow_rule(self, stmts):
+        return list(stmts)
+    
+    flow_rule_stmt = _only
+    
+    def propagate_stmt(self, items):
+        input_port, output_ports = items[0], items[1:]
+        return (1, (input_port, output_ports))
+    
+    def edit_stmt(self, items):
+        flatterned_items = [i for lst in items for i in lst]
+        return (2, flatterned_items)
+    
+    def delete_stmt(self, items):
+        flatterned_items = [i for lst in items for i in lst]
+        return (3, flatterned_items)
+    
+    port_matcher = _multi
+    input_port_may = _only
+    output_port_may = _only
+    
+    input_port = _only
+    output_port = _only
+    port = _only
+    
+    attr_matcher = _multi
+    attr_data_new = _multi
+    
+    attr_name_may = _only
+    attr_type_may = _only
+    attr_value_may = _only
+    attr_name = _only
+    attr_type = _only
+    attr_value = _only
+    
+    identifier = _only
+    value = _only
+
+    def SYM_ANY(self, s):
+        return None
+
+    def CNAME(self, s):
+        return s[:]
+    def STRING(self, s):
+        return s[1:-1]
+    def NUMBER(self, n):
+        return float(n)
+    def INT(self, n):
+        return int(n)
+
+
+class TreeToFlowRuleObject(TreeToFlowRuleContent):
+    
+    def flow_rule(self, stmts):
+        return FlowRule(list(stmts))
+    
+    def propagate_stmt(self, items):
+        input_port, output_ports = items[0], items[1:]
+        return Propagate(input_port, output_ports)
+    
+    def edit_stmt(self, items):
+        input_port, output_port, name, type_old, value_old, type_new, value_new = [i for lst in items for i in lst]
+        return Edit(type_new, value_new, input_port, output_port, name, type_old, value_old)
+    
+    def delete_stmt(self, items):
+        input_port, output_port, name, type, value = [i for lst in items for i in lst]
+        return Delete(input_port, output_port, name, type, value)
+
+
+def make_parser_call_template(grammar: str, transformer: Type[Transformer]):
+    def call_parser(rule: str, part: str):
+        data_rule_parser = Lark(grammar, start=part)
+        tree = data_rule_parser.parse(rule)
+        return transformer().transform(tree)
+    return call_parser
+
+
 def call_parser_data_rule(rule: str, part: str = 'data_rule'):
-    data_rule_parser = Lark(DATA_RULE_SYNTAX, start=part)
-    tree = data_rule_parser.parse(rule)
-    return TreeToDataRuleContent().transform(tree)
+    return make_parser_call_template(DATA_RULE_GRAMMAR, TreeToDataRuleContent)(rule, part)
+
+
+def call_parser_flow_rule(rule: str, part: str = 'flow_rule'):
+    return make_parser_call_template(FLOW_RULE_GRAMMAR, TreeToFlowRuleContent)(rule, part)
 
 
 def parse_data_rule(data_rule: str) -> Optional[DataRuleContainer]:
@@ -162,16 +285,8 @@ def parse_data_rule(data_rule: str) -> Optional[DataRuleContainer]:
     return DataRuleContainer(obligations, attribute_capsules)
 
 
-Propagate = FlowRule.Propagate
-Edit = FlowRule.Edit
-Delete = FlowRule.Delete
-
 def parse_flow_rule(flow_rule: Optional[str]) -> Optional[FlowRule]:
     if flow_rule is None:
         return None
-    try:
-        connectivity = eval(flow_rule)
-    except Exception as e:
-        raise MalformedRuleException(e)
-    return FlowRule(connectivity)
+    return make_parser_call_template(FLOW_RULE_GRAMMAR, TreeToFlowRuleObject)(flow_rule, 'flow_rule')
 

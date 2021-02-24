@@ -14,7 +14,7 @@
 import pytest
 
 from exp import parser
-from exp.rule import ObligationDeclaration, DataRuleContainer, AttributeCapsule
+from exp.rule import ObligationDeclaration, DataRuleContainer, AttributeCapsule, FlowRule, Propagate, Edit, Delete
 
 
 @pytest.mark.parametrize('s, attrcap', [
@@ -71,3 +71,16 @@ def test_obligation_with_attribute(s, obligations, amap):
     rule = DataRuleContainer(obligations, amap)
     assert parser.parse_data_rule(s) == rule
 
+
+@pytest.mark.parametrize('s, flow_rule_items', [
+    ('''
+"input1" -> "output1", "output2"
+"input2" -> "output2"
+edit("input1", "output1", dummy, "str", "111", "str", "222")
+delete("input2", *, dummy2, *, *)
+    ''', [Propagate("input1", ["output1", "output2"]), Propagate("input2", ["output2"]), Edit("str", "222", "input1", "output1", "dummy", "str", "111"), Delete("input2", None, "dummy2", None, None)]),
+
+    ])
+def test_flow_rule(s, flow_rule_items):
+    rule = FlowRule(flow_rule_items)
+    assert parser.parse_flow_rule(s) == rule

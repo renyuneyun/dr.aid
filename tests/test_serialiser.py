@@ -14,7 +14,7 @@
 import pytest
 
 from exp import parser
-from exp.rule import ObligationDeclaration, DataRuleContainer, AttributeCapsule
+from exp.rule import ObligationDeclaration, DataRuleContainer, AttributeCapsule, FlowRule, Propagate, Edit, Delete
 from exp.proto import WhenImported
 
 
@@ -53,3 +53,21 @@ def test_whole_data_rule_serialise(obligations, amap):
     rule2 = parser.parse_data_rule(s)
     assert rule2 == rule
 
+
+@pytest.mark.parametrize('flow_rule_items', [
+    [Propagate("input", ["output"])],
+    [Propagate("input", ["output1", "output2"])],
+    [Propagate("input", ["output1", "output2"]), Propagate("input2", ["output1"])],
+    [Propagate("input", ["output1", "output2"]), Edit("str", "bbb", "input", "output1", "attr_name", "str", "aaa")],
+    [Propagate("input", ["output1", "output2"]), Edit("str", "bbb", None, None, None, None, None)],
+    [Propagate("input", ["output1", "output2"]), Delete("input", "output1", "attr_name", "str", "aaa")],
+    [Propagate("input", ["output1", "output2"]), Delete(None, None, None, None, None)],
+    [Propagate("input", ["output1", "output2"]), Edit("str", "bbb", "input", "output1", "attr_name", "str", "aaa"), Delete("input", "output1", "attr_name", "str", "aaa")],
+    [Propagate("input", ["output1", "output2"]), Delete("input", "output1", "attr_name", "str", "aaa"), Edit("str", "bbb", "input", "output1", "attr_name", "str", "aaa")],
+    ])
+def test_flow_rule_serialise(flow_rule_items):
+    rule = FlowRule(flow_rule_items)
+    s = rule.dump()
+    print(f"serialised: {s}")
+    rule2 = parser.parse_flow_rule(s)
+    assert rule2 == rule

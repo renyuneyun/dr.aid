@@ -30,11 +30,13 @@ DanglingObligatedAction = Tuple[str, List[DanglingAttributeReference]]
 DanglingObligation = Tuple[DanglingObligatedAction, List[DanglingAttributeReference], Optional[ActivationCondition]]
 
 
-def escaped(value: Any):
+def escaped(value: Any) -> Optional[str]:
     if isinstance(value, (int, float)):
         return str(value)
     elif isinstance(value, str):
         return json.dumps(value)
+    elif value is None:  # `None` may represent different meanings for different elements, so it should be treated separately where it is used
+        return None
     else:
         return NotImplemented
 
@@ -370,20 +372,38 @@ class FlowRule:
             return [action.mapped(self.name_map) for action in self.actions]
 
     def dump(self) -> str:
+        def optional(s):
+            return s or '*'
         s = ''
         for action in self.actions:
             if isinstance(action, FlowRule.Propagate):
-                s += f"{action.input_port} -> {action.output_ports}\n"
+                s += f"{action.input_port} -> {', '.join(action.output_ports)}\n"
             elif isinstance(action, FlowRule.Edit):
-                s += f"edit({action.input_port or '*'}, {action.output_port or '*'}, {action.match_type or '*'}, {action.match_value or '*'}, {action.new_type}, {action.new_value})\n"
+                s += f"edit({optional(escaped(action.input_port))}, {optional(escaped(action.output_port))}, {optional(action.name)}, {optional(escaped(action.match_type))}, {optional(escaped(action.match_value))}, {escaped(action.new_type)}, {escaped(action.new_value)})\n"
             elif isinstance(action, FlowRule.Delete):
-                s += f"delete({action.input_port or '*'}, {action.output_port or '*'}, {action.match_type or '*'}, {action.match_value or '*'})\n"
+                s += f"delete({optional(escaped(action.input_port))}, {optional(escaped(action.output_port))}, {optional(action.name)}, {optional(escaped(action.match_type))}, {optional(escaped(action.match_value))})\n"
             else:
                 raise IllegalCaseError()
         return s
 
     def __iter__(self):
         return self.mapped_actions().__iter__()
+
+    def __eq__(self, other):
+        # TODO: order independent
+        if isinstance(other, self.__class__):
+            if not self.actions == other.actions:
+                return False
+            if not self.name_map == other.name_map:
+                return False
+            return True
+        else:
+            return NotImplemented
+
+
+Propagate = FlowRule.Propagate
+Edit = FlowRule.Edit
+Delete = FlowRule.Delete
 
 
 def DefaultFlow(input_ports: List[str], output_ports: List[str]) -> FlowRule:
