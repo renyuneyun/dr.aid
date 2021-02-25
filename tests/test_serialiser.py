@@ -64,6 +64,7 @@ def test_whole_data_rule_serialise(obligations, amap):
     [Propagate("input", ["output1", "output2"]), Delete(None, None, None, None, None)],
     [Propagate("input", ["output1", "output2"]), Edit("str", "bbb", "input", "output1", "attr_name", "str", "aaa"), Delete("input", "output1", "attr_name", "str", "aaa")],
     [Propagate("input", ["output1", "output2"]), Delete("input", "output1", "attr_name", "str", "aaa"), Edit("str", "bbb", "input", "output1", "attr_name", "str", "aaa")],
+    [Edit("int", 222, "input", "output1", "attr_name", "int", 111), Delete("input", "output1", "attr_name", "int", 333)],
     ])
 def test_flow_rule_serialise(flow_rule_items):
     rule = FlowRule(flow_rule_items)

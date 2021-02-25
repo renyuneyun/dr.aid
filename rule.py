@@ -333,7 +333,7 @@ class FlowRule:
         output_port: Optional[str] = None
         name: Optional[str] = None
         match_type: Optional[str] = None
-        match_value: Optional[str] = None
+        match_value: Optional[Union[str, int, float]] = None
 
         def mapped(self, name_map):
             input_port = FlowRule.map_name(name_map, self.input_port)
@@ -346,7 +346,7 @@ class FlowRule:
         output_port: Optional[str] = None
         name: Optional[str] = None
         match_type: Optional[str] = None
-        match_value: Optional[str] = None
+        match_value: Optional[Union[str, int, float]] = None
 
         def mapped(self, name_map):
             input_port = FlowRule.map_name(name_map, self.input_port)

@@ -2,30 +2,29 @@
 This module contains the handling functions for interacting with the Prolog reasoner which performs the flow rule through situations calculus formalism and Golog.
 '''
 
-from collections import defaultdict
+import pyswip
 import tempfile
 
+from collections import defaultdict
 from rdflib import Graph, URIRef
-from typing import Dict, Iterable, List, Tuple
+from typing import Dict, Iterable, List, Optional, Tuple, Union
 
 from .exception import IllegalCaseError
+from .graph_wrapper import GraphWrapper
 from .proto import (
         dump,
         is_ac,
         obtain,
         )
 from .rule import Attribute, AttributeCapsule, ObligationDeclaration, DataRuleContainer, FlowRule, PortedRules
-from .graph_wrapper import GraphWrapper
-
-import pyswip
 
 import logging
 logger = logging.getLogger(__name__)
 
 
-PR_DIR = '.'  # Prolog Reasoning directory
+FLOW_RULE_DEF = './prolog/flow_rule.pl'  # The directory which contains the flow rule definitions
 prolog = pyswip.Prolog()  # pyswip doesn't support launching multiple Prolog instances (said to be the limition of swi-prolog). So I'm using different initial situations for different ones instead
-prolog.consult(f"{PR_DIR}/prolog/flow_rule.pl")
+prolog.consult(FLOW_RULE_DEF)
 _uniq_counter = 0
 
 
@@ -34,16 +33,20 @@ IGNORED_PORTS = [
         ]
 
 
-def _pl_str(value):
-    return f'"{value}"'
-def _pl_str_act(value):
-    if value is None:
-        return '*'
-    else:
+def _pl_str(s: str):
+    return f'"{s}"'
+def _pl_value(value: Union[str, int, float]):
+    if isinstance(value, str):
         return _pl_str(value)
+    else:
+        return str(value)
+def _pl_str_act(s: Optional[str]):
+    return _pl_str(s) if s is not None else '*'
+def _pl_value_act(value: Optional[Union[str, int, float]]):
+    return _pl_value(value) if value is not None else '*'
 
-def _attr_id_for_prolog(attr_name, attr_ord):
-    return f"{attr_name}{attr_ord}"
+def _attr_id_for_prolog(attr_name, attr_ord) -> str:
+    return f"{attr_name}__{attr_ord}"
 
 _PL_NULL = 'null'  # The string literal which will be interpreted as null (in our semantics) in the prolog reasoner.
 _PL_EMPTY_LIST = '[]'
@@ -60,11 +63,9 @@ def dump_data_rule(drc: 'DataRuleContainer', port, situation='s0') -> str:
             _name = attr.name
             assert name == _name
             t, v = attr.type, attr.value
-            # t = 'str'
-            # v = attr.hasValue.valueData or attr.hasValue.valueObject
             attr_id = _attr_id_for_prolog(name, i)
             hist_repr = f"[{_pl_str(port)}, {_pl_str(attr_id)}]"
-            s += f"attr({_pl_str(name)}, {_pl_str(t)}, {_pl_str(v)}, {hist_repr}, {situation}).\n"
+            s += f"attr({_pl_str(name)}, {_pl_str(t)}, {_pl_value(v)}, {hist_repr}, {situation}).\n"
     for ob in drc._rules:
         name = ob.name()
         # TODO: Support multiple attr references in obligated action & multiple validity bindings
@@ -89,9 +90,9 @@ def pl_act_flow_rule(flow_rule: FlowRule) -> List[str]:
             output_ports.update(o_ports)
             lst.append(f"pr({_pl_str_act(action.input_port)}, [{','.join(map(_pl_str_act, o_ports))}])")
         elif isinstance(action, FlowRule.Edit):
-            lst.append(f"edit({_pl_str_act(action.name)}, {_pl_str_act(action.match_type)}, {_pl_str_act(action.match_value)}, {_pl_str_act(action.new_type)}, {_pl_str_act(action.new_value)}, {_pl_str_act(action.input_port)}, {_pl_str_act(action.output_port)})")
+            lst.append(f"edit({_pl_str_act(action.name)}, {_pl_str_act(action.match_type)}, {_pl_value_act(action.match_value)}, {_pl_str_act(action.new_type)}, {_pl_value_act(action.new_value)}, {_pl_str_act(action.input_port)}, {_pl_str_act(action.output_port)})")
         elif isinstance(action, FlowRule.Delete):
-            lst.append(f"del({_pl_str_act(action.name)}, {_pl_str_act(action.match_type)}, {_pl_str_act(action.match_value)}, {_pl_str_act(action.input_port)}, {_pl_str_act(action.output_port)})")
+            lst.append(f"del({_pl_str_act(action.name)}, {_pl_str_act(action.match_type)}, {_pl_value_act(action.match_value)}, {_pl_str_act(action.input_port)}, {_pl_str_act(action.output_port)})")
         else:
             raise IllegalCaseError()
     lst.extend([f"end({_pl_str(output)})" for output in output_ports])
@@ -160,7 +161,9 @@ def _parse_attribute(res_iter):
         hist = r_attr['H']
         port = hist[0].decode()
         name = r_attr['N'].decode()
-        a_type, a_value = r_attr['T'].decode(), r_attr['V'].decode()
+        a_type, a_value = r_attr['T'].decode(), r_attr['V']
+        if isinstance(a_value, bytes):  # If it's int (or float), it will automatically be recognised; if it's string, it's retrieved as bytes and needs to change to string. No data is in the form of bytes in the first place, so this ought to be correct.
+            a_value = a_value.decode()
         attr = Attribute(name, a_type, a_value)
         index = len(ported_attrs[port][name])
         ported_attrs[port][name].append(attr)

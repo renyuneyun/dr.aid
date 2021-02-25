@@ -74,11 +74,17 @@ def test_obligation_with_attribute(s, obligations, amap):
 
 @pytest.mark.parametrize('s, flow_rule_items', [
     ('''
-"input1" -> "output1", "output2"
-"input2" -> "output2"
-edit("input1", "output1", dummy, "str", "111", "str", "222")
-delete("input2", *, dummy2, *, *)
+    "input1" -> "output1", "output2"
+    "input2" -> "output2"
+    edit("input1", "output1", dummy, "str", "111", "str", "222")
+    delete("input2", *, dummy2, *, *)
     ''', [Propagate("input1", ["output1", "output2"]), Propagate("input2", ["output2"]), Edit("str", "222", "input1", "output1", "dummy", "str", "111"), Delete("input2", None, "dummy2", None, None)]),
+    ('''
+    "input1" -> "output1", "output2"
+    "input2" -> "output2"
+    edit("input1", "output1", dummy, "int", 111, "int", 222)
+    delete("input2", *, dummy2, *, *)
+    ''', [Propagate("input1", ["output1", "output2"]), Propagate("input2", ["output2"]), Edit("int", 222, "input1", "output1", "dummy", "int", 111), Delete("input2", None, "dummy2", None, None)]),
 
     ])
 def test_flow_rule(s, flow_rule_items):
