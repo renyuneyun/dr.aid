@@ -59,25 +59,22 @@ def dump_data_rule(drc: 'DataRuleContainer', port, situation='s0') -> str:
     s = ''
     for attrcap in drc._attrcaps:
         name = attrcap._name
-        for i, attr in enumerate(attrcap._attrs):
+        for i, attr in enumerate(attrcap._attrs):  # Different values of the same-named attribute will be written as different attr() fluents in situation calculus formulas.
             _name = attr.name
             assert name == _name
             t, v = attr.type, attr.value
             attr_id = _attr_id_for_prolog(name, i)
             hist_repr = f"[{_pl_str(port)}, {_pl_str(attr_id)}]"
             s += f"attr({_pl_str(name)}, {_pl_str(t)}, {_pl_value(v)}, {hist_repr}, {situation}).\n"
+    def dump_attr_refs(attr_refs):
+        return ["[{}, {}]".format(_pl_str(port), _pl_str(_attr_id_for_prolog(attr_name, attr_ord))) for attr_name, attr_ord in attr_refs]
     for ob in drc._rules:
         name = ob.name()
-        # TODO: Support multiple attr references in obligated action & multiple validity bindings
-        if len(ob._validity_binding) == 1:
-            for attr_name, attr_ord in ob._validity_binding:
-                attr_repr = "[{}, {}]".format(_pl_str(port), _pl_str(_attr_id_for_prolog(attr_name, attr_ord)))
-        else:
-            assert len(ob._attr_ref) == 0
-            attr_repr = _PL_NULL
+        attr_repr = '[' + ", ".join(dump_attr_refs(ob._attr_ref)) + ']'
+        vb_repr = '[' + ", ".join(dump_attr_refs(ob._validity_binding)) + ']'
         ac = dump(ob._ac)
         ac = _pl_str(ac) if ac else _PL_NULL
-        s += f"obligation({_pl_str(name)}, {attr_repr}, {ac}, {_pl_str(port)}, {situation}).\n"
+        s += f"obligation({_pl_str(name)}, {attr_repr}, {vb_repr}, {ac}, {_pl_str(port)}, {situation}).\n"
     return s
 
 # def _dump_flow_rule(flow_rule: 'FlowRule') -> List[str]:
@@ -151,7 +148,7 @@ def query_of_attribute(situation_out='S1'):
     return f"attr(N, T, V, H, {situation_out})"
 
 def query_of_obligation(situation_out='S1'):
-    return f"obligation(Ob, Attr, Ac, P, {situation_out})"
+    return f"obligation(Ob, Attr, VB, Ac, P, {situation_out})"
 
 
 def _parse_attribute(res_iter):
@@ -180,11 +177,10 @@ def _parse_obligation(res_iter, attr_hist):
     for r_ob in res_iter:
         port = r_ob['P'].decode()
         ob = r_ob['Ob'].decode()
-        raw_attr = r_ob['Attr']
-        if _is_pl_null(raw_attr):
-            attr = []
-        else:
-            attr = [attr_hist[tuple(raw_attr)]]
+        raw_attr_list = r_ob['Attr']
+        attr = [attr_hist[tuple(raw_attr)] for raw_attr in raw_attr_list]
+        raw_vb_list = r_ob['VB']
+        vb = [attr_hist[tuple(raw_vb)] for raw_vb in raw_vb_list]
         ac = r_ob['Ac']
         if _is_pl_null(ac):
             ac = None
@@ -192,7 +188,7 @@ def _parse_obligation(res_iter, attr_hist):
             ac = ac.decode()
             assert is_ac(ac)
             ac = obtain(ac)
-        ob = ObligationDeclaration(ob, attr, ac)
+        ob = ObligationDeclaration((ob, attr), vb, ac)
         ported_obs[port].append(ob)
     logger.debug("Retrieved obligations in %d ports. Summary ({PORT: #-OF-OBLIGATIONS}): %s", len(ported_obs), { port: len(obs) for port, obs in ported_obs.items() })
     return ported_obs
