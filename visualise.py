@@ -15,7 +15,7 @@ import logging
 import pygraphviz as pgv
 
 from .exception import ForceFailedException
-from .graph_wrapper import GraphWrapper
+from .graph_wrapper import GraphWrapper, trim_port_name
 
 logger = logging.getLogger(__name__)
 
@@ -27,8 +27,11 @@ def _clean_name(ref):
     name = name[:name.find('_taastrup')]
     return name
 
+def _function_name(graph, ref):
+    return graph.component_info(ref)[0].function
+
 def _component_label(graph, ref):
-    function = graph.component_info(ref)[0].function
+    function = _function_name(graph, ref)
     clean_name = _clean_name(ref)
     if not function:
         return clean_name
@@ -69,19 +72,20 @@ class GraphBuilder:
             logger.debug('adding component %s as cluster', component)
             cid = self._ni[component] # Cluster ID
             cluster_name = "cluster{}".format(cid)
+            function_name = _function_name(self._graph, component)
             sg = self.G.add_subgraph(name=cluster_name, label=_component_label(self._graph, component), style='striped')
             self._nm[component] = sg
             isg = sg.add_subgraph(rank='source')
             iports = []
             for input_port in self._graph.input_ports(component):
                 iportName = self._graph.name_of_port(input_port)
-                isg.add_node(self._ni[component, iportName], label=iportName)
+                isg.add_node(self._ni[component, iportName], label=trim_port_name(iportName, function_name))
                 iports.append(iportName)
             oports = []
             osg = sg.add_subgraph(rank='sink')
             for output_port in self._graph.output_ports(component):
                 oportName = self._graph.name_of_port(output_port)
-                osg.add_node(self._ni[component, oportName], label=oportName)
+                osg.add_node(self._ni[component, oportName], label=trim_port_name(oportName, function_name))
                 oports.append(oportName)
             if iports and oports:
                 sg.add_edge(self._ni[component, iports[0]], self._ni[component, oports[0]], style = 'invis')

@@ -192,9 +192,10 @@ def F_COMPONENT_PARS_IN(graph, component_list: Iterable) -> str:
     return F_QUERY('DISTINCT ?component ?par ?pred ?obj', graph, q_body)
 
 
-Q_COMPONENT_FUNCTION = '''
+Q_COMPONENT_FUNCTION = r'''
 SELECT ?component ?function_name WHERE {
-  ?component prov:qualifiedAssociation [prov:hadPlan ?function_name].
+  ?component prov:qualifiedAssociation [prov:hadPlan ?function_name_ori].
+  BIND (IF(REGEX(STR(?function_name_ori), "arcp://uuid,[^#]+\\.cwl#.+"), STRAFTER(STR(?function_name_ori), "#"), STR(?function_name_ori)) AS ?function_name).
 } 
 '''
 
@@ -278,7 +279,7 @@ WHERE {{
 #       ) AS ?connection)
 # }}
 # ''')
-C_DATA_DEPENDENCY_WITH_PORT = P('''
+C_DATA_DEPENDENCY_WITH_PORT = P(r'''
 PREFIX : <http://ryey/ns/#>
 
 
@@ -303,21 +304,24 @@ CONSTRUCT {{
 }}
 WHERE {{
   ?component0 a wf4prov:ProcessRun.
-  ?data_out0 prov:qualifiedGeneration [prov:activity ?component0; prov:hadRole ?out_port].
+  ?data_out0 prov:qualifiedGeneration [prov:activity ?component0; prov:hadRole ?out_port_ori].
 
   OPTIONAL {{
     ?component1 a wf4prov:ProcessRun.
     {{
-      ?component1 prov:qualifiedUsage [prov:entity ?data_out0; prov:hadRole ?in_port].
+      ?component1 prov:qualifiedUsage [prov:entity ?data_out0; prov:hadRole ?in_port_ori].
     }}
     UNION
     {{
-      ?component1 prov:qualifiedUsage [prov:entity [prov:hadMember ?data_out0]; prov:hadRole ?in_port].
+      ?component1 prov:qualifiedUsage [prov:entity [prov:hadMember ?data_out0]; prov:hadRole ?in_port_ori].
     }}
   }}
 
-  BIND (IF(REGEX(STR(?component0), "http://[^#]+#"), STRAFTER(STR(?component0), "#"), STR(?component0)) AS ?component0_name)
-  BIND (IF(REGEX(STR(?component1), "http://[^#]+#"), STRAFTER(STR(?component1), "#"), STR(?component1)) AS ?component1_name)
+  BIND (IF(REGEX(STR(?out_port_ori), "arcp://uuid,[^#]+\\.cwl#.+"), STRAFTER(STR(?out_port_ori), "#"), STR(?out_port_ori)) AS ?out_port).
+  BIND (IF(REGEX(STR(?in_port_ori), "arcp://uuid,[^#]+\\.cwl#.+"), STRAFTER(STR(?in_port_ori), "#"), STR(?in_port_ori)) AS ?in_port).
+
+  BIND (IF(REGEX(STR(?component0), "http://[^#]+#"), STRAFTER(STR(?component0), "#"), STR(?component0)) AS ?component0_name).
+  BIND (IF(REGEX(STR(?component1), "http://[^#]+#"), STRAFTER(STR(?component1), "#"), STR(?component1)) AS ?component1_name).
 
   BIND (COALESCE(?component1_name, "") AS ?component1_name_safe)
   BIND (COALESCE(?in_port, "") AS ?in_port_safe)

@@ -21,6 +21,7 @@ from . import injection
 from . import sparql_helper as sh
 
 from .exception import ForceFailedException, IllegalCaseError, IllegalStateError
+from .rdf_helper import one_or_none
 from .rule import DataRuleContainer, FlowRule, PortedRules
 from .setting import IMPORT_PORT_NAME
 from .sparql_helper import ComponentInfo
@@ -52,6 +53,12 @@ def graph_into_batches(graph: MultiDiGraph) -> List[List[URIRef]]:
             g.remove_node(node)
         ret.append(lst)
     return ret
+
+
+def trim_port_name(port_name: str, function: str):
+    if port_name.startswith(function):
+        port_name = port_name.removeprefix(function).lstrip('/')
+    return port_name
 
 
 class GraphWrapper:
@@ -318,18 +325,23 @@ class GraphWrapper:
         flow_rule = rh.flow_rule(self.rdf_graph, component)
         if not flow_rule:
             if force: raise ForceFailedException()
-            input_ports = list(map(self.name_of_port, self.input_ports(component)))
-            output_ports = list(map(self.name_of_port, self.output_ports(component)))
+            input_ports = list(map(self.unique_name_of_port, self.input_ports(component)))
+            output_ports = list(map(self.unique_name_of_port, self.output_ports(component)))
             # if has_imported_rule:  # We assume only components which do not have inputs or rules will have imported rules
             # It's no harm to have an extra rule for imported port -- it simply does nothing
             input_ports.append(virtual_port_for_import(component))
             flow_rule = rs.DefaultFlow(input_ports, output_ports)
         if flow_rule:
+            component_info = one_or_none(self.component_info(component))
+            function_name = component_info.function if component_info else None
             name_map = {}  # Here we assume local uniqueness of port names. TODO: local-uniqueness of input ports and output ports only
             for port in self.input_ports(component) + self.output_ports(component):
                 name = self.name_of_port(port)
                 long_name = self.unique_name_of_port(port)
                 name_map[name] = long_name
+                if function_name:
+                    short_name = trim_port_name(name, function_name)
+                    name_map[short_name] = long_name
             flow_rule.set_name_map(name_map)
         return flow_rule
 
