@@ -12,12 +12,12 @@ pc1_2 = AttributeCapsule.from_raw('name', [('str', 'UoE'), ('str', 'University o
 pc2 = AttributeCapsule.from_raw('sens', [('str', '1')])
 
 ob1 = (
-        ObligationDeclaration('credit', ('name', 0)),
-        ObligationDeclaration('credit', ('name', 1)),
-        ObligationDeclaration('credit', ('name', 0), WhenImported()),
-        ObligationDeclaration('credit', ('name', 1), WhenImported()),
+        ObligationDeclaration('credit', [('name', 0)]),
+        ObligationDeclaration('credit', [('name', 1)]),
+        ObligationDeclaration('credit', [('name', 0)], WhenImported()),
+        ObligationDeclaration('credit', [('name', 1)], WhenImported()),
         )
-ob2 = ObligationDeclaration('hide', ('sens', 0))
+ob2 = ObligationDeclaration('hide', [('sens', 0)])
 
 rule1 = DataRuleContainer([ob1[0], ob2], [pc1, pc2])
 # rule2 = DataRuleContainer([ob1[0], ob1[1], ob2, ob3], [pc1, pc2])

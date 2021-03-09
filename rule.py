@@ -193,10 +193,11 @@ class DataRuleContainer(AttributeResolver):
     # pylint: disable=protected-access
     @classmethod
     def merge(cls, first: 'DataRuleContainer', *rest: 'DataRuleContainer') -> 'DataRuleContainer':
-        obligation_declarations, attributes = list(), dict()
+        obligation_declarations = []
+        attributes: Dict[str, List[Attribute]] = {}
 
         for drc in [first, *rest]:
-            dmap = {}
+            dmap: Dict[str, Dict[int, int]] = {}
             for attr_cap in drc._attrcaps:
                 name = attr_cap.name()
                 if name not in attributes: attributes[name] = []
