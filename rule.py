@@ -130,10 +130,10 @@ class ObligationDeclaration:
         return cls(obligated_action, validity_binding, activation_condition)
 
     def __init__(self, obligated_action: Union[str, Tuple[str, List[Tuple[str, int]]]], validity_binding: List[Tuple[str, int]] = [], activation_condition: Optional[ActivationCondition] = None):
-        try:
-            self._name, self._attr_ref = obligated_action  # type: ignore
-        except ValueError:
-            self._name, self._attr_ref = obligated_action, []
+        if isinstance(obligated_action, str):
+            self._name, self._attr_ref = obligated_action, []  # type: str, List[Tuple[str, int]]
+        else:
+            self._name, self._attr_ref = obligated_action
         self._validity_binding = validity_binding
         if not activation_condition:
             activation_condition = Never()
@@ -174,7 +174,7 @@ class ObligationDeclaration:
             new_attr_refs = []
             for name, index in attr_refs:
                 if dmap and name in dmap:
-                    index += dmap[name][index]
+                    index = dmap[name][index]
                 new_attr_refs.append((name, index))
             return new_attr_refs
         return ObligationDeclaration((self._name, map_attr_refs(self._attr_ref)), map_attr_refs(self._validity_binding), self._ac)
@@ -193,24 +193,30 @@ class DataRuleContainer(AttributeResolver):
     # pylint: disable=protected-access
     @classmethod
     def merge(cls, first: 'DataRuleContainer', *rest: 'DataRuleContainer') -> 'DataRuleContainer':
-        new = first.clone()
-        for nxt in rest:
+        obligation_declarations, attributes = list(), dict()
+
+        for drc in [first, *rest]:
             dmap = {}
-            for pname, pr in nxt._amap.items():
-                if pname in new._amap:
-                    pr, diff = AttributeCapsule.merge(new._amap[pname], pr)
-                else:
-                    diff = None  # type: ignore
-                new._amap[pname] = pr
-                if diff is not None:
-                    dmap[pname] = diff
-            new._attrcaps = [v for v in new._amap.values()]
-            for r in nxt._rules:
-                r = r._transfer(dmap)
-                if r in new._rules:
-                    continue
-                new._rules.append(r)
-        return new
+            for attr_cap in drc._attrcaps:
+                name = attr_cap.name()
+                if name not in attributes: attributes[name] = []
+                if name not in dmap: dmap[name] = {}
+                for index, original_attr in enumerate(attr_cap._attrs):
+                    if original_attr in attributes[name]:
+                        dmap[name][index] = attributes[name].index(original_attr)
+                    else:
+                        dmap[name][index] = len(attributes[name])
+                        attributes[name].append(original_attr)
+
+            for ob_decl in drc._rules:
+                ob_decl_new = ob_decl._transfer(dmap)
+                if ob_decl_new not in obligation_declarations:
+                    obligation_declarations.append(ob_decl_new)
+
+        attribute_capsules = [AttributeCapsule(name, attrs) for name, attrs in attributes.items()]
+
+        return DataRuleContainer(obligation_declarations, attribute_capsules)
+
 
     def __init__(self, rules: List[ObligationDeclaration], attribute_capsules: List[AttributeCapsule]):
         self._rules: List[ObligationDeclaration] = rules

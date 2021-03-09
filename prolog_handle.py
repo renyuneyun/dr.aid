@@ -206,7 +206,7 @@ def _parse_result(prolog, q_sit, situation_out):
     for port in set(ported_attrs.keys()) | set(ported_obs.keys()):
         obs = [ob for ob in ported_obs[port] if isinstance(ob, ObligationDeclaration)]
         attrs = [AttributeCapsule(name, attrs) for name, attrs in ported_attrs[port].items()]
-        data_rule = DataRuleContainer(obs, attrs)
+        data_rule = DataRuleContainer.merge(DataRuleContainer(obs, attrs))
         ported_drs[port] = data_rule
     logger.debug("Recomposed data rules contain %d ports: %s", len(ported_drs), ported_drs.keys())
     return ported_drs
