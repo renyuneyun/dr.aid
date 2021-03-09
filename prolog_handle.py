@@ -182,7 +182,7 @@ def _parse_obligation(res_iter, attr_hist):
         ob = r_ob['Ob'].decode()
         raw_attr = r_ob['Attr']
         if _is_pl_null(raw_attr):
-            attr = None
+            attr = []
         else:
             attr = [attr_hist[tuple(raw_attr)]]
         ac = r_ob['Ac']
