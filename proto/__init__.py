@@ -36,5 +36,6 @@ from .stage import (
         Stage,
         Imported,
         Finished,
+        Processing,
         )
 

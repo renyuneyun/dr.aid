@@ -182,8 +182,8 @@ class ObligationDeclaration:
     def name(self):
         return self._name
 
-    def on_stage(self, current_stage: Stage, attribute_resolver: AttributeResolver) -> Optional[ActivatedObligation]:
-        if self._ac.is_met(current_stage):
+    def on_stage(self, current_stage: Stage, function: Optional[str], attribute_resolver: AttributeResolver) -> Optional[ActivatedObligation]:
+        if self._ac.is_met(current_stage, function):
             return ActivatedObligation(self._name, [attribute_resolver.resolve(attr_ref) for attr_ref in self._attr_ref])
         return None
 
@@ -260,10 +260,10 @@ class DataRuleContainer(AttributeResolver):
         attrcaps = [atc.clone() for atc in self._attrcaps]
         return DataRuleContainer(rules, attrcaps)
 
-    def on_stage(self, current_stage: Stage) -> List[ActivatedObligation]:
+    def on_stage(self, current_stage: Stage, function: Optional[str]) -> List[ActivatedObligation]:
         lst = []
         for r in self._rules:
-            ret = r.on_stage(current_stage, self)
+            ret = r.on_stage(current_stage, function, self)
             if ret:
                 lst.append(ret)
         return lst

@@ -19,19 +19,11 @@ from rdflib import Graph, URIRef
 from .rule import DataRuleContainer, ActivatedObligation, PortedRules
 from . import rule_handle
 from .rule_handle import FlowRuleHandler
-from .proto import Stage, Imported
-from .graph_wrapper import ComponentAugmentation, GraphWrapper, virtual_port_for_import
+from .proto import Stage, Imported, Processing
+from .graph_wrapper import ComponentAugmentation, GraphWrapper, virtual_port_for_import, K_FUNCTION
 
 
 logger = logging.getLogger(__name__)
-
-
-def on_import(rule: DataRuleContainer) -> List[ActivatedObligation]:
-    return on_stage(rule, Imported())
-
-
-def on_stage(rule: DataRuleContainer, stage: Stage) -> List[ActivatedObligation]:
-    return rule.on_stage(stage)
 
 
 def _flow_rule_handler(graph: GraphWrapper, component: URIRef):
@@ -57,12 +49,18 @@ def propagate(graph: GraphWrapper, component_list: List[URIRef]) -> Tuple[List[C
     augmentations = []
     activated_obligations = {}
     for component in component_list:
+        component_info = graph.component_info(component)[0]
+        function_name = component_info.function
+
         input_rules = graph.get_data_rules(component)
+
+        for input_rule in input_rules.values():
+            input_rule.on_stage(Processing(), function_name)
 
         imported_rule = graph.get_imported_rules(component)
         if imported_rule:
             input_rules[virtual_port_for_import(component)] = imported_rule
-            obs = on_import(imported_rule)
+            obs = imported_rule.on_stage(Imported(), function_name)
             if obs:
                 activated_obligations[component] = obs
 

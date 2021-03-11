@@ -27,3 +27,6 @@ with onto:
     class Finished(Thing):
         pass
 
+    class Processing(Thing):
+        pass
+

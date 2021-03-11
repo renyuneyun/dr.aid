@@ -207,10 +207,10 @@
     
 
 
-    <!-- http://www.semanticweb.org/ryey/ontologies/2019/9/core#OnPublish -->
+    <!-- http://www.semanticweb.org/ryey/ontologies/2019/9/core#Processing -->
 
-    <owl:Class rdf:about="http://www.semanticweb.org/ryey/ontologies/2019/9/core#OnPublish">
-        <rdfs:subClassOf rdf:resource="http://www.semanticweb.org/ryey/ontologies/2019/9/core#ActivationCondition"/>
+    <owl:Class rdf:about="http://www.semanticweb.org/ryey/ontologies/2019/9/core#Processing">
+        <rdfs:subClassOf rdf:resource="http://www.semanticweb.org/ryey/ontologies/2019/9/core#Stage"/>
     </owl:Class>
     
 
@@ -218,6 +218,14 @@
     <!-- http://www.semanticweb.org/ryey/ontologies/2019/9/core#Stage -->
 
     <owl:Class rdf:about="http://www.semanticweb.org/ryey/ontologies/2019/9/core#Stage"/>
+    
+
+
+    <!-- http://www.semanticweb.org/ryey/ontologies/2019/9/core#WhenPublish -->
+
+    <owl:Class rdf:about="http://www.semanticweb.org/ryey/ontologies/2019/9/core#WhenPublish">
+        <rdfs:subClassOf rdf:resource="http://www.semanticweb.org/ryey/ontologies/2019/9/core#ActivationCondition"/>
+    </owl:Class>
     
 
 
@@ -246,7 +254,7 @@
             <rdf:Description rdf:about="http://www.semanticweb.org/ryey/ontologies/2019/9/core#OnAsInput"/>
             <rdf:Description rdf:about="http://www.semanticweb.org/ryey/ontologies/2019/9/core#OnFinish"/>
             <rdf:Description rdf:about="http://www.semanticweb.org/ryey/ontologies/2019/9/core#OnImport"/>
-            <rdf:Description rdf:about="http://www.semanticweb.org/ryey/ontologies/2019/9/core#OnPublish"/>
+            <rdf:Description rdf:about="http://www.semanticweb.org/ryey/ontologies/2019/9/core#WhenPublish"/>
         </owl:members>
     </rdf:Description>
 </rdf:RDF>

@@ -57,7 +57,7 @@ def graph_into_batches(graph: MultiDiGraph) -> List[List[URIRef]]:
 
 def trim_port_name(port_name: str, function: str):
     if port_name.startswith(function):
-        port_name = port_name.removeprefix(function).lstrip('/')
+        port_name = port_name[len(function)+1:]  # The `/` after the function name is also removed
     return port_name
 
 

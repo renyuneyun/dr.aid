@@ -22,15 +22,15 @@ onto = import_ontology("core.owl")
 
 with onto:
     class ActivationCondition(Thing):
-        def is_met(self, current_stage: Stage) -> bool:
+        def is_met(self, current_stage: Stage, function: Optional[str]) -> bool:
             raise NotImplementedError
 
     class Never(Thing):
-        def is_met(self, current_stage: Stage) -> bool:
+        def is_met(self, current_stage: Stage, function: Optional[str]) -> bool:
             return False
 
     class OnImport(Thing):
-        def is_met(self, current_stage: Stage) -> bool:
+        def is_met(self, current_stage: Stage, function: Optional[str]) -> bool:
             return isinstance(current_stage, Imported)
 
     class OnAsInput(Thing):
@@ -38,6 +38,12 @@ with onto:
 
     class WhenImported(OnImport):
         equivalent_to = [OnImport]
+
+    class WhenPublish(Thing):
+        def is_met(self, current_stage: Stage, function: Optional[str]) -> bool:
+            if function == 'publish':
+                return True
+            return False
 
     def eq(a, b) -> bool:
         assert a != None
