@@ -13,6 +13,7 @@ This module contains the helper classes for dealing with the RDF endpoint (for p
 
 from dataclasses import dataclass
 import logging
+import typing
 from typing import Dict, List, Optional
 
 from rdflib import Graph, URIRef
@@ -26,6 +27,10 @@ from .names import T_REF
 from .namespaces import NS
 
 DEFAULT_PORT = ''
+
+
+if typing.TYPE_CHECKING:
+    from .graph_wrapper import GraphWrapper
 
 
 @dataclass
