@@ -18,6 +18,7 @@ setup(
     scripts = [],
     entry_points = {
         'console_scripts': [
+            'draid=draid.__main__:console_entry',
         ]
     }
 )

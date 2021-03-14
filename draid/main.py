@@ -1,84 +1,35 @@
-#!/usr/bin/env python3
 # -*- coding:utf-8 -*-
 #
 #   Author  :   renyuneyun
 #   E-mail  :   renyuneyun@gmail.com
-#   Date    :   19/04/12 18:53:31
+#   Date    :   21/03/14 10:38:46
 #   License :   Apache 2.0 (See LICENSE)
 #
 
 '''
-
+The main entry of the DRAid system. It can be used by a __main__.py, a Jupyter notebook, or anything similar.
 '''
 
-import logging, coloredlogs
-import logging.config
-
-logging.basicConfig()
-coloredlogs.install(level='DEBUG')
-logger = logging.getLogger()
-
-import argparse
-from rdflib.extras.external_graph_libs import rdflib_to_networkx_multidigraph
-import yaml
-from pprint import pformat
 import json
 
-import draid.recognizer as rcg
-import draid.reason as reason
-import draid.setting as setting
-import draid.sparql_helper as sh
-import draid.graph_wrapper as gw
-import draid.rule_database_helper as rdbh
+from rdflib.extras.external_graph_libs import rdflib_to_networkx_multidigraph
+
+from . import recognizer as rcg
+from . import reason as reason
+from . import setting as setting
+from . import sparql_helper as sh
+from . import graph_wrapper as gw
+from . import rule_database_helper as rdbh
+
+import logging
+logger = logging.getLogger()
 
 
-def main():
-
-    parser = argparse.ArgumentParser()
-    parser.add_argument('url', help='The URL to the service (SPARQL endpoint), e.g. http://127.0.0.1:3030/prov')
-    parser.add_argument('scheme', choices=['SPROV', 'CWLPROV'],
-            default=setting.SCHEME, nargs='?',
-            help='Set what scheme the target is using. Currently "SPROV" and "CWLPROV" are supported.')
-    parser.add_argument('--aio', action='store_true',
-            help='Perform ALl-In-One reasoning, rather than reason about one component at a time.')
-    parser.set_defaults(aio=False)
-    parser.add_argument('--rule-db',
-            default=setting.RULE_DB,
-            help='The database where the data rules and flow rules are stored. Use comma to separate multiple values. Every database should be a JSON file. If the file does not exist, it will be ignored.')
-    parser.add_argument('-w', '--write',
-            action='store', nargs='?', default=None, const=True,
-            help='Write the reasoning results into database. Optionally specifies the location it writes to. The default location is the last rule database.')  # See https://stackoverflow.com/questions/21997933/how-to-make-an-optional-value-for-argument-using-argparse
-    parser.add_argument("-v", "--verbosity", action="count", default=0,
-            help='Increase the verbosity of messages. Overrides "logging.yml"')
-    args = parser.parse_args()
-
-    with open('logging.yml','rt') as f:
-        config=yaml.safe_load(f.read())
-    logging.config.dictConfig(config)
-    if args.verbosity:
-        logging_level = logging.DEBUG
-        if args.verbosity == 1:
-            logging_level = logging.CRITICAL
-        elif args.verbosity == 2:
-            logging_level = logging.ERROR
-        elif args.verbosity == 3:
-            logging_level = logging.WARN
-        elif args.verbosity == 4:
-            logging_level = logging.INFO
-        elif args.verbosity == 5:
-            logging_level = logging.DEBUG
-        for handler in logging.getLogger().handlers:
-            handler.setLevel(logging_level)
-        logger.setLevel(logging_level)
-        for logger_name in config['loggers']:
-            logging.getLogger(logger_name).setLevel(logging_level)
-
-    service = args.url
-    setting.SCHEME = args.scheme
-    setting.AIO = args.aio
-    setting.RULE_DB = args.rule_db.split(',')
-    setting.DB_WRITE_TO = args.write
-
+def main(service, scheme=None, aio=None, rule_db=None, db_write_to=None):
+    if scheme: setting.SCHEME = scheme
+    if aio: setting.AIO = aio
+    if rule_db: setting.RULE_DB = rule_db
+    if db_write_to: setting.DB_WRITE_TO = db_write_to
 
     rdbh.init_default()
 
@@ -176,7 +127,3 @@ def draw(graphs, activated_obligations=[]):
                 .flow_rules()
         G = gb.build()
         vis.draw_to_file(G, filename)
-
-
-if __name__ == '__main__':
-    main()
