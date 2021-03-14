@@ -17,12 +17,12 @@ from .proto import (
         obtain,
         )
 from .rule import Attribute, AttributeCapsule, ObligationDeclaration, DataRuleContainer, FlowRule, PortedRules
+from .setting import FLOW_RULE_DEF
 
 import logging
 logger = logging.getLogger(__name__)
 
 
-FLOW_RULE_DEF = './prolog/flow_rule.pl'  # The directory which contains the flow rule definitions
 prolog = pyswip.Prolog()  # pyswip doesn't support launching multiple Prolog instances (said to be the limition of swi-prolog). So I'm using different initial situations for different ones instead
 prolog.consult(FLOW_RULE_DEF)
 _uniq_counter = 0

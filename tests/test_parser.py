@@ -13,8 +13,8 @@
 
 import pytest
 
-from exp import parser
-from exp.rule import ObligationDeclaration, DataRuleContainer, AttributeCapsule, FlowRule, Propagate, Edit, Delete
+from draid import parser
+from draid.rule import ObligationDeclaration, DataRuleContainer, AttributeCapsule, FlowRule, Propagate, Edit, Delete
 
 
 @pytest.mark.parametrize('s, attrcap', [

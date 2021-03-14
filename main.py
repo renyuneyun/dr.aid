@@ -24,12 +24,12 @@ import yaml
 from pprint import pformat
 import json
 
-import exp.recognizer as rcg
-import exp.reason as reason
-import exp.setting as setting
-import exp.sparql_helper as sh
-import exp.graph_wrapper as gw
-import exp.rule_database_helper as rdbh
+import draid.recognizer as rcg
+import draid.reason as reason
+import draid.setting as setting
+import draid.sparql_helper as sh
+import draid.graph_wrapper as gw
+import draid.rule_database_helper as rdbh
 
 
 def main():
@@ -166,7 +166,7 @@ def propagate_all_cwl(service):
 
 
 def draw(graphs, activated_obligations=[]):
-    from exp import visualise as vis
+    from draid import visualise as vis
     for i, graph in enumerate(graphs):
         filename = "graph_{}.png".format(i)
         gb = vis.GraphBuilder(graph, activated_obligations[i]) \

@@ -2,6 +2,11 @@
 The settings, shared among all modules.
 '''
 
+from pathlib import Path
+
+_source_dir = Path(__file__).resolve().parent  # Directory of the source code file
+FLOW_RULE_DEF = str(_source_dir / 'prolog/flow_rule.pl')  # The directory which contains the flow rule definitions
+
 SCHEME = 'CWLPROV'
 
 AIO = False

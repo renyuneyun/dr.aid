@@ -19,30 +19,30 @@ loggers:
         handlers: [console]
         propagate: yes
         
-    exp.graph_wrapper:
+    draid.graph_wrapper:
         level: DEBUG
         propagate: yes
 
-    exp.prolog_handle:
+    draid.prolog_handle:
         level: DEBUG
         propagate: yes
 
-    exp.reason:
+    draid.reason:
         level: DEBUG
         propagate: yes
 
-    exp.recognizer:
+    draid.recognizer:
         level: DEBUG
         propagate: yes
 
-    exp.rule_database_helper:
+    draid.rule_database_helper:
         level: DEBUG
         propagate: yes
 
-    exp.sparql_helper:
+    draid.sparql_helper:
         level: WARNING
         propagate: yes
 
-    exp.visualise:
+    draid.visualise:
         level: DEBUG
         propagate: yes

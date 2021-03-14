@@ -13,8 +13,8 @@
 
 import pytest
 
-from exp.rule import ObligationDeclaration, DataRuleContainer, AttributeCapsule
-from exp.proto import WhenImported
+from draid.rule import ObligationDeclaration, DataRuleContainer, AttributeCapsule
+from draid.proto import WhenImported
 
 
 pc1 = AttributeCapsule.from_raw('pr1', [('str', 'a')])

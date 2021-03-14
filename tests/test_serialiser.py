@@ -13,9 +13,9 @@
 
 import pytest
 
-from exp import parser
-from exp.rule import ObligationDeclaration, DataRuleContainer, AttributeCapsule, FlowRule, Propagate, Edit, Delete
-from exp.proto import WhenImported
+from draid import parser
+from draid.rule import ObligationDeclaration, DataRuleContainer, AttributeCapsule, FlowRule, Propagate, Edit, Delete
+from draid.proto import WhenImported
 
 
 @pytest.mark.parametrize('name, values', [

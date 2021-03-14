@@ -1,10 +1,10 @@
 import pytest
 import os
 
-from exp.rule import ObligationDeclaration, DataRuleContainer, AttributeCapsule, FlowRule
-from exp.proto import WhenImported
+from draid.rule import ObligationDeclaration, DataRuleContainer, AttributeCapsule, FlowRule
+from draid.proto import WhenImported
 
-from exp import prolog_handle
+from draid import prolog_handle
 
 pc1 = AttributeCapsule.from_raw('name', [('str', 'UoE')])
 pc1_2 = AttributeCapsule.from_raw('name', [('str', 'UoE'), ('str', 'University of Earth')])
