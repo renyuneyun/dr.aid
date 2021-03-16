@@ -40,6 +40,8 @@ You may often wish to specify the addition rule database to customize the data-u
 .. code:: shell
 
     draid --rule-db rule-db.json SPARQL_ENDPOINT PROVENANCE_SCHEMA
+    
+After running the command, a graph is rendered to :code:`graph_N.png` where `N` is a non-negative integer representing the index of the graphs (provenance graph identified in the SPARQL ENDPOINT).
 
 Run this command to see additional help:
 

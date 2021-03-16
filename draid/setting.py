@@ -11,9 +11,9 @@ SCHEME = 'CWLPROV'
 
 AIO = False
 
-RULE_DB = ['rule-db.json']
+RULE_DB = ['rule-db.json']  # Multiple DB entries can be accepted, and they will be queried in the specified order.
 
-DB_WRITE_TO = None
+DB_WRITE_TO = None  # `None` means don't write; `True` means write to the last `RULE_DB` file; a string means the file to write to.
 
 
 # Internal configurations. Normally they do not need to change, unless the you know what they are

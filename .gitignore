@@ -19,3 +19,5 @@ graph_0.png*
 *.dot
 
 *.egg-info/
+
+.ipynb_checkpoints
