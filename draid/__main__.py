@@ -41,6 +41,9 @@ def console_entry():
     parser.add_argument('-w', '--write',
             action='store', nargs='?', default=None, const=True,
             help='Write the reasoning results into database. Optionally specifies the location it writes to. The default location is the last rule database.')  # See https://stackoverflow.com/questions/21997933/how-to-make-an-optional-value-for-argument-using-argparse
+    parser.add_argument('--obligation-db',
+            default=setting.OBLIGATION_DB,
+            help='The obligation database path. If present, the identified obligations will be stored to the database.')
     parser.add_argument("-v", "--verbosity", action="count", default=0,
             help='Increase the verbosity of messages. Overrides "logging.yml"')
     args = parser.parse_args()
@@ -66,7 +69,7 @@ def console_entry():
         for logger_name in config['loggers']:
             logging.getLogger(logger_name).setLevel(logging_level)
 
-    main(args.url, args.scheme, args.aio, args.rule_db.split(','), args.write)
+    main(args.url, args.scheme, args.aio, args.rule_db.split(','), args.write, args.obligation_db)
 
 
 if __name__ == '__main__':

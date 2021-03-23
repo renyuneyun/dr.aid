@@ -15,6 +15,8 @@ RULE_DB = ['rule-db.json']  # Multiple DB entries can be accepted, and they will
 
 DB_WRITE_TO = None  # `None` means don't write; `True` means write to the last `RULE_DB` file; a string means the file to write to.
 
+OBLIGATION_DB = None  # A string (or `None`) representing the filepath of the obligation DB. Probably you want to use 'obligation-db.json'
+
 
 # Internal configurations. Normally they do not need to change, unless the you know what they are
 

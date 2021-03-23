@@ -299,7 +299,7 @@ def rule_acknowledge(source: str, suffix='', activate_on_import=False) -> str:
     when = 'WhenImported ' if activate_on_import else ''
     return f'''
     begin
-        obligation(Acknowledge, [source_name], {when}).
+        obligation(Acknowledge source_name, [source_name], {when}).
         attribute(source_name, ["str" "{source}{suffix}"]).
     end
     '''
