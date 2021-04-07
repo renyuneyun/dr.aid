@@ -2,6 +2,7 @@
 This module contains the handling functions for interacting with the Prolog reasoner which performs the flow rule through situations calculus formalism and Golog.
 '''
 
+import json
 import pyswip
 import tempfile
 
@@ -11,12 +12,13 @@ from typing import Dict, Iterable, List, Optional, Tuple, Union
 
 from .exception import IllegalCaseError
 from .graph_wrapper import GraphWrapper
-from .proto import (
-        dump,
-        is_ac,
-        obtain,
-        )
-from .rule import Attribute, AttributeCapsule, ObligationDeclaration, DataRuleContainer, FlowRule, PortedRules
+from .parser import call_parser_data_rule
+# from .proto import (
+#         # dump,
+#         # is_ac,
+#         # obtain,
+#         )
+from .rule import ActivationCondition, Attribute, AttributeCapsule, ObligationDeclaration, DataRuleContainer, FlowRule, PortedRules
 from .setting import FLOW_RULE_DEF
 
 import logging
@@ -34,7 +36,7 @@ IGNORED_PORTS = [
 
 
 def _pl_str(s: str):
-    return f'"{s}"'
+    return json.dumps(s)
 def _pl_value(value: Union[str, int, float]):
     if isinstance(value, str):
         return _pl_str(value)
@@ -72,7 +74,7 @@ def dump_data_rule(drc: 'DataRuleContainer', port, situation='s0') -> str:
         name = ob.name()
         attr_repr = '[' + ", ".join(dump_attr_refs(ob._attr_ref)) + ']'
         vb_repr = '[' + ", ".join(dump_attr_refs(ob._validity_binding)) + ']'
-        ac = dump(ob._ac)
+        ac = ob._ac.dump()
         ac = _pl_str(ac) if ac else _PL_NULL
         s += f"obligation({_pl_str(name)}, {attr_repr}, {vb_repr}, {ac}, {_pl_str(port)}, {situation}).\n"
     return s
@@ -186,8 +188,8 @@ def _parse_obligation(res_iter, attr_hist):
             ac = None
         else:
             ac = ac.decode()
-            assert is_ac(ac)
-            ac = obtain(ac)
+            ac_expr = call_parser_data_rule(ac, part='activation_condition')
+            ac = ActivationCondition.from_raw(ac_expr)
         ob = ObligationDeclaration((ob, attr), vb, ac)
         ported_obs[port].append(ob)
     logger.debug("Retrieved obligations in %d ports. Summary ({PORT: #-OF-OBLIGATIONS}): %s", len(ported_obs), { port: len(obs) for port, obs in ported_obs.items() })

@@ -30,3 +30,9 @@ with onto:
     class Processing(Thing):
         pass
 
+stage_mapping = {
+        Imported : 'import',
+        Finished : 'finish',
+        Processing : 'processing',
+        }
+

@@ -37,5 +37,6 @@ from .stage import (
         Imported,
         Finished,
         Processing,
+        stage_mapping,
         )
 

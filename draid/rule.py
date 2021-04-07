@@ -9,13 +9,14 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 from random import randint
 
 from .proto import (
-        ActivationCondition,
-        Never,
-        eq,
-        dump,
-        is_ac,
-        obtain,
+        # ActivationCondition,
+        # Never,
+        # eq,
+        # dump,
+        # is_ac,
+        # obtain,
         Stage,
+        stage_mapping,
         AttributeValue,
         Attribute,
         )
@@ -24,10 +25,7 @@ from .exception import IllegalCaseError
 
 PortedRules = Dict[str, Optional['DataRuleContainer']]
 
-
-DanglingAttributeReference = Tuple[str, int]
-DanglingObligatedAction = Tuple[str, List[DanglingAttributeReference]]
-DanglingObligation = Tuple[DanglingObligatedAction, List[DanglingAttributeReference], Optional[ActivationCondition]]
+ACTIVATION_CONDITION_EXPR = Optional[Tuple[str, Tuple[str, Optional[str]]]]
 
 
 def escaped(value: Any) -> Optional[str]:
@@ -39,6 +37,90 @@ def escaped(value: Any) -> Optional[str]:
         return None
     else:
         return NotImplemented
+
+
+class ActivationCondition:
+
+    def from_raw(ac_expr: ACTIVATION_CONDITION_EXPR):
+        if ac_expr == None:
+            return Never()
+        elif ac_expr[0] == '=':
+            return EqualAC(*ac_expr[1])
+        elif ac_expr[0] == '!=':
+            return NEqualAC(*ac_expr[1])
+        else:
+            raise SyntaxError("Invalid syntax for ActivationCondition expression")
+
+    def dump(self) -> Optional[str]:
+        return NotImplemented
+
+    def __eq__(self, o):
+        if o is None:
+            return False
+        if self.__class__ != o.__class__:
+            return False
+        return True
+
+    def is_met(self, current_stage: Stage, function: Optional[str]):
+        return NotImplemented
+
+
+class Never(ActivationCondition):
+
+    def dump(self):
+        return None
+
+    def is_met(self, current_stage: Stage, function: Optional[str]):
+        return False
+
+
+class EqualAC(ActivationCondition):
+
+    def __init__(self, slot, value):
+        self.slot = slot
+        self.value = value
+
+    def dump(self):
+        value = json.dumps(self.value) if self.value is not None else '*'
+        return "{} = {}".format(self.slot, value)
+
+    def __eq__(self, o):
+        if not super().__eq__(o):
+            return False
+        return self.slot == o.slot and self.value == o.value
+
+    def is_met(self, current_stage: Stage, function: Optional[str]):
+        if self.slot == 'action':
+            if self.value is not None:
+                return function == self.value
+            else:
+                return function is not None
+            return False
+        elif self.slot == 'stage':
+            if self.value is not None:
+                return stage_mapping[current_stage.__class__] == self.value
+            else:
+                return True
+        else:
+            # TODO: other conditions
+            return False
+
+
+
+class NEqualAC(ActivationCondition):
+
+    def __init__(self, slot, value):
+        self.slot = slot
+        self.value = value
+
+    def dump(self):
+        value = json.dumps(self.value) if self.value is not None else '*'
+        return "{} = {}".format(self.slot, value)
+
+    def __eq__(self, o):
+        if not super().__eq__(o):
+            return False
+        return self.slot == o.slot and self.value == o.value
 
 
 class AttributeCapsule:
@@ -98,6 +180,11 @@ class AttributeCapsule:
         return self._attrs[index]
 
 
+DanglingAttributeReference = Tuple[str, int]
+DanglingObligatedAction = Tuple[str, List[DanglingAttributeReference]]
+DanglingObligation = Tuple[DanglingObligatedAction, List[DanglingAttributeReference], Optional[ActivationCondition]]
+
+
 class AttributeResolver:
 
     def __init__(self, attribute_capsule_map: Dict[str, AttributeCapsule]):
@@ -125,8 +212,8 @@ class ObligationDeclaration:
     '''
 
     @classmethod
-    def from_raw(cls, obligated_action: DanglingObligatedAction, validity_binding: List[DanglingAttributeReference]=[], activation_condition_repr: Optional[str]=None):
-        activation_condition = obtain(activation_condition_repr) if activation_condition_repr else None
+    def from_raw(cls, obligated_action: DanglingObligatedAction, validity_binding: List[DanglingAttributeReference]=[], activation_condition_expr: ACTIVATION_CONDITION_EXPR=None):
+        activation_condition = ActivationCondition.from_raw(activation_condition_expr)
         return cls(obligated_action, validity_binding, activation_condition)
 
     def __init__(self, obligated_action: Union[str, Tuple[str, List[Tuple[str, int]]]], validity_binding: List[Tuple[str, int]] = [], activation_condition: Optional[ActivationCondition] = None):
@@ -150,7 +237,7 @@ class ObligationDeclaration:
                 return False
             if self._validity_binding != other._validity_binding:
                 return False
-            if not eq(self._ac, other._ac):
+            if self._ac != other._ac:
                 return False
             return True
         else:
@@ -161,8 +248,9 @@ class ObligationDeclaration:
             return (f"{attr_name}[{attr_index}]" for attr_name, attr_index in attr_refs)
         s_attr_ref = " ".join(dump_attr_ref(self._attr_ref))
         s_validity_binding = ','.join(dump_attr_ref(self._validity_binding))
-        ac_dump = dump(self._ac)
-        s_ac = f'"{ac_dump}"' if ac_dump else 'null'
+        ac_dump = self._ac.dump()
+        # s_ac = f'"{ac_dump}"' if ac_dump else 'null'
+        s_ac = ac_dump if ac_dump else 'null'
         s = f"obligation({escaped(self._name)} {s_attr_ref}, [{s_validity_binding}], {s_ac})."
         return s
 
@@ -296,7 +384,7 @@ def random_rule(suffix='', must=False) -> str:
 
 
 def rule_acknowledge(source: str, suffix='', activate_on_import=False) -> str:
-    when = 'WhenImported ' if activate_on_import else ''
+    when = 'stage = "import" ' if activate_on_import else 'null'
     return f'''
     begin
         obligation(Acknowledge source_name, [source_name], {when}).

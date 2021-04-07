@@ -35,20 +35,25 @@ obligation_decl : "obligation" "(" obligated_action "," validity_binding "," act
 attribute_decl : "attribute" "(" attribute_name "," attribute_value_field ")" "."
 obligated_action : action_ref action_spec
 validity_binding : "[" attribute_reference ( "," attribute_reference )* "]" | "["  "]"
-activation_condition : activation_condition_ref
+activation_condition : activation_condition_expr | NULL
 attribute_name : identifier
 attribute_value_field : attribute_value_expr
                           | "[" attribute_value_expr ("," attribute_value_expr)* "]"
 action_ref : external_identifier
 action_spec : attribute_reference*
 attribute_reference : attribute_name [ "[" INT "]" ]
-activation_condition_ref : external_identifier | "null"
+activation_condition_expr : AC_TARGET OPERATOR ac_value
 identifier : CNAME
 attribute_value_expr : attribute_type attribute_value
+NULL : "null"
 external_identifier : identifier | STRING
+AC_TARGET : "action" | "stage" | "user" | "date" | "processId" | "purpose"
+OPERATOR : "=" | "!="
+ac_value : value | ANY
 attribute_type : external_identifier
 attribute_value : value
 value : INT | NUMBER | STRING
+ANY : "*"
 
 %import common.ESCAPED_STRING   -> STRING
 %import common.CNAME            -> CNAME
@@ -96,6 +101,10 @@ SYM_ANY : "*"
 
 
 class TreeToDataRuleContent(Transformer):
+    def _only(self, item):
+        (item,) = item
+        return item
+
     def data_rule(self, stmts):
         obs = []
         attrs = []
@@ -122,9 +131,22 @@ class TreeToDataRuleContent(Transformer):
         return (action, attrs)
     def validity_binding(self, items):
         return list(items)
+    
     def activation_condition(self, items):
         (item,) = items
+        if item == "null":
+            return None
         return item
+    def activation_condition_expr(self, items):
+        ac_target, operator, ac_value = items
+        return (operator, (ac_target, ac_value))
+    def AC_TARGET(self, s):
+        return str(s)
+    def OPERATOR(self, s):
+        return str(s)
+    ac_value = _only
+    def ANY(self, s):
+        return None
 
     def attribute_name(self, items):
         return items[0]
@@ -169,7 +191,7 @@ class TreeToDataRuleContent(Transformer):
     def CNAME(self, s):
         return s[:]
     def STRING(self, s):
-        return json.loads(s)
+        return s[1:-1]
     def NUMBER(self, n):
         return float(n)
     def INT(self, n):
