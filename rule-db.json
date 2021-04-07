@@ -2,9 +2,9 @@
     "imported_rules": {
         "": {
             "function": {
-                "main/create_environment": "begin\nobligation(acknowledge source, [source], OnImport).\nattribute( source, [\"str\" \"UoE\"]).\nend",
-                "main/create_environment_2": "begin\nobligation( acknowledge source, [source], OnImport).\nattribute(source, [\"str\" \"UoE\"]).\nend",
-                "main/create_environment_3": "begin\nobligation( acknowledge source, [source], OnImport).\nattribute(source, [\"str\" \"UoE\"]).\nend"
+                "main/create_environment": "begin\nobligation(acknowledge source, [source], stage = \"import\").\nattribute( source, [\"str\" \"UoE\"]).\nend",
+                "main/create_environment_2": "begin\nobligation( acknowledge source, [source], stage = \"import\").\nattribute(source, [\"str\" \"UoE\"]).\nend",
+                "main/create_environment_3": "begin\nobligation( acknowledge source, [source], stage = \"import\").\nattribute(source, [\"str\" \"UoE\"]).\nend"
             }
         }
     },
