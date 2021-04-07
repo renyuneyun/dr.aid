@@ -36,8 +36,8 @@ IGNORED_PORTS = [
 
 
 def _pl_str(s: str):
-    return json.dumps(s)
-def _pl_value(value: Union[str, int, float]):
+    return json.dumps(s, ensure_ascii=False)
+def _pl_value(value: Union[str, int, float]):  # Maybe merge with _pl_str is a better approach?
     if isinstance(value, str):
         return _pl_str(value)
     else:

@@ -32,11 +32,26 @@ def escaped(value: Any) -> Optional[str]:
     if isinstance(value, (int, float)):
         return str(value)
     elif isinstance(value, str):
-        return json.dumps(value)
+        return json.dumps(value, ensure_ascii=False)
     elif value is None:  # `None` may represent different meanings for different elements, so it should be treated separately where it is used
         return None
-    else:
-        return NotImplemented
+    raise NotImplementedError(f"Unknown value to be escaped: {value}")
+def deescaped(repr: Optional[str]) -> Any:
+    if repr is None:
+        return None
+    try:
+        return int(repr)
+    except ValueError:
+        pass
+    try:
+        return float(repr)
+    except ValueError:
+        pass
+    try:
+        return json.loads(f'"{repr}"')
+    except ValueError:
+        pass
+    raise NotImplementedError(f"Unknown repr to be de-escaped: {repr}")
 
 
 class ActivationCondition:
@@ -143,7 +158,7 @@ class AttributeCapsule:
     @staticmethod
     def from_raw(name: str, raw_attribute: List[Tuple[str, Any]]):
         attrs = []
-        attrs.extend([Attribute(name, a_type, a_value) for (a_type, a_value) in raw_attribute])
+        attrs.extend([Attribute(name, a_type, deescaped(a_value)) for (a_type, a_value) in raw_attribute])
         return AttributeCapsule(name, attrs)
 
     def __init__(self, name: str, attribute: List[Attribute]):
