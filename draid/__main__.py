@@ -36,7 +36,7 @@ def console_entry():
             help='Perform ALl-In-One reasoning, rather than reason about one component at a time.')
     parser.set_defaults(aio=False)
     parser.add_argument('--rule-db',
-            default=setting.RULE_DB,
+            default=','.join(setting.RULE_DB),
             help='The database where the data rules and flow rules are stored. Use comma to separate multiple values. Every database should be a JSON file. If the file does not exist, it will be ignored.')
     parser.add_argument('-w', '--write',
             action='store', nargs='?', default=None, const=True,
