@@ -144,13 +144,13 @@ class GraphBuilder:
                 rule = self._graph.get_data_rule_of_port(output_port)
                 if rule:  # If file-oriented, `rule` will be None
                     ruleNode = self._ni[component, oportName, rule]
-                    self.G.add_node(ruleNode, label=rule.dump().replace('\n', '\\n'), shape='note')
+                    self.G.add_node(ruleNode, label=rule.dump().replace('\n', '\\l'), shape='note')
                     self.G.add_edge(oportNode, ruleNode, arrowhead='none')
 
             imported_rule = self._graph.get_imported_rules(component)
             if imported_rule:
                 ruleNode = self._ni[component, 'imported_rule_data']
-                self.G.add_node(ruleNode, label=imported_rule.dump().replace('\n', '\\n'), shape='note')
+                self.G.add_node(ruleNode, label=imported_rule.dump().replace('\n', '\\l'), shape='note')
                 connectedNode = self._ni[component, 'imported_rule']
                 sg.add_node(connectedNode, label='imported', style='dashed', shape='egg')
                 self.G.add_edge(ruleNode, connectedNode, style='tapered', penwidth=7, arrowtail='none', dir='forward', arrowhead='none')
@@ -164,7 +164,7 @@ class GraphBuilder:
             if rule:
                 dataNode = self._ni[data]
                 ruleNode = self._ni[component, data, rule]
-                self.G.add_node(ruleNode, label=rule.dump().replace('\n', '\\n'), shape='note')
+                self.G.add_node(ruleNode, label=rule.dump().replace('\n', '\\l'), shape='note')
                 self.G.add_edge(dataNode, ruleNode, arrowhead='none')
 
         return self
