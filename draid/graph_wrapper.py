@@ -102,6 +102,8 @@ class GraphWrapper:
             rh.put_component_info(self.rdf_graph, component_info.id, info_dict)
         logger.debug("all_component_info: %s", pformat(components_info))
 
+        self._virtual_process = []
+
     def is_data_streaming(self) -> bool:
         return self._data_streaming
 
@@ -143,6 +145,17 @@ class GraphWrapper:
                     continue
                 mapped[source] = d
             lst = list(mapped.values())
+        return lst
+
+    def port_without_consume(self) -> List[URIRef]:
+        '''
+        Similar to data_without_consume, but only ports. This is normally useful only for data-streaming workflows.
+        '''
+        lst = []
+        for component in self.components():
+            for port in self.output_ports(component):
+                if len(self.downstream_of_output_port(port)) == 0:
+                    lst.append(port)
         return lst
 
     def input_ports(self, component: URIRef) -> List[URIRef]:
@@ -246,6 +259,7 @@ class GraphWrapper:
         rdf_component_graph = self.s_helper.get_graph_component()
         component_graph = rdflib_to_networkx_multidigraph(rdf_component_graph)
         batches = graph_into_batches(component_graph)
+        batches.append(self._virtual_process)
         return batches
 
     def initial_components(self) -> List[URIRef]:
@@ -344,6 +358,20 @@ class GraphWrapper:
                     name_map[short_name] = long_name
             flow_rule.set_name_map(name_map)
         return flow_rule
+
+    def add_virtual(self, action: str):
+        nodes = []
+        if self.is_data_streaming():
+            for port in self.port_without_consume():
+                node = rh.insert_virtual_process(self.rdf_graph, port, action)
+                nodes.append(node)
+        else:
+            for data in self.data_without_consume():
+                port = self.data_from(data)
+                assert port is not None
+                node = rh.insert_virtual_process(self.rdf_graph, port, action, via_data=data)
+                nodes.append(node)
+        self._virtual_process.extend(nodes)
 
 
     def apply_augmentation(self, augmentations: List[ComponentAugmentation]) -> None:

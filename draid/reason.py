@@ -54,15 +54,20 @@ def propagate(graph: GraphWrapper, component_list: List[URIRef]) -> Tuple[List[C
 
         input_rules = graph.get_data_rules(component)
 
+        obs = []
+
         for input_rule in input_rules.values():
-            input_rule.on_stage(Processing(), function_name)
+            obs.extend(input_rule.on_stage(Processing(), function_name))
 
         imported_rule = graph.get_imported_rules(component)
         if imported_rule:
             input_rules[virtual_port_for_import(component)] = imported_rule
-            obs = imported_rule.on_stage(Imported(), function_name)
-            if obs:
-                activated_obligations[component] = obs
+            obs.extend(imported_rule.on_stage(Imported(), function_name))
+
+        if obs:
+            if component not in activated_obligations:
+                activated_obligations[component] = []
+            activated_obligations[component].extend(obs)
 
         logger.debug("Component %s receives input rules from %d ports", component, len(input_rules))
         flow_handler = _flow_rule_handler(graph, component)
