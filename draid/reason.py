@@ -52,17 +52,22 @@ def propagate(graph: GraphWrapper, component_list: List[URIRef]) -> Tuple[List[C
         component_info = graph.component_info(component)[0]
         function_name = component_info.function
 
+        info = graph.get_graph_info()
+        info.update(graph.info)
+        info.update(component_info.par)
+        info['processId'] = str(component_info.id)
+
         input_rules = graph.get_data_rules(component)
 
         obs = []
 
         for input_rule in input_rules.values():
-            obs.extend(input_rule.on_stage(Processing(), function_name))
+            obs.extend(input_rule.on_stage(Processing(), function_name, info))
 
         imported_rule = graph.get_imported_rules(component)
         if imported_rule:
             input_rules[virtual_port_for_import(component)] = imported_rule
-            obs.extend(imported_rule.on_stage(Imported(), function_name))
+            obs.extend(imported_rule.on_stage(Imported(), function_name, info))
 
         if obs:
             if component not in activated_obligations:

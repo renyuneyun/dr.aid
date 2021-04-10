@@ -121,6 +121,18 @@ class SProvHelper(Helper):
             ret.append(g)
         return ret
 
+    def get_graph_info(self):
+        ret = {}
+        results = self._q(q.Q(q.F_GRAPH_START_TIME(self.graph)))
+        for binding in results['results']['bindings']:
+            startTime = _rd(binding, 'startTime')
+            ret['startTime'] = startTime
+        results = self._q(q.Q(q.F_GRAPH_USER(self.graph)))
+        for binding in results['results']['bindings']:
+            startTime = _rd(binding, 'user')
+            ret['user'] = startTime
+        return ret
+
     def get_initial_components(self):
         ret = []
         results = self._q(q.Q(q.F_COMPONENT_WITHOUT_INPUT_DATA(self.graph)))
@@ -171,6 +183,15 @@ class CWLHelper(Helper):
 
     def __init__(self, destination):
         super().__init__(destination)
+
+    def get_graph_info(self):
+        ret = {}
+        results = self._q(cq.Q(cq.Q_GRAPH_START_TIME))
+        for binding in results['results']['bindings']:
+            startTime = _rd(binding, 'startTime')
+            ret['startTime'] = startTime
+        return ret
+
 
     def get_components_info(self, components: List[URIRef]) -> List[ComponentInfo]:
         def get_components_function(self) -> Dict[URIRef, str]:

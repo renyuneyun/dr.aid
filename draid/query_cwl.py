@@ -200,6 +200,14 @@ SELECT ?component ?function_name WHERE {
 '''
 
 
+Q_GRAPH_START_TIME = r'''
+SELECT ?startTime WHERE {
+  ?run a wf4prov:WorkflowRun.
+  ?run prov:startedAtTime ?startTime.
+}
+'''
+
+
 C_COMPONENT_GRAPH = P('''
 PREFIX : <http://ryey/ns/#>
 

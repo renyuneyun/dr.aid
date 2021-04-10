@@ -76,7 +76,7 @@ class ActivationCondition:
             return False
         return True
 
-    def is_met(self, current_stage: Stage, function: Optional[str]):
+    def is_met(self, current_stage: Stage, function: Optional[str], info: Dict[str, str]):
         return NotImplemented
 
 
@@ -85,7 +85,7 @@ class Never(ActivationCondition):
     def dump(self):
         return None
 
-    def is_met(self, current_stage: Stage, function: Optional[str]):
+    def is_met(self, current_stage: Stage, function: Optional[str], info: Dict[str, str]):
         return False
 
 
@@ -104,7 +104,7 @@ class EqualAC(ActivationCondition):
             return False
         return self.slot == o.slot and self.value == o.value
 
-    def is_met(self, current_stage: Stage, function: Optional[str]):
+    def is_met(self, current_stage: Stage, function: Optional[str], info: Dict[str, str]):
         if self.slot == 'action':
             if self.value is not None:
                 return function == self.value
@@ -117,8 +117,12 @@ class EqualAC(ActivationCondition):
             else:
                 return True
         else:
-            # TODO: other conditions
-            return False
+            if self.slot in info:
+                if self.value is not None:
+                    return info[self.slot] == self.value
+                else:  # None for self.value represents "any"
+                    return True
+        return False
 
 
 
@@ -136,6 +140,26 @@ class NEqualAC(ActivationCondition):
         if not super().__eq__(o):
             return False
         return self.slot == o.slot and self.value == o.value
+
+    def is_met(self, current_stage: Stage, function: Optional[str], info: Dict[str, str]):
+        if self.slot == 'action':
+            if self.value is not None:
+                return function != self.value
+            else:
+                return function is not None
+            return False
+        elif self.slot == 'stage':
+            if self.value is not None:
+                return stage_mapping[current_stage.__class__] != self.value
+            else:
+                return True
+        else:
+            if self.slot in info:
+                if self.value is not None:
+                    return info[self.slot] != self.value
+                else:  # None for self.value represents "any"
+                    return True
+        return False
 
 
 class AttributeCapsule:
@@ -285,8 +309,8 @@ class ObligationDeclaration:
     def name(self):
         return self._name
 
-    def on_stage(self, current_stage: Stage, function: Optional[str], attribute_resolver: AttributeResolver) -> Optional[ActivatedObligation]:
-        if self._ac.is_met(current_stage, function):
+    def on_stage(self, current_stage: Stage, function: Optional[str], info: Dict[str, str], attribute_resolver: AttributeResolver) -> Optional[ActivatedObligation]:
+        if self._ac.is_met(current_stage, function, info):
             return ActivatedObligation(self._name, [attribute_resolver.resolve(attr_ref) for attr_ref in self._attr_ref])
         return None
 
@@ -363,10 +387,10 @@ class DataRuleContainer(AttributeResolver):
         attrcaps = [atc.clone() for atc in self._attrcaps]
         return DataRuleContainer(rules, attrcaps)
 
-    def on_stage(self, current_stage: Stage, function: Optional[str]) -> List[ActivatedObligation]:
+    def on_stage(self, current_stage: Stage, function: Optional[str], info: Dict[str, str]) -> List[ActivatedObligation]:
         lst = []
         for r in self._rules:
-            ret = r.on_stage(current_stage, function, self)
+            ret = r.on_stage(current_stage, function, info, self)
             if ret:
                 lst.append(ret)
         return lst

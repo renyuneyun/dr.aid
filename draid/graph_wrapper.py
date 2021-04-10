@@ -103,6 +103,7 @@ class GraphWrapper:
         logger.debug("all_component_info: %s", pformat(components_info))
 
         self._virtual_process = []
+        self.info = {}
 
     def is_data_streaming(self) -> bool:
         return self._data_streaming
@@ -372,6 +373,12 @@ class GraphWrapper:
                 node = rh.insert_virtual_process(self.rdf_graph, port, action, via_data=data)
                 nodes.append(node)
         self._virtual_process.extend(nodes)
+
+    def set_purpose(self, purpose: str):
+        self.info['purpose'] = purpose
+
+    def get_graph_info(self) -> Dict[str, str]:
+        return self.s_helper.get_graph_info()
 
 
     def apply_augmentation(self, augmentations: List[ComponentAugmentation]) -> None:
