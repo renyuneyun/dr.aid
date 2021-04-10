@@ -260,7 +260,10 @@ class GraphWrapper:
         rdf_component_graph = self.s_helper.get_graph_component()
         component_graph = rdflib_to_networkx_multidigraph(rdf_component_graph)
         batches = graph_into_batches(component_graph)
-        batches.append(self._virtual_process)
+        if not batches:
+            batches = [self.components()]
+        if self._virtual_process:
+            batches.append(self._virtual_process)
         return batches
 
     def initial_components(self) -> List[URIRef]:
