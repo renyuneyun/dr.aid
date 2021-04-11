@@ -306,6 +306,22 @@ P_COMPONENT_FUNCTION = '''
 def F_COMPONENT_FUNCTION(graph: T_REF) -> str:
     return F_QUERY('?component ?function_name', graph, P_COMPONENT_FUNCTION)
 
+P_GRAPH_START_TIME = '''
+    ?run a s-prov:WFExecution.
+    ?run prov:startedAtTime ?startTime.
+'''
+
+def F_GRAPH_START_TIME(graph: T_REF) -> str:
+    return F_QUERY('?startTime', graph, P_GRAPH_START_TIME)
+
+P_GRAPH_USER = '''
+    ?run a s-prov:WFExecution.
+    ?run s-prov:username ?user.
+'''
+
+def F_GRAPH_USER(graph: T_REF) -> str:
+    return F_QUERY('?user', graph, P_GRAPH_USER)
+
 
 T_COMPONENT_GRAPH = P('''
 PREFIX : <http://ryey/ns/#>

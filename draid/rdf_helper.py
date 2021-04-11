@@ -12,7 +12,8 @@ This module contains the helper functions for dealing with the underlying RDF Gr
 '''
 
 import json
-from rdflib import Graph, Literal, URIRef
+import uuid
+from rdflib import BNode, Graph, Literal, URIRef
 from typing import Dict, Iterable, Optional, Tuple
 
 from .namespaces import NS
@@ -218,4 +219,31 @@ def insert_rule(graph: Graph, component: URIRef, rule: DataRuleContainer) -> Non
 
 def set_flow_rule(graph: Graph, component: URIRef, flow_rule: str) -> None:
     graph.add((component, NS['mine']['flowRule'], flow_rule))
+
+
+def insert_virtual_process(graph: Graph, from_port: URIRef, action: str, via_data: Optional[URIRef]=None) -> URIRef:
+    node = URIRef("http://ryey/ns/VirtualComponent/{}".format(str(uuid.uuid4())))
+    graph.add((node, NS['rdf']['type'], NS['s-prov']['Component']))
+    graph.add((node, NS['rdf']['type'], NS['mine']['VirtualComponent']))
+    put_component_info(graph, node, {'function': action})  # TODO: remove hard-coding
+    out_port = URIRef(str(uuid.uuid4()))
+    OUTPUT_PORT_NAME = Literal('voutput')
+    graph.add((node, NS['mine']['hasOutPort'], out_port))
+    graph.add((out_port, NS['rdf']['type'], NS['mine']['OutputPort']))
+    graph.add((out_port, NS['mine']['name'], OUTPUT_PORT_NAME))
+    # connection_out = URIRef(str(uuid.uuid4()))
+    # graph.add((out_port, NS['mine']['hasConnection'], connection_out))
+    if via_data:
+        connection = one(connections_from_port(graph, from_port))
+    else:
+        connection = URIRef(str(uuid.uuid4()))
+    graph.add((from_port, NS['mine']['hasConnection'], connection))
+    graph.add((connection, NS['rdf']['type'], NS['mine']['Connection']))
+    iport = URIRef(str(uuid.uuid4()))
+    INPUT_PORT_NAME = Literal('vinput')
+    graph.add((connection, NS['mine']['target'], iport))
+    graph.add((iport, NS['rdf']['type'], NS['mine']['InputPort']))
+    graph.add((iport, NS['mine']['name'], INPUT_PORT_NAME))
+    graph.add((iport, NS['mine']['inputTo'], node))
+    return node
 
