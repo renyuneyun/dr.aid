@@ -1,0 +1,23 @@
+{
+    "imported_rules": {
+        "": {
+            "function": {
+                "json_organizer": "begin\nobligation( Acknowledge INGV, [ ], action = \"publish\" ).\nattribute( INGV, string \"Instituto Nazionale Di Geofisica E Vulcanologia\" ).\nobligation( Include CC_BY_SA_4 , [ ], action = \"publish\" ).\nattribute( CC_BY_SA_4, url \"https://creativecommons.org/licenses/by/4.0/\" ).\nend",
+                "PE_stationxml_reader": "begin\nobligation( Cite AC_network , [ ], stage = \"import\" ).\nattribute( AC_network, string \"Institute Of Geosciences, Energy, Water And Environment. (2002). Albanian Seismological Network [Data set]. International Federation of Digital Seismograph Networks. https://doi.org/10.7914/SN/AC\" ).\n\nobligation( Acknowledge ORFEUS_EIDA , [ ], action = \"publish\" ).\nattribute( ORFEUS_EIDA, string \"We acknowledge ORFEUS and EIDA for providing the waveform data.\" ).\nend"
+            }
+        }
+    },
+    "flow_rules": {
+        "": {
+            "function": {
+                "main/processfiles_2": "\"cyclone_workflow\" -> \"output'\"\ndelete(*, *, *, *, \"UoE\")\n",
+                "main/processfiles_3": "\"cyclone_workflow\" -> \"output\"\nedit(*, *, *, *, \"UoE\", \"str\", \"UK\")\n"
+            }
+        }
+    },
+    "link": {
+        "": {
+        
+        }
+    }
+}
