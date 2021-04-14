@@ -14,6 +14,8 @@ This module contains useful utils to visualise the graph.
 import logging
 import pygraphviz as pgv
 
+from pprint import pformat
+
 from .exception import ForceFailedException
 from .graph_wrapper import GraphWrapper, trim_port_name
 
@@ -175,7 +177,7 @@ class GraphBuilder:
             if obs:
                 sg = self._nm[component]
                 obNode = self._ni[sg, 'obligation']
-                sg.add_node(obNode, label=str(obs), shape='folder')
+                sg.add_node(obNode, label=pformat(obs).replace('\n', '\\l'), shape='folder')
         return self
 
     def flow_rules(self):

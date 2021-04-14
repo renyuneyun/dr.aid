@@ -17,7 +17,7 @@ RDF = Namespace('http://www.w3.org/1999/02/22-rdf-syntax-ns#')
 RDFS = Namespace('http://www.w3.org/2000/01/rdf-schema#')
 PROV = Namespace('http://www.w3.org/ns/prov#')
 S_PROV = Namespace('http://s-prov/ns/#')
-MINE = Namespace('http://ryey/ns/#')
+MINE = Namespace('http://draid/ns/#')
 
 NS = {
         'rdf': RDF,

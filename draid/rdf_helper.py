@@ -222,7 +222,7 @@ def set_flow_rule(graph: Graph, component: URIRef, flow_rule: str) -> None:
 
 
 def insert_virtual_process(graph: Graph, from_port: URIRef, action: str, via_data: Optional[URIRef]=None) -> URIRef:
-    node = URIRef("http://ryey/ns/VirtualComponent/{}".format(str(uuid.uuid4())))
+    node = URIRef("http://draid/ns/VirtualProcess/{}".format(str(uuid.uuid4())))
     graph.add((node, NS['rdf']['type'], NS['s-prov']['Component']))
     graph.add((node, NS['rdf']['type'], NS['mine']['VirtualComponent']))
     put_component_info(graph, node, {'function': action})  # TODO: remove hard-coding
