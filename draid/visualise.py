@@ -149,12 +149,12 @@ class GraphBuilder:
                     self.G.add_node(ruleNode, label=rule.dump().replace('\n', '\\l'), shape='note')
                     self.G.add_edge(oportNode, ruleNode, arrowhead='none')
 
-            imported_rule = self._graph.get_imported_rules(component)
-            if imported_rule:
-                ruleNode = self._ni[component, 'imported_rule_data']
+            imported_rules = self._graph.get_imported_rules(component)
+            for vport_name, imported_rule in imported_rules.items():
+                ruleNode = self._ni[component, 'imported_rule_data', vport_name]
                 self.G.add_node(ruleNode, label=imported_rule.dump().replace('\n', '\\l'), shape='note')
-                connectedNode = self._ni[component, 'imported_rule']
-                sg.add_node(connectedNode, label='imported', style='dashed', shape='egg')
+                connectedNode = self._ni[component, 'imported_rule', vport_name]
+                sg.add_node(connectedNode, label=vport_name, style='dashed', shape='egg')
                 self.G.add_edge(ruleNode, connectedNode, style='tapered', penwidth=7, arrowtail='none', dir='forward', arrowhead='none')
 
         for data in self._graph.data():

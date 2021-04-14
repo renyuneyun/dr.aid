@@ -33,13 +33,21 @@ The general structure of a valid rule database is a series of matchers, against 
     	"imported_rules": {
     		"": {  # Match any graph. It may be overritten by the ones with specific graph id
     			"uri": {  # Match the uri of a process (in the provenance)
-    				"SOME-URI-AS-YOU-WISH": "THE-DATA-RULE"
+    				"SOME-URI-AS-YOU-WISH": {
+    					"": "THE-DATA-RULE",  # Uses the default name
+    					"IMPORT-PORT-NAME-AS-YOU-WISH": "THE-DATA-RULE"
+    				},
+    				"SOME-URI-AS-YOU-WISH":  "THE-DATA-RULE"  # Uses the default name
     			},
     			"function": {  # Match the function name of the process
-    				"SOME-FUNCTION-NAME": "THE-DATA-RULE"
+    				"SOME-FUNCTION-NAME": {
+    					"": "THE-DATA-RULE",  # Uses the default name
+    					"IMPORT-PORT-NAME-AS-YOU-WISH": "THE-DATA-RULE"
+    				},
+    				"SOME-FUNCTION-NAME":  "THE-DATA-RULE"  # Uses the default name
     			}
     		},
-    		"GRAPH-ID": {  # Match the ID of the graph
+    		"GRAPH-ID": {  # Match the ID of the graph; uses the same schema as above, and omitted for length
     			"uri": {  # Match the uri of a process (in the provenance)
     				"SOME-URI-AS-YOU-WISH": "THE-DATA-RULE"
     			},

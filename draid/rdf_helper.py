@@ -198,9 +198,13 @@ def rule(graph: Graph, output_port: URIRef) -> Optional[DataRuleContainer]:
     return parser.parse_data_rule(literal) if literal else None
 
 
-def imported_rule(graph: Graph, component: URIRef) -> Optional[DataRuleContainer]:
-    imported_rule_literal = one_or_none(graph.objects(component, NS['mine']['importedRule']))
-    return parser.parse_data_rule(imported_rule_literal) if imported_rule_literal else None
+def imported_rule(graph: Graph, component: URIRef) -> Dict[str, DataRuleContainer]:
+    imported_rule_dict_literal = one_or_none(graph.objects(component, NS['mine']['importedRule']))
+    if not imported_rule_dict_literal:
+        return {}
+    imported_rule_literal_dict = json.loads(str(imported_rule_dict_literal))
+    imported_rule_dict = {k: parser.parse_data_rule(imported_rule_literal) for k, imported_rule_literal in imported_rule_literal_dict.items()}
+    return imported_rule_dict
 
 
 def flow_rule(graph: Graph, component: URIRef) -> Optional[FlowRule]:
@@ -209,8 +213,10 @@ def flow_rule(graph: Graph, component: URIRef) -> Optional[FlowRule]:
     return parser.parse_flow_rule(flow_rule_str)
 
 
-def insert_imported_rule(graph: Graph, component: URIRef, rule: DataRuleContainer) -> None:
-    graph.add((component, NS['mine']['importedRule'], Literal(rule.dump())))
+def insert_imported_rule(graph: Graph, component: URIRef, rule: Dict[str, DataRuleContainer]) -> None:
+    imported_rule_literal_dict = {k: v.dump() for k, v in rule.items()}
+    imported_rule_dict_literal = json.dumps(imported_rule_literal_dict)
+    graph.add((component, NS['mine']['importedRule'], Literal(imported_rule_dict_literal)))
 
 
 def insert_rule(graph: Graph, component: URIRef, rule: DataRuleContainer) -> None:

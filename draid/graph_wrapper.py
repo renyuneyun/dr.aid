@@ -36,8 +36,10 @@ class ComponentAugmentation:
 K_FUNCTION = 'function'
 
 
-def virtual_port_for_import(component: URIRef) -> str:
-    return f"{str(component)}#{IMPORT_PORT_NAME}"
+def virtual_port_for_import(component: URIRef, vport_name: Optional[str]) -> str:
+    if vport_name is None:
+        vport_name = IMPORT_PORT_NAME
+    return f"{str(component)}#{vport_name}"
 
 
 def graph_into_batches(graph: MultiDiGraph) -> List[List[URIRef]]:
@@ -277,13 +279,17 @@ class GraphWrapper:
         for node, data_rule in data_rules.items():
             rh.insert_rule(self.rdf_graph, node, data_rule)
 
-    def set_imported_rules(self, imported_rules: Dict[URIRef, DataRuleContainer]) -> None:
-        for component, dr in imported_rules.items():
+    def set_imported_rules(self, imported_rules: Dict[URIRef, Dict[str, DataRuleContainer]]) -> None:
+        for component, dr_dic in imported_rules.items():
             input_ports = self.input_ports(component)
-            assert IMPORT_PORT_NAME not in input_ports
-            rh.insert_imported_rule(self.rdf_graph, component, dr)
+            for port, dr in dr_dic.items():
+                if not port:
+                    assert IMPORT_PORT_NAME not in input_ports
+                else:
+                    assert port not in input_ports
+            rh.insert_imported_rule(self.rdf_graph, component, dr_dic)
 
-    def get_imported_rules(self, component: URIRef) -> Optional[DataRuleContainer]:
+    def get_imported_rules(self, component: URIRef) -> Dict[str, DataRuleContainer]:
         return rh.imported_rule(self.rdf_graph, component)
 
     def get_data_rule_of_port(self, port: URIRef) -> Optional[DataRuleContainer]:
@@ -347,7 +353,8 @@ class GraphWrapper:
             output_ports = list(map(self.unique_name_of_port, self.output_ports(component)))
             # if has_imported_rule:  # We assume only components which do not have inputs or rules will have imported rules
             # It's no harm to have an extra rule for imported port -- it simply does nothing
-            input_ports.append(virtual_port_for_import(component))
+            for vport_name in self.get_imported_rules(component):  # See comment two lines above
+                input_ports.append(virtual_port_for_import(component, vport_name))
             flow_rule = rs.DefaultFlow(input_ports, output_ports)
         if flow_rule:
             component_info = one_or_none(self.component_info(component))
@@ -360,6 +367,9 @@ class GraphWrapper:
                 if function_name:
                     short_name = trim_port_name(name, function_name)
                     name_map[short_name] = long_name
+            for vport_name in self.get_imported_rules(component):
+                internal_name = virtual_port_for_import(component, vport_name)
+                name_map[vport_name] = internal_name
             flow_rule.set_name_map(name_map)
         return flow_rule
 
