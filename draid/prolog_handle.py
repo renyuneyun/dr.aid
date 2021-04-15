@@ -107,7 +107,10 @@ def pl_act_inter_process_connection(connections: Dict[str, str]) -> List[str]:
 def query_of_flow_rule(flow_rule: 'FlowRule', situation_in='s0') -> Tuple[str, str]:
     situation_out='S1'
     act_seq = pl_act_flow_rule(flow_rule)
-    s = f"do({':'.join(act_seq)}, {situation_in}, {situation_out})"
+    if act_seq:
+        s = f"do({':'.join(act_seq)}, {situation_in}, {situation_out})"
+    else:
+        s = f"{situation_out}={situation_in}"
     return s, situation_out
 
 def query_of_graph_flow_rules(graph: GraphWrapper, flow_rules: Dict[URIRef, 'FlowRule'], situation_in='s0') -> Tuple[str, str]:

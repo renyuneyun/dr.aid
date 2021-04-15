@@ -209,7 +209,7 @@ SELECT ?startTime WHERE {
 
 
 C_COMPONENT_GRAPH = P('''
-PREFIX : <http://ryey/ns/#>
+PREFIX : <http://draid/ns/#>
 
 
 CONSTRUCT {{
@@ -234,7 +234,7 @@ WHERE {{
 
 # TODO: remove P() and double brackets -- this does not contain templates / string formatter
 # C_DATA_DEPENDENCY_WITH_PORT = P('''
-# PREFIX : <http://ryey/ns/#>
+# PREFIX : <http://draid/ns/#>
 
 
 # CONSTRUCT {{
@@ -273,10 +273,10 @@ WHERE {{
 #   BIND (STRAFTER(STR(?component0), "#") AS ?component0_name)
 #   BIND (STRAFTER(STR(?component1), "#") AS ?component1_name)
 
-#   BIND (IRI(CONCAT("http://ryey/ns/#", CONCAT(STR(?component0_name), CONCAT("=)", STR(?out_port))))) AS ?port_out)
-#   BIND (IRI(CONCAT("http://ryey/ns/#", CONCAT(STR(?component1_name), CONCAT("(=", STR(?in_port))))) AS ?port_in)
+#   BIND (IRI(CONCAT("http://draid/ns/#", CONCAT(STR(?component0_name), CONCAT("=)", STR(?out_port))))) AS ?port_out)
+#   BIND (IRI(CONCAT("http://draid/ns/#", CONCAT(STR(?component1_name), CONCAT("(=", STR(?in_port))))) AS ?port_in)
 #     BIND (IRI(
-#         CONCAT("http://ryey/ns/#",
+#         CONCAT("http://draid/ns/#",
 #           CONCAT(
 #             CONCAT(
 #               CONCAT(?component0_name, CONCAT("::", STR(?out_port))),
@@ -288,7 +288,7 @@ WHERE {{
 # }}
 # ''')
 C_DATA_DEPENDENCY_WITH_PORT = P(r'''
-PREFIX : <http://ryey/ns/#>
+PREFIX : <http://draid/ns/#>
 
 
 CONSTRUCT {{
@@ -334,10 +334,10 @@ WHERE {{
   BIND (COALESCE(?component1_name, "") AS ?component1_name_safe)
   BIND (COALESCE(?in_port, "") AS ?in_port_safe)
 
-  BIND (IRI(CONCAT("http://ryey/ns/#", CONCAT(STR(?component0_name), CONCAT("=)", STR(?out_port))))) AS ?port_out)
-  BIND (IRI(CONCAT("http://ryey/ns/#", CONCAT(STR(?component1_name), CONCAT("(=", STR(?in_port))))) AS ?port_in)
+  BIND (IRI(CONCAT("http://draid/ns/#", CONCAT(STR(?component0_name), CONCAT("=)", STR(?out_port))))) AS ?port_out)
+  BIND (IRI(CONCAT("http://draid/ns/#", CONCAT(STR(?component1_name), CONCAT("(=", STR(?in_port))))) AS ?port_in)
     BIND (IRI(
-        CONCAT("http://ryey/ns/#",
+        CONCAT("http://draid/ns/#",
           CONCAT(
             CONCAT(
               CONCAT(?component0_name, CONCAT("::", STR(?out_port))),

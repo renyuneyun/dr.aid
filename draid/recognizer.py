@@ -45,9 +45,10 @@ def apply_imported_rules(graph: GraphWrapper) -> None:
         else:
             raise IllegalCaseError('Injected rule should be any of str, function, or None')
         rules_obj = parser.parse_data_rule(irules)
+        assert rules_obj
         return rules_obj
 
-    def obtain_rules(component_info_list: List[ComponentInfo], injected_imported_rule_graph) -> Dict[URIRef, DataRuleContainer]:
+    def obtain_rules(component_info_list: List[ComponentInfo], injected_imported_rule_graph) -> Dict[URIRef, Dict[str, DataRuleContainer]]:
         rules = {}
         for component_info in component_info_list:
             component_id = component_info.id
@@ -58,10 +59,12 @@ def apply_imported_rules(graph: GraphWrapper) -> None:
                 defined_imported_rules = injected_imported_rule_graph[function]
             else:
                 continue
-            rules_obj = translate_rule_injection(component_info, defined_imported_rules)
-            assert rules_obj
-            logger.info("component: {} rules: {}ported_rules".format(component_info, rules_obj))
-            rules[component_id] = rules_obj
+            imported_rules = {}
+            for port, defined_rule in defined_imported_rules.items():
+                port_a = port if port else setting.IMPORT_PORT_NAME
+                imported_rules[port_a] = translate_rule_injection(component_info, defined_rule)
+            logger.info("component: {} rules: {} imported_rules".format(component_info, imported_rules))
+            rules[component_id] = imported_rules
         return rules
 
     component_info_list = graph.component_info()

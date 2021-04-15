@@ -13,6 +13,9 @@ This module contains useful utils to visualise the graph.
 
 import logging
 import pygraphviz as pgv
+import textwrap as tw
+
+from pprint import pformat
 
 from .exception import ForceFailedException
 from .graph_wrapper import GraphWrapper, trim_port_name
@@ -37,6 +40,10 @@ def _component_label(graph, ref):
         return clean_name
     else:
         return f"{clean_name}\\n[{function}]"
+
+def _display_text(text: str) -> str:
+    # return '\\l'.join(tw.wrap(text))
+    return '\\l'.join(tw.shorten(t, width=70) for t in text.splitlines())
 
 
 class _NameId:
@@ -144,15 +151,15 @@ class GraphBuilder:
                 rule = self._graph.get_data_rule_of_port(output_port)
                 if rule:  # If file-oriented, `rule` will be None
                     ruleNode = self._ni[component, oportName, rule]
-                    self.G.add_node(ruleNode, label=rule.dump().replace('\n', '\\l'), shape='note')
+                    self.G.add_node(ruleNode, label=_display_text(rule.dump()), shape='note')
                     self.G.add_edge(oportNode, ruleNode, arrowhead='none')
 
-            imported_rule = self._graph.get_imported_rules(component)
-            if imported_rule:
-                ruleNode = self._ni[component, 'imported_rule_data']
-                self.G.add_node(ruleNode, label=imported_rule.dump().replace('\n', '\\l'), shape='note')
-                connectedNode = self._ni[component, 'imported_rule']
-                sg.add_node(connectedNode, label='imported', style='dashed', shape='egg')
+            imported_rules = self._graph.get_imported_rules(component)
+            for vport_name, imported_rule in imported_rules.items():
+                ruleNode = self._ni[component, 'imported_rule_data', vport_name]
+                self.G.add_node(ruleNode, label=_display_text(imported_rule.dump()), shape='note')
+                connectedNode = self._ni[component, 'imported_rule', vport_name]
+                sg.add_node(connectedNode, label=vport_name, style='dashed', shape='egg')
                 self.G.add_edge(ruleNode, connectedNode, style='tapered', penwidth=7, arrowtail='none', dir='forward', arrowhead='none')
 
         for data in self._graph.data():
@@ -164,7 +171,7 @@ class GraphBuilder:
             if rule:
                 dataNode = self._ni[data]
                 ruleNode = self._ni[component, data, rule]
-                self.G.add_node(ruleNode, label=rule.dump().replace('\n', '\\l'), shape='note')
+                self.G.add_node(ruleNode, label=_display_text(rule.dump()), shape='note')
                 self.G.add_edge(dataNode, ruleNode, arrowhead='none')
 
         return self
@@ -175,7 +182,7 @@ class GraphBuilder:
             if obs:
                 sg = self._nm[component]
                 obNode = self._ni[sg, 'obligation']
-                sg.add_node(obNode, label=str(obs), shape='folder')
+                sg.add_node(obNode, label=_display_text(pformat(obs)), shape='folder')
         return self
 
     def flow_rules(self):

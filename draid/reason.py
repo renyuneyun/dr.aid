@@ -64,9 +64,9 @@ def propagate(graph: GraphWrapper, component_list: List[URIRef]) -> Tuple[List[C
         for input_rule in input_rules.values():
             obs.extend(input_rule.on_stage(Processing(), function_name, info))
 
-        imported_rule = graph.get_imported_rules(component)
-        if imported_rule:
-            input_rules[virtual_port_for_import(component)] = imported_rule
+        imported_rules = graph.get_imported_rules(component)
+        for vport_name, imported_rule in imported_rules.items():
+            input_rules[virtual_port_for_import(component, vport_name)] = imported_rule
             obs.extend(imported_rule.on_stage(Imported(), function_name, info))
 
         if obs:
@@ -95,12 +95,10 @@ def obtain_rules(graph: GraphWrapper, component_list: List[URIRef]) -> Dict[URIR
     for component in component_list:
         input_rules = graph.get_data_rules(component)
 
-        imported_rule = graph.get_imported_rules(component)
-        if imported_rule:
-            input_rules[virtual_port_for_import(component)] = imported_rule
-            # obs = on_import(imported_rule)
-            # if obs:
-            #     activated_obligations[component] = obs
+        imported_rules = graph.get_imported_rules(component)
+        for vport_name, imported_rule in imported_rules.items():
+            input_rules[virtual_port_for_import(component, vport_name)] = imported_rule
+            # obs.extend(imported_rule.on_stage(Imported(), function_name, info))
         if input_rules:
             logger.info("Component %s receives input rules from %d ports", component, len(input_rules))
             component_port_rules[component] = input_rules

@@ -324,7 +324,7 @@ def F_GRAPH_USER(graph: T_REF) -> str:
 
 
 T_COMPONENT_GRAPH = P('''
-PREFIX : <http://ryey/ns/#>
+PREFIX : <http://draid/ns/#>
 
 
 CONSTRUCT {{
@@ -368,7 +368,7 @@ def F_C_COMPONENT_GRAPH(graph: T_REF) -> str:
 
 
 # C_DATA_DEPENDENCY = '''
-# PREFIX : <http://ryey/ns/#>
+# PREFIX : <http://draid/ns/#>
 
 # CONSTRUCT {
 #   ?component0 a s-prov:Component .
@@ -407,7 +407,7 @@ def F_C_COMPONENT_GRAPH(graph: T_REF) -> str:
 # '''
 
 T_DATA_DEPENDENCY_WITH_PORT = P('''
-PREFIX : <http://ryey/ns/#>
+PREFIX : <http://draid/ns/#>
 
 
 CONSTRUCT {{
@@ -465,10 +465,10 @@ WHERE {{
     BIND (COALESCE(?component1_name, "") AS ?component1_name_safe)
     BIND (COALESCE(?in_port, "") AS ?in_port_safe)
 
-    BIND (IRI(CONCAT("http://ryey/ns/#", CONCAT(STR(?component0_name), CONCAT("=)", STR(?out_port))))) AS ?port_out)
-    BIND (IRI(CONCAT("http://ryey/ns/#", CONCAT(STR(?component1_name), CONCAT("(=", STR(?in_port))))) AS ?port_in)
+    BIND (IRI(CONCAT("http://draid/ns/#", CONCAT(STR(?component0_name), CONCAT("=)", STR(?out_port))))) AS ?port_out)
+    BIND (IRI(CONCAT("http://draid/ns/#", CONCAT(STR(?component1_name), CONCAT("(=", STR(?in_port))))) AS ?port_in)
       BIND (IRI(
-          CONCAT("http://ryey/ns/#",
+          CONCAT("http://draid/ns/#",
             CONCAT(
               CONCAT(
                 CONCAT(?component0_name, CONCAT("::", STR(?out_port))),
@@ -488,7 +488,7 @@ def F_C_DATA_DEPENDENCY_WITH_PORT(graph: T_REF) -> str:
     return T_DATA_DEPENDENCY_WITH_PORT("<{}>".format(graph))
 
 #C_INITIAL_DATA = '''
-#PREFIX : <http://ryey/ns/#>
+#PREFIX : <http://draid/ns/#>
 #
 #
 #CONSTRUCT {
@@ -531,7 +531,7 @@ def F_C_DATA_DEPENDENCY_WITH_PORT(graph: T_REF) -> str:
 #
 #    BIND (STRAFTER(STR(?component0), "#") AS ?component0_name)
 #
-#    BIND (IRI(CONCAT("http://ryey/ns/#", CONCAT(STR(?component0_name), CONCAT("=)", STR(?out_port))))) AS ?port_out)
+#    BIND (IRI(CONCAT("http://draid/ns/#", CONCAT(STR(?component0_name), CONCAT("=)", STR(?out_port))))) AS ?port_out)
 #
 #  }
 #}

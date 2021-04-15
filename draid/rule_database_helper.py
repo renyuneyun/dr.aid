@@ -96,19 +96,49 @@ def _parse_imported_rule_graph(section_graph):
     rules = {}
     try:
         section_graph_uri = section_graph['uri']
-        for uri, data_rule_str in section_graph_uri.items():
-            rules[URIRef(uri)] = data_rule_str
+        for uri, value in section_graph_uri.items():
+            if isinstance(value, str):
+                data_rule_str = value
+                rules[URIRef(uri)] = {None: data_rule_str}
+            else:
+                composed_data_rules = {}
+                for vport, data_rule_str in value.items():
+                    vport_n = vport if vport else None
+                    composed_data_rules[vport_n] = data_rule_str
+                rules[URIRef(uri)] = composed_data_rules
     except KeyError:
         pass
     try:
         section_graph_function = section_graph['function']
-        for function, data_rule_str in section_graph_function.items():
-            rules[function] = data_rule_str
+        for function, value in section_graph_function.items():
+            if isinstance(value, str):
+                data_rule_str = value
+                rules[function] = {None: data_rule_str}
+            else:
+                composed_data_rules = {}
+                for vport, data_rule_str in value.items():
+                    vport_n = vport if vport else None
+                    composed_data_rules[vport_n] = data_rule_str
+                rules[function] = composed_data_rules
     except KeyError:
         pass
     return rules
 
-_parse_flow_rule_graph = _parse_imported_rule_graph  # It works fine because imported rules and flow rules share the same schema, and we are not parsing the rules themselves.
+def _parse_flow_rule_graph(section_graph):
+    rules = {}
+    try:
+        section_graph_uri = section_graph['uri']
+        for uri, flow_rule_str in section_graph_uri.items():
+            rules[URIRef(uri)] = flow_rule_str
+    except KeyError:
+        pass
+    try:
+        section_graph_function = section_graph['function']
+        for function, flow_rule_str in section_graph_function.items():
+            rules[function] = flow_rule_str
+    except KeyError:
+        pass
+    return rules
 
 
 def _parse_link(section):
