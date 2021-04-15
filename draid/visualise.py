@@ -43,7 +43,7 @@ def _component_label(graph, ref):
 
 def _display_text(text: str) -> str:
     # return '\\l'.join(tw.wrap(text))
-    return '\\l'.join(tw.shorten(t, width=70) for t in text.splitlines())
+    return '\\l'.join(tw.shorten(t, width=80) for t in text.splitlines())
 
 
 class _NameId:
