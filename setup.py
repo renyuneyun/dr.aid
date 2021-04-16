@@ -13,6 +13,10 @@ setup(
         "networkx",
         "pyswip",
         "coloredlogs",
+        "lark-parser",
+        "graphviz",
+        "pyyaml",
+        "notebook",
         ],
 
     scripts = [],
