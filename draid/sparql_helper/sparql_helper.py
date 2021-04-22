@@ -20,11 +20,12 @@ from rdflib import Graph, URIRef
 import SPARQLWrapper as SW
 from SPARQLWrapper import SPARQLWrapper, JSON, XML
 
-from . import queries as q
-from .import query_cwl as cq
 from draid import setting
 from draid.names import T_REF
 from draid.namespaces import NS
+
+from . import query_sprov
+from . import query_cwl
 
 DEFAULT_PORT = ''
 
@@ -106,6 +107,7 @@ class Helper:
 
 
 class SProvHelper(Helper):
+    q = query_sprov
 
     def __init__(self, destination):
         super().__init__(destination)
@@ -115,7 +117,7 @@ class SProvHelper(Helper):
 
     def get_wfe_graphs(self):
         ret = []
-        results = self._q(q.Q(q.ALL_WFE_GRAPHS))
+        results = self._q(self.q.Q(self.q.ALL_WFE_GRAPHS))
         for binding in results['results']['bindings']:
             g = _rdu(binding, 'g')
             ret.append(g)
@@ -123,11 +125,11 @@ class SProvHelper(Helper):
 
     def get_graph_info(self):
         ret = {}
-        results = self._q(q.Q(q.F_GRAPH_START_TIME(self.graph)))
+        results = self._q(self.q.Q(self.q.F_GRAPH_START_TIME(self.graph)))
         for binding in results['results']['bindings']:
             startTime = _rd(binding, 'startTime')
             ret['startTime'] = startTime
-        results = self._q(q.Q(q.F_GRAPH_USER(self.graph)))
+        results = self._q(self.q.Q(self.q.F_GRAPH_USER(self.graph)))
         for binding in results['results']['bindings']:
             startTime = _rd(binding, 'user')
             ret['user'] = startTime
@@ -135,7 +137,7 @@ class SProvHelper(Helper):
 
     def get_initial_components(self):
         ret = []
-        results = self._q(q.Q(q.F_COMPONENT_WITHOUT_INPUT_DATA(self.graph)))
+        results = self._q(self.q.Q(self.q.F_COMPONENT_WITHOUT_INPUT_DATA(self.graph)))
         for binding in results['results']['bindings']:
             component = _rdu(binding, 'component')
             ret.append(component)
@@ -143,7 +145,7 @@ class SProvHelper(Helper):
 
     def get_components_function(self) -> Dict[URIRef, str]:
         ret = {}
-        results = self._q(q.Q(q.F_COMPONENT_FUNCTION(self.graph)))
+        results = self._q(self.q.Q(self.q.F_COMPONENT_FUNCTION(self.graph)))
         for binding in results['results']['bindings']:
             component = _rdu(binding, 'component')
             f_name, real = _rd(binding, 'function_name', True)
@@ -156,7 +158,7 @@ class SProvHelper(Helper):
     def get_components_info(self, components: List[URIRef]) -> List[ComponentInfo]:
         component_function = self.get_components_function()
         info: Dict[URIRef, Dict[str, str]] = {com: {} for com in components}
-        results = self._q(q.Q(q.F_COMPONENT_PARS_IN(self.graph, components)))
+        results = self._q(self.q.Q(self.q.F_COMPONENT_PARS_IN(self.graph, components)))
         for binding in results['results']['bindings']:
             component = _rdu(binding, 'component')
             if component not in info:
@@ -173,20 +175,21 @@ class SProvHelper(Helper):
         return ret
 
     def get_graph_dependency_with_port(self) -> Graph:
-        return self._c(q.Q(q.F_C_DATA_DEPENDENCY_WITH_PORT(self.graph)))
+        return self._c(self.q.Q(self.q.F_C_DATA_DEPENDENCY_WITH_PORT(self.graph)))
 
     def get_graph_component(self) -> Graph:
-        return self._c(q.Q(q.F_C_COMPONENT_GRAPH(self.graph)))
+        return self._c(self.q.Q(self.q.F_C_COMPONENT_GRAPH(self.graph)))
 
 
 class CWLHelper(Helper):
+    q = query_cwl
 
     def __init__(self, destination):
         super().__init__(destination)
 
     def get_graph_info(self):
         ret = {}
-        results = self._q(cq.Q(cq.Q_GRAPH_START_TIME))
+        results = self._q(self.q.Q(self.q.Q_GRAPH_START_TIME))
         for binding in results['results']['bindings']:
             startTime = _rd(binding, 'startTime')
             ret['startTime'] = startTime
@@ -196,7 +199,7 @@ class CWLHelper(Helper):
     def get_components_info(self, components: List[URIRef]) -> List[ComponentInfo]:
         def get_components_function(self) -> Dict[URIRef, str]:
             ret = {}
-            results = self._q(cq.Q(cq.Q_COMPONENT_FUNCTION))
+            results = self._q(self.q.Q(self.q.Q_COMPONENT_FUNCTION))
             for binding in results['results']['bindings']:
                 component = _rdu(binding, 'component')
                 f_name, real = _rd(binding, 'function_name', True)
@@ -208,7 +211,7 @@ class CWLHelper(Helper):
 
         component_function = get_components_function(self)
         info: Dict[URIRef, Dict[str, str]] = {com: {} for com in components}
-        results = self._q(cq.Q(cq.F_COMPONENT_PARS_IN(self.graph, components)))
+        results = self._q(self.q.Q(self.q.F_COMPONENT_PARS_IN(self.graph, components)))
         for binding in results['results']['bindings']:
             component = _rdu(binding, 'component')
             if component not in info:
@@ -225,13 +228,13 @@ class CWLHelper(Helper):
         return ret
 
     def get_graph_dependency_with_port(self) -> Graph:
-        results = self._c(cq.Q(cq.C_DATA_DEPENDENCY_WITH_PORT(self.graph)))
+        results = self._c(self.q.Q(self.q.C_DATA_DEPENDENCY_WITH_PORT(self.graph)))
         g = Graph()
         g.parse(data=results, format="turtle")
         return g
 
     def get_graph_component(self) -> Graph:
-        results = self._c(cq.Q(cq.C_COMPONENT_GRAPH(self.graph)))
+        results = self._c(self.q.Q(self.q.C_COMPONENT_GRAPH(self.graph)))
         g = Graph()
         g.parse(data=results, format="turtle")
         return g

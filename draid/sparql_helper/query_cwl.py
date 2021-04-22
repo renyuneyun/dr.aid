@@ -11,39 +11,11 @@
 This module contains the queries used by the CWL SPARQL helper, handling the CWLProv schema.
 '''
 
-from functools import partial
 from typing import Iterable
 
 from draid.names import T_REF
+from .query_sprov import P
 
-
-def P(s, *args, **kwargs):
-    if callable(s):
-        return partial(s, *args, **kwargs)
-    else:
-        assert isinstance(s, str)
-        return partial(s.format, *args, **kwargs)
-
-
-def D(post, pri_key, pri, *args, **kwargs):
-    def wrapped(*iargs, **ikwargs):
-        pri_result = pri(*iargs, **ikwargs)
-        kwargs[pri_key] = pri_result
-        return post(*args, **kwargs)
-    return wrapped
-
-
-def DP(post, pri_key, pri, *args, **kwargs):
-    '''
-    Deferred P
-    '''
-    def wrapped(*iargs, **ikwargs):
-        pri_result = pri(*iargs, **ikwargs)
-        if callable(pri_result):
-            return DP(post, pri_key, pri_result, *args, **kwargs)
-        kwargs[pri_key] = pri_result
-        return P(post, *args, **kwargs)
-    return wrapped
 
 
 def Q(s, *args, **kwargs):
