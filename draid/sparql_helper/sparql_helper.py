@@ -17,8 +17,7 @@ import typing
 from typing import Dict, List, Optional
 
 from rdflib import Graph, URIRef
-import SPARQLWrapper as SW
-from SPARQLWrapper import SPARQLWrapper, JSON, XML
+from SPARQLWrapper import SPARQLWrapper, JSON, XML, TURTLE
 
 from draid import setting
 from draid.names import T_REF
@@ -48,22 +47,6 @@ class ComponentInfo:
 
 
 logger = logging.getLogger(__name__)
-
-
-def _q(sparql: SPARQLWrapper, query: str) -> Dict:
-    sparql.setQuery(query)
-    sparql.setReturnFormat(JSON)
-    return sparql.query().convert()
-
-
-def _c(sparql: SPARQLWrapper, query: str) -> Graph:
-    sparql.setQuery(query)
-    if setting.SCHEME == 'CWLPROV':
-        sparql.setReturnFormat(SW.TURTLE)
-    else:
-        sparql.setReturnFormat(XML)
-    sparql.setOnlyConneg(True)
-    return sparql.query().convert()
 
 
 def _rd(binding, target, safe=False):
@@ -99,11 +82,16 @@ class Helper:
         self.sparql = SPARQLWrapper(destination)
         self.graph = None
 
-    def _q(self, query: str):
-        return _q(self.sparql, query)
+    def _q(self, query: str) -> Dict:
+        self.sparql.setQuery(query)
+        self.sparql.setReturnFormat(JSON)
+        return self.sparql.query().convert()
 
-    def _c(self, query: str):
-        return _c(self.sparql, query)
+    def _c(self, query: str, return_format = XML) -> Graph:
+        self.sparql.setQuery(query)
+        self.sparql.setReturnFormat(return_format)
+        self.sparql.setOnlyConneg(True)
+        return self.sparql.query().convert()
 
 
 class SProvHelper(Helper):
@@ -186,6 +174,9 @@ class CWLHelper(Helper):
 
     def __init__(self, destination):
         super().__init__(destination)
+
+    def _c(self, query: str):
+        return super()._c(query, return_format=TURTLE)
 
     def get_graph_info(self):
         ret = {}
