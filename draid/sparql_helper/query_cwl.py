@@ -14,7 +14,7 @@ This module contains the queries used by the CWL SPARQL helper, handling the CWL
 from functools import partial
 from typing import Iterable
 
-from .names import T_REF
+from draid.names import T_REF
 
 
 def P(s, *args, **kwargs):

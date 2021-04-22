@@ -21,16 +21,16 @@ import SPARQLWrapper as SW
 from SPARQLWrapper import SPARQLWrapper, JSON, XML
 
 from . import queries as q
-from . import setting
 from .import query_cwl as cq
-from .names import T_REF
-from .namespaces import NS
+from draid import setting
+from draid.names import T_REF
+from draid.namespaces import NS
 
 DEFAULT_PORT = ''
 
 
 if typing.TYPE_CHECKING:
-    from .graph_wrapper import GraphWrapper
+    from draid.graph_wrapper import GraphWrapper
 
 
 @dataclass
