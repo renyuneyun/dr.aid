@@ -10,16 +10,16 @@ from collections import defaultdict
 from rdflib import Graph, URIRef
 from typing import Dict, Iterable, List, Optional, Tuple, Union
 
-from .defs.exception import IllegalCaseError
-from .graph_wrapper import GraphWrapper
-from .rule.parser import call_parser_data_rule
+from draid.defs.exception import IllegalCaseError
+from draid.graph_wrapper import GraphWrapper
+from draid.rule.parser import call_parser_data_rule
 # from .proto import (
 #         # dump,
 #         # is_ac,
 #         # obtain,
 #         )
-from .rule import ActivationCondition, Attribute, AttributeCapsule, ObligationDeclaration, DataRuleContainer, FlowRule, PortedRules
-from .setting import FLOW_RULE_DEF
+from draid.rule import ActivationCondition, Attribute, AttributeCapsule, ObligationDeclaration, DataRuleContainer, FlowRule, PortedRules
+from draid.setting import FLOW_RULE_DEF
 
 import logging
 logger = logging.getLogger(__name__)

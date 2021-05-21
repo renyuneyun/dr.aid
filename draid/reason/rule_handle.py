@@ -1,9 +1,10 @@
 from rdflib import Graph, URIRef
 from typing import Dict, List
 
-from .rule import DataRuleContainer, FlowRule, PortedRules
+from draid.rule import DataRuleContainer, FlowRule, PortedRules
+from draid.graph_wrapper import GraphWrapper
+
 from . import prolog_handle
-from .graph_wrapper import GraphWrapper
 
 class FlowRuleHandler:
 

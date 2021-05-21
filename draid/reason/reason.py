@@ -16,11 +16,12 @@ from typing import Dict, List, Tuple
 
 from rdflib import Graph, URIRef
 
-from .rule import DataRuleContainer, ActivatedObligation, PortedRules
+from draid.rule import DataRuleContainer, ActivatedObligation, PortedRules
+from draid.rule.proto import Stage, Imported, Processing
+from draid.graph_wrapper import ComponentAugmentation, GraphWrapper, virtual_port_for_import, K_FUNCTION
+
 from . import rule_handle
 from .rule_handle import FlowRuleHandler
-from .rule.proto import Stage, Imported, Processing
-from .graph_wrapper import ComponentAugmentation, GraphWrapper, virtual_port_for_import, K_FUNCTION
 
 
 logger = logging.getLogger(__name__)
