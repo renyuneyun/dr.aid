@@ -16,10 +16,9 @@ import uuid
 from rdflib import BNode, Graph, Literal, URIRef
 from typing import Dict, Iterable, Optional, Tuple
 
-from .namespaces import NS
-from . import parser
-from .rule import DataRuleContainer, FlowRule
-from .exception import ForceFailedException
+from draid.defs.exception import ForceFailedException
+from draid.defs.namespaces import NS
+from draid.rule import parser, DataRuleContainer, FlowRule
 
 
 def one(iterator):

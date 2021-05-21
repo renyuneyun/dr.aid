@@ -15,16 +15,17 @@ from typing import Callable, Dict, Iterable, List, Optional, Union
 import logging
 logger = logging.getLogger(__name__)
 
-from . import rdf_helper as rh
-from . import rule as rs
-from . import injection
-from . import sparql_helper as sh
+from draid import injection
+from draid import rule as rs
 
-from .exception import ForceFailedException, IllegalCaseError, IllegalStateError
+from draid.defs import ComponentInfo
+from draid.defs.exception import ForceFailedException, IllegalCaseError, IllegalStateError
+from draid.rule import DataRuleContainer, FlowRule, PortedRules
+from draid.setting import IMPORT_PORT_NAME
+
+from . import rdf_helper as rh
+
 from .rdf_helper import one_or_none
-from .rule import DataRuleContainer, FlowRule, PortedRules
-from .setting import IMPORT_PORT_NAME
-from .sparql_helper import ComponentInfo
 
 
 @dataclass

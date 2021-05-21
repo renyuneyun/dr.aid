@@ -17,13 +17,12 @@ from typing import Dict, List
 
 from rdflib import Graph, URIRef, Literal
 
-from . import parser
 from . import rule
-from .rule import DataRuleContainer
-from .sparql_helper import ComponentInfo
 from . import setting
-from .exception import IllegalCaseError
+from .defs import ComponentInfo
+from .defs.exception import IllegalCaseError
 from .graph_wrapper import GraphWrapper
+from .rule import parser, DataRuleContainer
 
 
 logger = logging.getLogger(__name__)

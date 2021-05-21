@@ -8,6 +8,8 @@ import json
 from typing import Any, Dict, List, Optional, Tuple, Union
 from random import randint
 
+from draid.defs.exception import IllegalCaseError
+
 from .proto import (
         # ActivationCondition,
         # Never,
@@ -20,7 +22,6 @@ from .proto import (
         AttributeValue,
         Attribute,
         )
-from .exception import IllegalCaseError
 
 
 PortedRules = Dict[str, Optional['DataRuleContainer']]

@@ -19,7 +19,7 @@ from rdflib import Graph, URIRef
 from .rule import DataRuleContainer, ActivatedObligation, PortedRules
 from . import rule_handle
 from .rule_handle import FlowRuleHandler
-from .proto import Stage, Imported, Processing
+from .rule.proto import Stage, Imported, Processing
 from .graph_wrapper import ComponentAugmentation, GraphWrapper, virtual_port_for_import, K_FUNCTION
 
 

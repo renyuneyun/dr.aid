@@ -13,7 +13,8 @@ This module contains the queries used by the CWL SPARQL helper, handling the CWL
 
 from typing import Iterable
 
-from draid.names import T_REF
+from draid.defs.typing import T_REF
+
 from .query_sprov import P
 
 

@@ -20,30 +20,11 @@ from rdflib import Graph, URIRef
 from SPARQLWrapper import SPARQLWrapper, JSON, XML, TURTLE
 
 from draid import setting
-from draid.names import T_REF
-from draid.namespaces import NS
+from draid.defs import InitialInfo, ComponentInfo
+from draid.defs.typing import T_REF
 
 from . import query_sprov
 from . import query_cwl
-
-DEFAULT_PORT = ''
-
-
-if typing.TYPE_CHECKING:
-    from draid.graph_wrapper import GraphWrapper
-
-
-@dataclass
-class InitialInfo:
-    par: List[str]
-    data: Dict[str, List[str]]
-
-
-@dataclass
-class ComponentInfo:
-    id: URIRef
-    function: Optional[str]
-    par: Dict[str, str]
 
 
 logger = logging.getLogger(__name__)
@@ -229,22 +210,6 @@ class CWLHelper(Helper):
         g = Graph()
         g.parse(data=results, format="turtle")
         return g
-
-
-class AugmentedGraphHelper(Helper):
-
-    def __init__(self, destination):
-        super().__init__(destination)
-
-    def write_transformed_graph(self, graph: 'GraphWrapper'):
-        '''
-        Create / Prune a new graph dedicated to store the old graph + initial rules
-        '''
-        # TODO
-        logger.warning("<write_transformed_graph> Not implemented yet")
-        for s, p, o in graph.rdf_graph:
-            if p == NS['mine']['rule']:
-                logger.info("{} {} {}".format(s, p, o))
 
 
 def get_initial_components_and_output(sparql):

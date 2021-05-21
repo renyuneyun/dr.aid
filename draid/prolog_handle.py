@@ -10,9 +10,9 @@ from collections import defaultdict
 from rdflib import Graph, URIRef
 from typing import Dict, Iterable, List, Optional, Tuple, Union
 
-from .exception import IllegalCaseError
+from .defs.exception import IllegalCaseError
 from .graph_wrapper import GraphWrapper
-from .parser import call_parser_data_rule
+from .rule.parser import call_parser_data_rule
 # from .proto import (
 #         # dump,
 #         # is_ac,

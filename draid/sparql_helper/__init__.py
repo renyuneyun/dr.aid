@@ -1,6 +1,6 @@
 from .sparql_helper import (
-    ComponentInfo,
     SProvHelper,
     CWLHelper,
-    AugmentedGraphHelper,
     )
+
+from .augmented_graph_helper import AugmentedGraphHelper
