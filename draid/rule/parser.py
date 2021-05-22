@@ -191,7 +191,7 @@ class TreeToDataRuleContent(Transformer):
     def CNAME(self, s):
         return s[:]
     def STRING(self, s):
-        return s[1:-1]
+        return json.loads(s)
     def NUMBER(self, n):
         return float(n)
     def INT(self, n):
@@ -249,7 +249,7 @@ class TreeToFlowRuleContent(Transformer):
     def CNAME(self, s):
         return s[:]
     def STRING(self, s):
-        return s[1:-1]
+        return json.loads(s)
     def NUMBER(self, n):
         return float(n)
     def INT(self, n):
