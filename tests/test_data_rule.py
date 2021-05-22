@@ -14,7 +14,10 @@
 import pytest
 
 from draid.rule import ObligationDeclaration, DataRuleContainer, AttributeCapsule
-from draid.proto import WhenImported
+from draid.rule import EqualAC
+
+
+WhenImported = EqualAC('stage', 'import')
 
 
 pc1 = AttributeCapsule.from_raw('pr1', [('str', 'a')])
@@ -26,7 +29,7 @@ pc2 = AttributeCapsule.from_raw('pr2', [('str', 'A'), ('str', 'B'), ('str', 'C')
 ob1 = (
         ObligationDeclaration('ob1'),
         ObligationDeclaration('ob1', [('pr1', 0)]),
-        ObligationDeclaration('ob1', [('pr1', 0)], WhenImported()),
+        ObligationDeclaration('ob1', [('pr1', 0)], WhenImported),
         )
 ob2 = ObligationDeclaration('ob2', [('pr2', 0)])
 ob3 = ObligationDeclaration('ob2', [('pr2', 1)])

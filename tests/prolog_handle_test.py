@@ -2,9 +2,11 @@ import pytest
 import os
 
 from draid.rule import ObligationDeclaration, DataRuleContainer, AttributeCapsule, FlowRule
-from draid.proto import WhenImported
+from draid.rule import EqualAC
 
-from draid import prolog_handle
+from draid.reason import prolog_handle
+
+WhenImported = EqualAC('stage', 'import')
 
 pc1 = AttributeCapsule.from_raw('name', [('str', 'UoE')])
 pc1_2 = AttributeCapsule.from_raw('name', [('str', 'UoE'), ('str', 'University of Earth')])
@@ -14,8 +16,8 @@ pc2 = AttributeCapsule.from_raw('sens', [('str', '1')])
 ob1 = (
         ObligationDeclaration('credit', [('name', 0)]),
         ObligationDeclaration('credit', [('name', 1)]),
-        ObligationDeclaration('credit', [('name', 0)], WhenImported()),
-        ObligationDeclaration('credit', [('name', 1)], WhenImported()),
+        ObligationDeclaration('credit', [('name', 0)], WhenImported),
+        ObligationDeclaration('credit', [('name', 1)], WhenImported),
         )
 ob2 = ObligationDeclaration('hide', [('sens', 0)])
 
