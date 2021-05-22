@@ -203,7 +203,7 @@ def imported_rule(graph: Graph, component: URIRef) -> Dict[str, DataRuleContaine
         return {}
     imported_rule_literal_dict = json.loads(str(imported_rule_dict_literal))
     imported_rule_dict = {k: parser.parse_data_rule(imported_rule_literal) for k, imported_rule_literal in imported_rule_literal_dict.items()}
-    return imported_rule_dict
+    return imported_rule_dict  # type: ignore
 
 
 def flow_rule(graph: Graph, component: URIRef) -> Optional[FlowRule]:

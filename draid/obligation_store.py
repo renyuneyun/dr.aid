@@ -15,7 +15,7 @@ import json
 from rdflib import URIRef
 from typing import Dict, List, Tuple
 
-from .rule import ActivatedObligation, Attribute
+from draid.rule import ActivatedObligation, Attribute
 
 
 def _dump_activated_obligation(ob: ActivatedObligation):
@@ -37,7 +37,7 @@ class ObligationStore:
 
     def __init__(self, filename: str):
         self._filename = filename
-        self._obligation_list = []
+        self._obligation_list = []  # type: List[Tuple[URIRef, ActivatedObligation]]
         self.reload()
 
     def reload(self):

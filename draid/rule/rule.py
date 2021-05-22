@@ -57,8 +57,9 @@ def deescaped(repr: Optional[str]) -> Any:
 
 class ActivationCondition:
 
+    @staticmethod
     def from_raw(ac_expr: ACTIVATION_CONDITION_EXPR):
-        if ac_expr == None:
+        if ac_expr is None:
             return Never()
         elif ac_expr[0] == '=':
             return EqualAC(*ac_expr[1])

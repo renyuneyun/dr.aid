@@ -68,7 +68,7 @@ class Helper:
         self.sparql.setReturnFormat(JSON)
         return self.sparql.query().convert()
 
-    def _c(self, query: str, return_format = XML) -> Graph:
+    def _c(self, query: str, return_format=XML) -> Graph:
         self.sparql.setQuery(query)
         self.sparql.setReturnFormat(return_format)
         self.sparql.setOnlyConneg(True)
@@ -156,7 +156,7 @@ class CWLHelper(Helper):
     def __init__(self, destination):
         super().__init__(destination)
 
-    def _c(self, query: str):
+    def _c(self, query: str, return_format=TURTLE):
         return super()._c(query, return_format=TURTLE)
 
     def get_graph_info(self):
@@ -210,39 +210,3 @@ class CWLHelper(Helper):
         g = Graph()
         g.parse(data=results, format="turtle")
         return g
-
-
-def get_initial_components_and_output(sparql):
-    ret = {}
-    results = _q(sparql, q.Q(q.INITIAL_COMPONENT_AND_DATA))
-    for binding in results['results']['bindings']:
-        component = _rd(binding, 'component')
-        if component not in ret:
-            ret[component] = []
-        data = _rd(binding, 'data_out')
-        ret[component].append(data)
-    return ret
-
-
-def get_initial_info(sparql) -> Dict[URIRef, InitialInfo]:
-    sparql.setQuery(q.Q(q.INITIAL_COMPONENT_AND_DATA_AND_PAR))
-    sparql.setReturnFormat(JSON)
-    results = sparql.query().convert()
-    initial_info_map: Dict[URIRef, InitialInfo] = {}
-    for binding in results['results']['bindings']:
-        component = _rd(binding, 'value')
-        if component not in initial_info_map:
-            initial_info_map[component] = InitialInfo([], {})
-        info = initial_info_map[component]
-        par, real = _rd(binding, 'par', True)
-        if real:
-            info.par.append(par)
-        data, real = _rd(binding, 'data_out', True)
-        if real:
-            port = binding['port_out']['value'] if 'port_out' in binding else DEFAULT_PORT
-            if port in info.data:
-                info.data[port].append(data)
-            else:
-                info.data[port] = [data]
-    return initial_info_map
-

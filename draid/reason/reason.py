@@ -48,7 +48,7 @@ def _retract_port_name(graph: GraphWrapper, component: URIRef, ported_rules: 'Po
 
 def propagate(graph: GraphWrapper, component_list: List[URIRef]) -> Tuple[List[ComponentAugmentation], Dict[URIRef, List[ActivatedObligation]]]:
     augmentations = []
-    activated_obligations = {}
+    activated_obligations = {}  # type: Dict[URIRef, List[ActivatedObligation]]
     for component in component_list:
         component_info = graph.component_info(component)[0]
         function_name = component_info.function
