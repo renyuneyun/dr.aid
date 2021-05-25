@@ -19,7 +19,8 @@ from lark import Lark, Transformer
 import re
 from typing import Dict, List, Optional, Union, Tuple, Type
 
-from .rule import FlowRule, Propagate, Edit, Delete, ObligationDeclaration, DataRuleContainer, AttributeCapsule
+from .data_rule import ObligationDeclaration, DataRuleContainer, AttributeCapsule
+from .flow_rule import FlowRule, Propagate, Edit, Delete
 
 
 class MalformedRuleException(Exception):
