@@ -1,167 +1,28 @@
 '''
-This module contains the definitions of the rule classes, and a few helper functions.
-The rule classes contain their serialiser functions, usually called `dump`. See `parser` module for the deserialisers.
+This module contains the definitions of the rule classes, and a few helper
+functions.
+The rule classes contain their serialiser functions, usually called `dump`.
+See `parser` module for the deserialisers.
 '''
 
 from dataclasses import dataclass
-import json
 from typing import Any, Dict, List, Optional, Tuple, Union
 from random import randint
 
 from draid.defs.exception import IllegalCaseError
 
-from .proto import (
-        # ActivationCondition,
-        # Never,
-        # eq,
-        # dump,
-        # is_ac,
-        # obtain,
-        Stage,
-        stage_mapping,
-        AttributeValue,
-        Attribute,
+from .activation import (
+        ActivationCondition,
+        Never,
+        ACTIVATION_CONDITION_EXPR,
         )
+from .attribute import Attribute
+from .stage import Stage
+from .utils import escaped, deescaped
 
 
+# TODO: move to defs.typing
 PortedRules = Dict[str, Optional['DataRuleContainer']]
-
-ACTIVATION_CONDITION_EXPR = Optional[Tuple[str, Tuple[str, Optional[str]]]]
-
-
-def escaped(value: Any) -> Optional[str]:
-    if isinstance(value, (int, float)):
-        return str(value)
-    elif isinstance(value, str):
-        return json.dumps(value, ensure_ascii=False)
-    elif value is None:  # `None` may represent different meanings for different elements, so it should be treated separately where it is used
-        return None
-    raise NotImplementedError(f"Unknown value to be escaped: {value}")
-def deescaped(repr: Optional[str]) -> Any:
-    if repr is None:
-        return None
-    try:
-        return int(repr)
-    except ValueError:
-        pass
-    try:
-        return float(repr)
-    except ValueError:
-        pass
-    try:
-        return json.loads(f'"{repr}"')
-    except ValueError:
-        pass
-    raise NotImplementedError(f"Unknown repr to be de-escaped: {repr}")
-
-
-class ActivationCondition:
-
-    @staticmethod
-    def from_raw(ac_expr: ACTIVATION_CONDITION_EXPR):
-        if ac_expr is None:
-            return Never()
-        elif ac_expr[0] == '=':
-            return EqualAC(*ac_expr[1])
-        elif ac_expr[0] == '!=':
-            return NEqualAC(*ac_expr[1])
-        else:
-            raise SyntaxError("Invalid syntax for ActivationCondition expression")
-
-    def dump(self) -> Optional[str]:
-        return NotImplemented
-
-    def __eq__(self, o):
-        if o is None:
-            return False
-        if self.__class__ != o.__class__:
-            return False
-        return True
-
-    def is_met(self, current_stage: Stage, function: Optional[str], info: Dict[str, str]):
-        return NotImplemented
-
-
-class Never(ActivationCondition):
-
-    def dump(self):
-        return None
-
-    def is_met(self, current_stage: Stage, function: Optional[str], info: Dict[str, str]):
-        return False
-
-
-class EqualAC(ActivationCondition):
-
-    def __init__(self, slot, value):
-        self.slot = slot
-        self.value = value
-
-    def dump(self):
-        value = json.dumps(self.value) if self.value is not None else '*'
-        return "{} = {}".format(self.slot, value)
-
-    def __eq__(self, o):
-        if not super().__eq__(o):
-            return False
-        return self.slot == o.slot and self.value == o.value
-
-    def is_met(self, current_stage: Stage, function: Optional[str], info: Dict[str, str]):
-        if self.slot == 'action':
-            if self.value is not None:
-                return function == self.value
-            else:
-                return function is not None
-            return False
-        elif self.slot == 'stage':
-            if self.value is not None:
-                return stage_mapping[current_stage.__class__] == self.value
-            else:
-                return True
-        else:
-            if self.slot in info:
-                if self.value is not None:
-                    return info[self.slot] == self.value
-                else:  # None for self.value represents "any"
-                    return True
-        return False
-
-
-
-class NEqualAC(ActivationCondition):
-
-    def __init__(self, slot, value):
-        self.slot = slot
-        self.value = value
-
-    def dump(self):
-        value = json.dumps(self.value) if self.value is not None else '*'
-        return "{} = {}".format(self.slot, value)
-
-    def __eq__(self, o):
-        if not super().__eq__(o):
-            return False
-        return self.slot == o.slot and self.value == o.value
-
-    def is_met(self, current_stage: Stage, function: Optional[str], info: Dict[str, str]):
-        if self.slot == 'action':
-            if self.value is not None:
-                return function != self.value
-            else:
-                return function is not None
-            return False
-        elif self.slot == 'stage':
-            if self.value is not None:
-                return stage_mapping[current_stage.__class__] != self.value
-            else:
-                return True
-        else:
-            if self.slot in info:
-                if self.value is not None:
-                    return info[self.slot] != self.value
-                else:  # None for self.value represents "any"
-                    return True
-        return False
 
 
 class AttributeCapsule:

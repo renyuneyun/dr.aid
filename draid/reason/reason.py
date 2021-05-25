@@ -17,7 +17,7 @@ from typing import Dict, List, Tuple
 from rdflib import Graph, URIRef
 
 from draid.rule import DataRuleContainer, ActivatedObligation, PortedRules
-from draid.rule.proto import Stage, Imported, Processing
+from draid.rule.stage import Imported, Processing
 from draid.graph_wrapper import ComponentAugmentation, GraphWrapper, virtual_port_for_import, K_FUNCTION
 
 from . import rule_handle

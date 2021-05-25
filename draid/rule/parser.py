@@ -20,7 +20,6 @@ import re
 from typing import Dict, List, Optional, Union, Tuple, Type
 
 from .rule import FlowRule, Propagate, Edit, Delete, ObligationDeclaration, DataRuleContainer, AttributeCapsule
-from .proto import ActivationCondition, is_ac, obtain
 
 
 class MalformedRuleException(Exception):
