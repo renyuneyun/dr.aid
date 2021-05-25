@@ -19,6 +19,7 @@ from draid.rule.parser import call_parser_data_rule
 #         # obtain,
 #         )
 from draid.rule import ActivationCondition, Attribute, AttributeCapsule, ObligationDeclaration, DataRuleContainer, FlowRule, PortedRules
+from draid.rule.flow_rule import Delete, Edit, Propagate
 from draid.setting import FLOW_RULE_DEF
 
 import logging
@@ -84,13 +85,13 @@ def pl_act_flow_rule(flow_rule: FlowRule) -> List[str]:
     lst = []
     output_ports = set()  # The output ports need to be identified from the flow rules
     for action in flow_rule:
-        if isinstance(action, FlowRule.Propagate):
+        if isinstance(action, Propagate):
             o_ports = action.output_ports
             output_ports.update(o_ports)
             lst.append(f"pr({_pl_str_act(action.input_port)}, [{','.join(map(_pl_str_act, o_ports))}])")
-        elif isinstance(action, FlowRule.Edit):
+        elif isinstance(action, Edit):
             lst.append(f"edit({_pl_str_act(action.name)}, {_pl_str_act(action.match_type)}, {_pl_value_act(action.match_value)}, {_pl_str_act(action.new_type)}, {_pl_value_act(action.new_value)}, {_pl_str_act(action.input_port)}, {_pl_str_act(action.output_port)})")
-        elif isinstance(action, FlowRule.Delete):
+        elif isinstance(action, Delete):
             lst.append(f"del({_pl_str_act(action.name)}, {_pl_str_act(action.match_type)}, {_pl_value_act(action.match_value)}, {_pl_str_act(action.input_port)}, {_pl_str_act(action.output_port)})")
         else:
             raise IllegalCaseError()

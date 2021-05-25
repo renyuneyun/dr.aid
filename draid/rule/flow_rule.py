@@ -19,6 +19,49 @@ from draid.defs.exception import IllegalCaseError
 from .utils import escaped
 
 
+class Action:
+    def mapped(self, name_map): pass
+
+
+@dataclass
+class Propagate(Action):
+    input_port: str
+    output_ports: List[str]
+
+    def mapped(self, name_map):
+        input_port = FlowRule.map_name(name_map, self.input_port)
+        output_ports = [FlowRule.map_name(name_map, port) for port in self.output_ports]
+        return Propagate(input_port, output_ports)
+
+@dataclass
+class Edit(Action):
+    new_type: str
+    new_value: str
+    input_port: Optional[str] = None
+    output_port: Optional[str] = None
+    name: Optional[str] = None
+    match_type: Optional[str] = None
+    match_value: Optional[Union[str, int, float]] = None
+
+    def mapped(self, name_map):
+        input_port = FlowRule.map_name(name_map, self.input_port)
+        output_port = FlowRule.map_name(name_map, self.output_port)
+        return Edit(self.new_type, self.new_value, input_port, output_port, self.name, self.match_type, self.match_value)
+
+@dataclass
+class Delete(Action):
+    input_port: Optional[str] = None
+    output_port: Optional[str] = None
+    name: Optional[str] = None
+    match_type: Optional[str] = None
+    match_value: Optional[Union[str, int, float]] = None
+
+    def mapped(self, name_map):
+        input_port = FlowRule.map_name(name_map, self.input_port)
+        output_port = FlowRule.map_name(name_map, self.output_port)
+        return Delete(input_port, output_port, self.name, self.match_type, self.match_value)
+
+
 class FlowRule:
     '''
     FlowRule is stateless
@@ -27,46 +70,6 @@ class FlowRule:
     @staticmethod
     def map_name(name_map, name):
         return name_map[name] if name in name_map else name
-
-    @dataclass
-    class Propagate:
-        input_port: str
-        output_ports: List[str]
-
-        def mapped(self, name_map):
-            input_port = FlowRule.map_name(name_map, self.input_port)
-            output_ports = [FlowRule.map_name(name_map, port) for port in self.output_ports]
-            return FlowRule.Propagate(input_port, output_ports)
-
-    @dataclass
-    class Edit:
-        new_type: str
-        new_value: str
-        input_port: Optional[str] = None
-        output_port: Optional[str] = None
-        name: Optional[str] = None
-        match_type: Optional[str] = None
-        match_value: Optional[Union[str, int, float]] = None
-
-        def mapped(self, name_map):
-            input_port = FlowRule.map_name(name_map, self.input_port)
-            output_port = FlowRule.map_name(name_map, self.output_port)
-            return FlowRule.Edit(self.new_type, self.new_value, input_port, output_port, self.name, self.match_type, self.match_value)
-
-    @dataclass
-    class Delete:
-        input_port: Optional[str] = None
-        output_port: Optional[str] = None
-        name: Optional[str] = None
-        match_type: Optional[str] = None
-        match_value: Optional[Union[str, int, float]] = None
-
-        def mapped(self, name_map):
-            input_port = FlowRule.map_name(name_map, self.input_port)
-            output_port = FlowRule.map_name(name_map, self.output_port)
-            return FlowRule.Delete(input_port, output_port, self.name, self.match_type, self.match_value)
-
-    Action = Union[Propagate, Edit, Delete]
 
     def __init__(self, actions: List[Action]):
         self.actions = actions
@@ -89,11 +92,11 @@ class FlowRule:
             return s or '*'
         s = ''
         for action in self.actions:
-            if isinstance(action, FlowRule.Propagate):
+            if isinstance(action, Propagate):
                 s += f"{action.input_port} -> {', '.join(action.output_ports)}\n"
-            elif isinstance(action, FlowRule.Edit):
+            elif isinstance(action, Edit):
                 s += f"edit({optional(escaped(action.input_port))}, {optional(escaped(action.output_port))}, {optional(action.name)}, {optional(escaped(action.match_type))}, {optional(escaped(action.match_value))}, {escaped(action.new_type)}, {escaped(action.new_value)})\n"
-            elif isinstance(action, FlowRule.Delete):
+            elif isinstance(action, Delete):
                 s += f"delete({optional(escaped(action.input_port))}, {optional(escaped(action.output_port))}, {optional(action.name)}, {optional(escaped(action.match_type))}, {optional(escaped(action.match_value))})\n"
             else:
                 raise IllegalCaseError()
@@ -114,14 +117,9 @@ class FlowRule:
             return NotImplemented
 
 
-Propagate = FlowRule.Propagate
-Edit = FlowRule.Edit
-Delete = FlowRule.Delete
-
-
 def DefaultFlow(input_ports: List[str], output_ports: List[str]) -> FlowRule:
-    actions = []  # type: List[FlowRule.Action]
+    actions = []  # type: List[Action]
     for input_port in input_ports:
-        pr = FlowRule.Propagate(input_port, output_ports)
+        pr = Propagate(input_port, output_ports)
         actions.append(pr)
     return FlowRule(actions)
