@@ -70,8 +70,8 @@ class ObligationStore:
     def list(self):
         return self._obligation_list
 
-    def delete(self, index):
-        self._obligation_list = [ob for i, ob in enumerate(self._obligation_list) if ob != index]
+    def delete(self, *index):
+        self._obligation_list = [ob for i, ob in enumerate(self._obligation_list) if i not in index]
 
     def find(self, component):
         return []
