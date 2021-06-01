@@ -72,7 +72,7 @@ def dump_data_rule(drc: 'DataRuleContainer', port, situation='s0') -> str:
     def dump_attr_refs(attr_refs):
         return ["[{}, {}]".format(_pl_str(port), _pl_str(_attr_id_for_prolog(attr_name, attr_ord))) for attr_name, attr_ord in attr_refs]
     for ob in drc._rules:
-        name = ob.name()
+        name = ob.name().dump()
         attr_repr = '[' + ", ".join(dump_attr_refs(ob._attr_ref)) + ']'
         vb_repr = '[' + ", ".join(dump_attr_refs(ob._validity_binding)) + ']'
         ac = ob._ac.dump()

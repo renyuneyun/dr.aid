@@ -13,11 +13,23 @@
 
 from owlready2 import Thing
 
-from .ontomix import import_ontology
+from draid.defs.exception import OntologyTypeException
 
-onto = import_ontology("core.owl")
+from .utils import import_ontology
 
-with onto:
+base_onto = import_ontology("core.owl")
+
+with base_onto:
     class Obligation(Thing):
         pass
 
+
+def get_obligation(name: str) -> Obligation:
+    #onto = import_ontology(path)
+    onto = base_onto
+    ob_class = onto[name]
+    if isinstance(ob_class, Obligation):
+        return ob_class
+    if not ob_class:
+        raise OntologyTypeException('Expecting Obligation/ObligatedAction, but found nothing. From representation: {}'.format(name))
+    raise OntologyTypeException('Expecting Obligation/ObligatedAction, but got {}. From representation: {}'.format(ob_class.__class__, name))

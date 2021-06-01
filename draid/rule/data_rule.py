@@ -17,6 +17,7 @@ from .activation import (
         ACTIVATION_CONDITION_EXPR,
         )
 from .attribute import Attribute
+from .ontologiable import OntologiableString, ObligationOntoString
 from .stage import Stage
 from .utils import escaped, deescaped
 
@@ -99,8 +100,8 @@ class AttributeResolver:
 
 class ActivatedObligation:
 
-    def __init__(self, name: str, attributes: List[Attribute] = []):
-        self.name = name
+    def __init__(self, action: ObligationOntoString, attributes: List[Attribute] = []):
+        self.name = action
         self.attributes = attributes
 
     def __repr__(self):
@@ -116,11 +117,14 @@ class ObligationDeclaration:
     @classmethod
     def from_raw(cls, obligated_action: DanglingObligatedAction, validity_binding: List[DanglingAttributeReference]=[], activation_condition_expr: ACTIVATION_CONDITION_EXPR=None):
         activation_condition = ActivationCondition.from_raw(activation_condition_expr)
-        return cls(obligated_action, validity_binding, activation_condition)
+        action, args = obligated_action
+        resolved_action = ObligationOntoString(action)
+        resolved_obligated_action = (resolved_action, args)
+        return cls(resolved_obligated_action, validity_binding, activation_condition)
 
-    def __init__(self, obligated_action: Union[str, Tuple[str, List[Tuple[str, int]]]], validity_binding: List[Tuple[str, int]] = [], activation_condition: Optional[ActivationCondition] = None):
+    def __init__(self, obligated_action: Union[str, Tuple[ObligationOntoString, List[Tuple[str, int]]]], validity_binding: List[Tuple[str, int]] = [], activation_condition: Optional[ActivationCondition] = None):
         if isinstance(obligated_action, str):
-            self._name, self._attr_ref = obligated_action, []  # type: str, List[Tuple[str, int]]
+            self._name, self._attr_ref = ObligationOntoString(obligated_action), []  # type: ObligationOntoString, List[Tuple[str, int]]
         else:
             self._name, self._attr_ref = obligated_action
         self._validity_binding = validity_binding
@@ -129,7 +133,7 @@ class ObligationDeclaration:
         self._ac = activation_condition
 
     def __repr__(self):
-        return f"obligation ( ({self._name, self._attr_ref}), {self._attr_ref}, {self._ac} )"
+        return f"obligation ( ({repr(self._name), self._attr_ref}), {self._attr_ref}, {self._ac} )"
 
     def __eq__(self, other):
         if isinstance(other, self.__class__):
@@ -148,12 +152,13 @@ class ObligationDeclaration:
     def dump(self) -> str:
         def dump_attr_ref(attr_refs):
             return (f"{attr_name}[{attr_index}]" for attr_name, attr_index in attr_refs)
+        s_name = escaped(self._name.dump())
         s_attr_ref = " ".join(dump_attr_ref(self._attr_ref))
         s_validity_binding = ','.join(dump_attr_ref(self._validity_binding))
         ac_dump = self._ac.dump()
         # s_ac = f'"{ac_dump}"' if ac_dump else 'null'
         s_ac = ac_dump if ac_dump else 'null'
-        s = f"obligation({escaped(self._name)} {s_attr_ref}, [{s_validity_binding}], {s_ac})."
+        s = f"obligation({s_name} {s_attr_ref}, [{s_validity_binding}], {s_ac})."
         return s
 
     def clone(self) -> 'ObligationDeclaration':

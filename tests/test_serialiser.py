@@ -34,8 +34,8 @@ def test_attribute_serialise(name, values):
 
 @pytest.mark.parametrize('name, validity_binding, activation_condition', [
     ('ru1', [('a', 1)], None),
-    ('"ru1"', [('a', 1)], None),
-    ('"ru1"', [('a', 1)], WhenImported),
+    (':ru1', [('a', 1)], None),
+    ('a:ru1', [('a', 1)], WhenImported),
     ])
 def test_data_rule_serialise(name, validity_binding, activation_condition):
     r = ObligationDeclaration(name, validity_binding, activation_condition)

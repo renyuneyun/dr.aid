@@ -11,11 +11,11 @@
 
 '''
 
-from .attribute import (
-        AttributeValue,
-        Attribute,
-        )
-
 from .obligation import (
         Obligation,
+        get_obligation,
+        )
+
+from owlready2 import (
+        Thing,
         )

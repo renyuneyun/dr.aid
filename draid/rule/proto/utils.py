@@ -21,5 +21,3 @@ def import_ontology(name):
     onto = get_ontology(name)
     onto.load()
     return onto
-
-
