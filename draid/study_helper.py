@@ -30,6 +30,7 @@ class Helper:
         self.graph = None
         self.graph_wrapper = None
         self.store = None
+        self._acob = None
         self._configure(service_url, scheme, rule_db, obligation_db)
 
     def _configure(self, service, scheme, rule_db, obligation_db):
@@ -71,6 +72,8 @@ class Helper:
         self.graph_wrapper.add_virtual("publish")
         graph_wrapper, activated_obligations = main.propagate_single(self.graph_wrapper)
 
+        self._acob = activated_obligations
+
         self.store.insert(activated_obligations)
         self.store.write()
         rdbh.update_db_default(self.graph_wrapper)
@@ -78,7 +81,7 @@ class Helper:
         return activated_obligations
 
     def visualize(self, with_rules=False, filename='graph_tmp.png'):
-        gb = vis.GraphBuilder(self.graph_wrapper) \
+        gb = vis.GraphBuilder(self.graph_wrapper, self._acob) \
                 .data_flow()
         if with_rules:
             gb.rules() \
