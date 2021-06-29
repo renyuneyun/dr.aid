@@ -15,10 +15,12 @@ import pytest
 
 from draid.rule import parser
 from draid.rule import ObligationDeclaration, DataRuleContainer, AttributeCapsule, FlowRule, Propagate, Edit, Delete
-from draid.rule import EqualAC
+from draid.rule import EqualAC, NEqualAC, Never
+from draid.rule import And, Or, Not
 
 
-WhenImported = EqualAC('stage', 'import')
+on_publish = EqualAC('action', 'publish')
+when_imported = EqualAC('stage', 'import')
 
 
 @pytest.mark.parametrize('name, values', [
@@ -35,7 +37,11 @@ def test_attribute_serialise(name, values):
 @pytest.mark.parametrize('name, validity_binding, activation_condition', [
     ('ru1', [('a', 1)], None),
     ('"ru1"', [('a', 1)], None),
-    ('"ru1"', [('a', 1)], WhenImported),
+    ('"ru1"', [('a', 1)], when_imported),
+    ('"ru1"', [('a', 1)], on_publish),
+    ('"ru1"', [('a', 1)], And(on_publish, when_imported)),
+    ('"ru1"', [('a', 1)], Or(on_publish, when_imported)),
+    ('"ru1"', [('a', 1)], Not(on_publish)),
     ])
 def test_data_rule_serialise(name, validity_binding, activation_condition):
     r = ObligationDeclaration(name, validity_binding, activation_condition)
