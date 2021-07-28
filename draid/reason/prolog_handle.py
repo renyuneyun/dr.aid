@@ -54,8 +54,7 @@ def _attr_id_for_prolog(attr_name, attr_ord) -> str:
 _PL_NULL = 'null'  # The string literal which will be interpreted as null (in our semantics) in the prolog reasoner.
 _PL_EMPTY_LIST = '[]'
 def _is_pl_null(s):
-    if isinstance(s, bytes):
-        s = s.decode()
+    s = s.decode()  # s should be bytes
     return s == _PL_NULL
 
 def dump_data_rule(drc: 'DataRuleContainer', port, situation='s0') -> str:
@@ -189,12 +188,11 @@ def _parse_obligation(res_iter, attr_hist):
         vb = [attr_hist[tuple(raw_vb)] for raw_vb in raw_vb_list]
         ac = r_ob['Ac']
         if _is_pl_null(ac):
-            ac = None
+            ac_expr = ''
         else:
             ac = ac.decode()
             ac_expr = call_parser_data_rule(ac, part='activation_condition')
-            ac = ActivationCondition.from_raw(ac_expr)
-        ob = ObligationDeclaration((ob, attr), vb, ac)
+        ob = ObligationDeclaration.from_raw((ob, attr), vb, ac_expr)
         ported_obs[port].append(ob)
     logger.debug("Retrieved obligations in %d ports. Summary ({PORT: #-OF-OBLIGATIONS}): %s", len(ported_obs), { port: len(obs) for port, obs in ported_obs.items() })
     return ported_obs

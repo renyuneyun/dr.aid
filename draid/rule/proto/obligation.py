@@ -12,21 +12,33 @@
 '''
 
 from owlready2 import Thing
+from typing import Optional
 
 from draid.defs.exception import OntologyTypeException
 
 from .utils import import_ontology
 
+
+WELL_KNOWN = {
+        '': 'core.owl',
+        'core': 'core.owl',
+        'draid': 'core.owl',
+        }
+
+
 base_onto = import_ontology("core.owl")
+
 
 with base_onto:
     class Obligation(Thing):
         pass
 
 
-def get_obligation(name: str) -> Obligation:
-    #onto = import_ontology(path)
-    onto = base_onto
+def get_obligation(onto_url: Optional[str], name: str) -> Obligation:
+    if onto_url:
+        onto = import_ontology(onto_url)
+    else:
+        onto = base_onto
     ob_class = onto[name]
     if isinstance(ob_class, Obligation):
         return ob_class

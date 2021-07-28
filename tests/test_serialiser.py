@@ -21,6 +21,11 @@ from draid.rule import EqualAC
 WhenImported = EqualAC('stage', 'import')
 
 
+NAMESPACES = {
+        'core': 'core.owl',
+        }
+
+
 @pytest.mark.parametrize('name, values', [
     ("pr1", (('str', "a"), ('str', "b"))),
     ])
@@ -35,13 +40,13 @@ def test_attribute_serialise(name, values):
 @pytest.mark.parametrize('name, validity_binding, activation_condition', [
     ('ru1', [('a', 1)], None),
     (':ru1', [('a', 1)], None),
-    ('a:ru1', [('a', 1)], WhenImported),
+    ('core:ru1', [('a', 1)], WhenImported),
     ])
 def test_data_rule_serialise(name, validity_binding, activation_condition):
-    r = ObligationDeclaration(name, validity_binding, activation_condition)
+    r = ObligationDeclaration(name, validity_binding, activation_condition, namespaces=NAMESPACES)
     s = r.dump()
     _, (obligated_action, validity_binding, activation_condition_ref) = parser.call_parser_data_rule(s, 'obligation_decl')
-    r2 = ObligationDeclaration.from_raw(obligated_action, validity_binding, activation_condition_ref)
+    r2 = ObligationDeclaration.from_raw(obligated_action, validity_binding, activation_condition_ref, namespaces=NAMESPACES)
     assert r2 == r
 
 

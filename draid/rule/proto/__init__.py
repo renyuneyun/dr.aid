@@ -12,6 +12,7 @@
 '''
 
 from .obligation import (
+        WELL_KNOWN,
         Obligation,
         get_obligation,
         )

@@ -100,9 +100,12 @@ class AttributeResolver:
 
 class ActivatedObligation:
 
-    def __init__(self, action: ObligationOntoString, attributes: List[Attribute] = []):
-        self.name = action
-        self.attributes = attributes
+    def __init__(self, action: Union[str, ObligationOntoString], args: List[Attribute] = []):
+        if isinstance(action, str):
+            self.name = action
+        else:
+            self.name = action.fully_quantified()
+        self.attributes = args
 
     def __repr__(self):
         return f'({self.name} {self.attributes})'
@@ -115,16 +118,16 @@ class ObligationDeclaration:
     '''
 
     @classmethod
-    def from_raw(cls, obligated_action: DanglingObligatedAction, validity_binding: List[DanglingAttributeReference]=[], activation_condition_expr: ACTIVATION_CONDITION_EXPR=None):
+    def from_raw(cls, obligated_action: DanglingObligatedAction, validity_binding: List[DanglingAttributeReference]=[], activation_condition_expr: ACTIVATION_CONDITION_EXPR=None, namespaces: Optional[Dict[str, str]]=None):
         activation_condition = ActivationCondition.from_raw(activation_condition_expr)
         action, args = obligated_action
-        resolved_action = ObligationOntoString(action)
+        resolved_action = ObligationOntoString(action, namespaces=namespaces)
         resolved_obligated_action = (resolved_action, args)
-        return cls(resolved_obligated_action, validity_binding, activation_condition)
+        return cls(resolved_obligated_action, validity_binding, activation_condition, namespaces=namespaces)
 
-    def __init__(self, obligated_action: Union[str, Tuple[ObligationOntoString, List[Tuple[str, int]]]], validity_binding: List[Tuple[str, int]] = [], activation_condition: Optional[ActivationCondition] = None):
+    def __init__(self, obligated_action: Union[str, Tuple[ObligationOntoString, List[Tuple[str, int]]]], validity_binding: List[Tuple[str, int]] = [], activation_condition: Optional[ActivationCondition] = None, namespaces: Optional[Dict[str, str]]=None):
         if isinstance(obligated_action, str):
-            self._name, self._attr_ref = ObligationOntoString(obligated_action), []  # type: ObligationOntoString, List[Tuple[str, int]]
+            self._name, self._attr_ref = ObligationOntoString(obligated_action, namespaces=namespaces), []  # type: ObligationOntoString, List[Tuple[str, int]]
         else:
             self._name, self._attr_ref = obligated_action
         self._validity_binding = validity_binding
