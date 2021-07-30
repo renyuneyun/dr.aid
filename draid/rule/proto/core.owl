@@ -95,6 +95,14 @@
     
 
 
+    <!-- http://www.semanticweb.org/draid/ontologies/2019/9/core#Acknowledge -->
+
+    <owl:Class rdf:about="http://www.semanticweb.org/draid/ontologies/2019/9/core#Acknowledge">
+        <rdfs:subClassOf rdf:resource="http://www.semanticweb.org/draid/ontologies/2019/9/core#Obligation"/>
+    </owl:Class>
+    
+
+
     <!-- http://www.semanticweb.org/draid/ontologies/2019/9/core#ActivationCondition -->
 
     <owl:Class rdf:about="http://www.semanticweb.org/draid/ontologies/2019/9/core#ActivationCondition"/>
@@ -144,6 +152,14 @@
     
 
 
+    <!-- http://www.semanticweb.org/draid/ontologies/2019/9/core#Cite -->
+
+    <owl:Class rdf:about="http://www.semanticweb.org/draid/ontologies/2019/9/core#Cite">
+        <rdfs:subClassOf rdf:resource="http://www.semanticweb.org/draid/ontologies/2019/9/core#Obligation"/>
+    </owl:Class>
+    
+
+
     <!-- http://www.semanticweb.org/draid/ontologies/2019/9/core#Finished -->
 
     <owl:Class rdf:about="http://www.semanticweb.org/draid/ontologies/2019/9/core#Finished">
@@ -153,10 +169,26 @@
     
 
 
+    <!-- http://www.semanticweb.org/draid/ontologies/2019/9/core#ForTesting -->
+
+    <owl:Class rdf:about="http://www.semanticweb.org/draid/ontologies/2019/9/core#ForTesting">
+        <rdfs:subClassOf rdf:resource="http://www.semanticweb.org/draid/ontologies/2019/9/core#Obligation"/>
+    </owl:Class>
+    
+
+
     <!-- http://www.semanticweb.org/draid/ontologies/2019/9/core#Imported -->
 
     <owl:Class rdf:about="http://www.semanticweb.org/draid/ontologies/2019/9/core#Imported">
         <rdfs:subClassOf rdf:resource="http://www.semanticweb.org/draid/ontologies/2019/9/core#Stage"/>
+    </owl:Class>
+    
+
+
+    <!-- http://www.semanticweb.org/draid/ontologies/2019/9/core#Include -->
+
+    <owl:Class rdf:about="http://www.semanticweb.org/draid/ontologies/2019/9/core#Include">
+        <rdfs:subClassOf rdf:resource="http://www.semanticweb.org/draid/ontologies/2019/9/core#Obligation"/>
     </owl:Class>
     
 
@@ -225,6 +257,46 @@
 
     <owl:Class rdf:about="http://www.semanticweb.org/draid/ontologies/2019/9/core#WhenPublish">
         <rdfs:subClassOf rdf:resource="http://www.semanticweb.org/draid/ontologies/2019/9/core#ActivationCondition"/>
+    </owl:Class>
+    
+
+
+    <!-- http://www.semanticweb.org/draid/ontologies/2019/9/core#credit -->
+
+    <owl:Class rdf:about="http://www.semanticweb.org/draid/ontologies/2019/9/core#credit">
+        <rdfs:subClassOf rdf:resource="http://www.semanticweb.org/draid/ontologies/2019/9/core#ForTesting"/>
+    </owl:Class>
+    
+
+
+    <!-- http://www.semanticweb.org/draid/ontologies/2019/9/core#hide -->
+
+    <owl:Class rdf:about="http://www.semanticweb.org/draid/ontologies/2019/9/core#hide">
+        <rdfs:subClassOf rdf:resource="http://www.semanticweb.org/draid/ontologies/2019/9/core#ForTesting"/>
+    </owl:Class>
+    
+
+
+    <!-- http://www.semanticweb.org/draid/ontologies/2019/9/core#ob1 -->
+
+    <owl:Class rdf:about="http://www.semanticweb.org/draid/ontologies/2019/9/core#ob1">
+        <rdfs:subClassOf rdf:resource="http://www.semanticweb.org/draid/ontologies/2019/9/core#ForTesting"/>
+    </owl:Class>
+    
+
+
+    <!-- http://www.semanticweb.org/draid/ontologies/2019/9/core#ob2 -->
+
+    <owl:Class rdf:about="http://www.semanticweb.org/draid/ontologies/2019/9/core#ob2">
+        <rdfs:subClassOf rdf:resource="http://www.semanticweb.org/draid/ontologies/2019/9/core#ForTesting"/>
+    </owl:Class>
+    
+
+
+    <!-- http://www.semanticweb.org/draid/ontologies/2019/9/core#ru1 -->
+
+    <owl:Class rdf:about="http://www.semanticweb.org/draid/ontologies/2019/9/core#ru1">
+        <rdfs:subClassOf rdf:resource="http://www.semanticweb.org/draid/ontologies/2019/9/core#ForTesting"/>
     </owl:Class>
     
 

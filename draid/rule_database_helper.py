@@ -18,7 +18,7 @@ from rdflib import URIRef
 
 from . import setting
 
-from .exception import ParseError
+from .defs.exception import ParseError
 from .graph_wrapper import GraphWrapper
 from .injection import Link
 

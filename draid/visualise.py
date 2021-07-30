@@ -17,7 +17,7 @@ import textwrap as tw
 
 from pprint import pformat
 
-from .exception import ForceFailedException
+from .defs.exception import ForceFailedException
 from .graph_wrapper import GraphWrapper, trim_port_name
 
 logger = logging.getLogger(__name__)

@@ -11,6 +11,21 @@ class IllegalCaseError(IllegalStateError):
     '''
     pass
 
+
+class OntologyException(Exception):
+    '''
+    The base exception class for any ontology-related exceptions
+    '''
+    pass
+
+
+class OntologyTypeException(OntologyException):
+    '''
+    The type of the fetched entry is different from expected.
+    '''
+    pass
+
+
 class ForceFailedException(Exception):
     '''
     An exception representing that a "force" action (i.e. trying to ensure something) failed. It often indicates the data is different from expectation.

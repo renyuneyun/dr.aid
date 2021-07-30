@@ -13,7 +13,7 @@
 
 import pytest
 
-from draid import parser
+from draid.rule import parser
 from draid.rule import ObligationDeclaration, DataRuleContainer, AttributeCapsule, FlowRule, Propagate, Edit, Delete
 
 

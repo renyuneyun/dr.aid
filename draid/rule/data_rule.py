@@ -1,165 +1,29 @@
 '''
-This module contains the definitions of the rule classes, and a few helper functions.
-The rule classes contain their serialiser functions, usually called `dump`. See `parser` module for the deserialisers.
+This module contains the definitions of the rule classes, and a few helper
+functions.
+The rule classes contain their serialiser functions, usually called `dump`.
+See `parser` module for the deserialisers.
 '''
 
 from dataclasses import dataclass
-import json
 from typing import Any, Dict, List, Optional, Tuple, Union
 from random import randint
 
-from .proto import (
-        # ActivationCondition,
-        # Never,
-        # eq,
-        # dump,
-        # is_ac,
-        # obtain,
-        Stage,
-        stage_mapping,
-        AttributeValue,
-        Attribute,
+from draid.defs.exception import IllegalCaseError
+
+from .activation import (
+        ActivationCondition,
+        Never,
+        ACTIVATION_CONDITION_EXPR,
         )
-from .exception import IllegalCaseError
+from .attribute import Attribute
+from .ontologiable import OntologiableString, ObligationOntoString
+from .stage import Stage
+from .utils import escaped, deescaped
 
 
+# TODO: move to defs.typing
 PortedRules = Dict[str, Optional['DataRuleContainer']]
-
-ACTIVATION_CONDITION_EXPR = Optional[Tuple[str, Tuple[str, Optional[str]]]]
-
-
-def escaped(value: Any) -> Optional[str]:
-    if isinstance(value, (int, float)):
-        return str(value)
-    elif isinstance(value, str):
-        return json.dumps(value, ensure_ascii=False)
-    elif value is None:  # `None` may represent different meanings for different elements, so it should be treated separately where it is used
-        return None
-    raise NotImplementedError(f"Unknown value to be escaped: {value}")
-def deescaped(repr: Optional[str]) -> Any:
-    if repr is None:
-        return None
-    try:
-        return int(repr)
-    except ValueError:
-        pass
-    try:
-        return float(repr)
-    except ValueError:
-        pass
-    try:
-        return json.loads(f'"{repr}"')
-    except ValueError:
-        pass
-    raise NotImplementedError(f"Unknown repr to be de-escaped: {repr}")
-
-
-class ActivationCondition:
-
-    def from_raw(ac_expr: ACTIVATION_CONDITION_EXPR):
-        if ac_expr == None:
-            return Never()
-        elif ac_expr[0] == '=':
-            return EqualAC(*ac_expr[1])
-        elif ac_expr[0] == '!=':
-            return NEqualAC(*ac_expr[1])
-        else:
-            raise SyntaxError("Invalid syntax for ActivationCondition expression")
-
-    def dump(self) -> Optional[str]:
-        return NotImplemented
-
-    def __eq__(self, o):
-        if o is None:
-            return False
-        if self.__class__ != o.__class__:
-            return False
-        return True
-
-    def is_met(self, current_stage: Stage, function: Optional[str], info: Dict[str, str]):
-        return NotImplemented
-
-
-class Never(ActivationCondition):
-
-    def dump(self):
-        return None
-
-    def is_met(self, current_stage: Stage, function: Optional[str], info: Dict[str, str]):
-        return False
-
-
-class EqualAC(ActivationCondition):
-
-    def __init__(self, slot, value):
-        self.slot = slot
-        self.value = value
-
-    def dump(self):
-        value = json.dumps(self.value) if self.value is not None else '*'
-        return "{} = {}".format(self.slot, value)
-
-    def __eq__(self, o):
-        if not super().__eq__(o):
-            return False
-        return self.slot == o.slot and self.value == o.value
-
-    def is_met(self, current_stage: Stage, function: Optional[str], info: Dict[str, str]):
-        if self.slot == 'action':
-            if self.value is not None:
-                return function == self.value
-            else:
-                return function is not None
-            return False
-        elif self.slot == 'stage':
-            if self.value is not None:
-                return stage_mapping[current_stage.__class__] == self.value
-            else:
-                return True
-        else:
-            if self.slot in info:
-                if self.value is not None:
-                    return info[self.slot] == self.value
-                else:  # None for self.value represents "any"
-                    return True
-        return False
-
-
-
-class NEqualAC(ActivationCondition):
-
-    def __init__(self, slot, value):
-        self.slot = slot
-        self.value = value
-
-    def dump(self):
-        value = json.dumps(self.value) if self.value is not None else '*'
-        return "{} = {}".format(self.slot, value)
-
-    def __eq__(self, o):
-        if not super().__eq__(o):
-            return False
-        return self.slot == o.slot and self.value == o.value
-
-    def is_met(self, current_stage: Stage, function: Optional[str], info: Dict[str, str]):
-        if self.slot == 'action':
-            if self.value is not None:
-                return function != self.value
-            else:
-                return function is not None
-            return False
-        elif self.slot == 'stage':
-            if self.value is not None:
-                return stage_mapping[current_stage.__class__] != self.value
-            else:
-                return True
-        else:
-            if self.slot in info:
-                if self.value is not None:
-                    return info[self.slot] != self.value
-                else:  # None for self.value represents "any"
-                    return True
-        return False
 
 
 class AttributeCapsule:
@@ -236,9 +100,12 @@ class AttributeResolver:
 
 class ActivatedObligation:
 
-    def __init__(self, name: str, attributes: List[Attribute] = []):
-        self.name = name
-        self.attributes = attributes
+    def __init__(self, action: Union[str, ObligationOntoString], args: List[Attribute] = []):
+        if isinstance(action, str):
+            self.name = action
+        else:
+            self.name = action.fully_quantified()
+        self.attributes = args
 
     def __repr__(self):
         return f'({self.name} {self.attributes})'
@@ -251,13 +118,16 @@ class ObligationDeclaration:
     '''
 
     @classmethod
-    def from_raw(cls, obligated_action: DanglingObligatedAction, validity_binding: List[DanglingAttributeReference]=[], activation_condition_expr: ACTIVATION_CONDITION_EXPR=None):
+    def from_raw(cls, obligated_action: DanglingObligatedAction, validity_binding: List[DanglingAttributeReference]=[], activation_condition_expr: ACTIVATION_CONDITION_EXPR=None, namespaces: Optional[Dict[str, str]]=None):
         activation_condition = ActivationCondition.from_raw(activation_condition_expr)
-        return cls(obligated_action, validity_binding, activation_condition)
+        action, args = obligated_action
+        resolved_action = ObligationOntoString(action, namespaces=namespaces)
+        resolved_obligated_action = (resolved_action, args)
+        return cls(resolved_obligated_action, validity_binding, activation_condition, namespaces=namespaces)
 
-    def __init__(self, obligated_action: Union[str, Tuple[str, List[Tuple[str, int]]]], validity_binding: List[Tuple[str, int]] = [], activation_condition: Optional[ActivationCondition] = None):
+    def __init__(self, obligated_action: Union[str, Tuple[ObligationOntoString, List[Tuple[str, int]]]], validity_binding: List[Tuple[str, int]] = [], activation_condition: Optional[ActivationCondition] = None, namespaces: Optional[Dict[str, str]]=None):
         if isinstance(obligated_action, str):
-            self._name, self._attr_ref = obligated_action, []  # type: str, List[Tuple[str, int]]
+            self._name, self._attr_ref = ObligationOntoString(obligated_action, namespaces=namespaces), []  # type: ObligationOntoString, List[Tuple[str, int]]
         else:
             self._name, self._attr_ref = obligated_action
         self._validity_binding = validity_binding
@@ -266,7 +136,7 @@ class ObligationDeclaration:
         self._ac = activation_condition
 
     def __repr__(self):
-        return f"obligation ( ({self._name, self._attr_ref}), {self._attr_ref}, {self._ac} )"
+        return f"obligation ( ({repr(self._name), self._attr_ref}), {self._attr_ref}, {self._ac} )"
 
     def __eq__(self, other):
         if isinstance(other, self.__class__):
@@ -285,12 +155,13 @@ class ObligationDeclaration:
     def dump(self) -> str:
         def dump_attr_ref(attr_refs):
             return (f"{attr_name}[{attr_index}]" for attr_name, attr_index in attr_refs)
+        s_name = escaped(self._name.dump())
         s_attr_ref = " ".join(dump_attr_ref(self._attr_ref))
         s_validity_binding = ','.join(dump_attr_ref(self._validity_binding))
         ac_dump = self._ac.dump()
         # s_ac = f'"{ac_dump}"' if ac_dump else 'null'
         s_ac = ac_dump if ac_dump else 'null'
-        s = f"obligation({escaped(self._name)} {s_attr_ref}, [{s_validity_binding}], {s_ac})."
+        s = f"obligation({s_name} {s_attr_ref}, [{s_validity_binding}], {s_ac})."
         return s
 
     def clone(self) -> 'ObligationDeclaration':
@@ -438,111 +309,3 @@ def rule_account(suffix='') -> str:
         obligation(Account{suffix}, [], null).
     end
     '''
-
-
-class FlowRule:
-    '''
-    FlowRule is stateless
-    '''
-
-    @staticmethod
-    def map_name(name_map, name):
-        return name_map[name] if name in name_map else name
-
-    @dataclass
-    class Propagate:
-        input_port: str
-        output_ports: List[str]
-
-        def mapped(self, name_map):
-            input_port = FlowRule.map_name(name_map, self.input_port)
-            output_ports = [FlowRule.map_name(name_map, port) for port in self.output_ports]
-            return FlowRule.Propagate(input_port, output_ports)
-
-    @dataclass
-    class Edit:
-        new_type: str
-        new_value: str
-        input_port: Optional[str] = None
-        output_port: Optional[str] = None
-        name: Optional[str] = None
-        match_type: Optional[str] = None
-        match_value: Optional[Union[str, int, float]] = None
-
-        def mapped(self, name_map):
-            input_port = FlowRule.map_name(name_map, self.input_port)
-            output_port = FlowRule.map_name(name_map, self.output_port)
-            return FlowRule.Edit(self.new_type, self.new_value, input_port, output_port, self.name, self.match_type, self.match_value)
-
-    @dataclass
-    class Delete:
-        input_port: Optional[str] = None
-        output_port: Optional[str] = None
-        name: Optional[str] = None
-        match_type: Optional[str] = None
-        match_value: Optional[Union[str, int, float]] = None
-
-        def mapped(self, name_map):
-            input_port = FlowRule.map_name(name_map, self.input_port)
-            output_port = FlowRule.map_name(name_map, self.output_port)
-            return FlowRule.Delete(input_port, output_port, self.name, self.match_type, self.match_value)
-
-    Action = Union[Propagate, Edit, Delete]
-
-    def __init__(self, actions: List[Action]):
-        self.actions = actions
-        self.name_map = None  # type: Optional[Dict[str, str]]
-
-    def set_name_map(self, name_map: Dict[str, str]):
-        self.name_map = name_map
-
-    def mapped_actions(self) -> List[Action]:
-        '''
-        Returns the actions with name mapped.
-        '''
-        if not self.name_map:
-            return self.actions
-        else:
-            return [action.mapped(self.name_map) for action in self.actions]
-
-    def dump(self) -> str:
-        def optional(s):
-            return s or '*'
-        s = ''
-        for action in self.actions:
-            if isinstance(action, FlowRule.Propagate):
-                s += f"{action.input_port} -> {', '.join(action.output_ports)}\n"
-            elif isinstance(action, FlowRule.Edit):
-                s += f"edit({optional(escaped(action.input_port))}, {optional(escaped(action.output_port))}, {optional(action.name)}, {optional(escaped(action.match_type))}, {optional(escaped(action.match_value))}, {escaped(action.new_type)}, {escaped(action.new_value)})\n"
-            elif isinstance(action, FlowRule.Delete):
-                s += f"delete({optional(escaped(action.input_port))}, {optional(escaped(action.output_port))}, {optional(action.name)}, {optional(escaped(action.match_type))}, {optional(escaped(action.match_value))})\n"
-            else:
-                raise IllegalCaseError()
-        return s
-
-    def __iter__(self):
-        return self.mapped_actions().__iter__()
-
-    def __eq__(self, other):
-        # TODO: order independent
-        if isinstance(other, self.__class__):
-            if not self.actions == other.actions:
-                return False
-            if not self.name_map == other.name_map:
-                return False
-            return True
-        else:
-            return NotImplemented
-
-
-Propagate = FlowRule.Propagate
-Edit = FlowRule.Edit
-Delete = FlowRule.Delete
-
-
-def DefaultFlow(input_ports: List[str], output_ports: List[str]) -> FlowRule:
-    actions = []  # type: List[FlowRule.Action]
-    for input_port in input_ports:
-        pr = FlowRule.Propagate(input_port, output_ports)
-        actions.append(pr)
-    return FlowRule(actions)

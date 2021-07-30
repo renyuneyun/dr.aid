@@ -5,7 +5,7 @@ The settings, shared among all modules.
 from pathlib import Path
 
 _source_dir = Path(__file__).resolve().parent  # Directory of the source code file
-FLOW_RULE_DEF = str(_source_dir / 'prolog/flow_rule.pl')  # The directory which contains the flow rule definitions
+FLOW_RULE_DEF = str(_source_dir / 'reason/prolog/flow_rule.pl')  # The directory which contains the flow rule definitions
 
 SCHEME = 'CWLPROV'
 
@@ -26,7 +26,6 @@ IMPORT_PORT_NAME = 'imported_rule'
 # Rule injection
 
 from rdflib import URIRef
-from . import synthetic_raw_rules as rr
 
 # The extra flow rules to be injected into the reasoner. It takes precedence of the added rules from the database.
 # It is a nested dictionary, where the key of the first level is the graph ID (if there is a subgraph in the provenance) specifying a specific graph where the flow rule applies. For anything with graph ID `None`, it is applied universally unless already specified above.

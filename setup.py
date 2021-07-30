@@ -14,8 +14,9 @@ setup(
         "pyswip",
         "coloredlogs",
         "lark-parser",
-        "graphviz",
+        "pygraphviz",
         "pyyaml",
+        "pandas",
         "notebook",
         ],
 

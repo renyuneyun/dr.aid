@@ -19,8 +19,8 @@ from lark import Lark, Transformer
 import re
 from typing import Dict, List, Optional, Union, Tuple, Type
 
-from .rule import FlowRule, Propagate, Edit, Delete, ObligationDeclaration, DataRuleContainer, AttributeCapsule
-from .proto import ActivationCondition, is_ac, obtain
+from .data_rule import ObligationDeclaration, DataRuleContainer, AttributeCapsule
+from .flow_rule import FlowRule, Propagate, Edit, Delete
 
 
 class MalformedRuleException(Exception):
@@ -191,7 +191,7 @@ class TreeToDataRuleContent(Transformer):
     def CNAME(self, s):
         return s[:]
     def STRING(self, s):
-        return s[1:-1]
+        return json.loads(s)
     def NUMBER(self, n):
         return float(n)
     def INT(self, n):
@@ -249,7 +249,7 @@ class TreeToFlowRuleContent(Transformer):
     def CNAME(self, s):
         return s[:]
     def STRING(self, s):
-        return s[1:-1]
+        return json.loads(s)
     def NUMBER(self, n):
         return float(n)
     def INT(self, n):

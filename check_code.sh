@@ -4,7 +4,7 @@ dir_name=${PWD##*/}
 
 # Type check using mypy
 
-cd .. && mypy --config-file=$dir_name/.mypy.ini $dir_name/*.py $dir_name/draid/*.py &&
+cd .. && mypy --config-file=$dir_name/.mypy.ini $dir_name/*.py $dir_name/draid/*.py $dir_name/draid/*/*.py &&
 
 echo "mypy with no errors" &&
 

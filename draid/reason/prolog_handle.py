@@ -10,16 +10,17 @@ from collections import defaultdict
 from rdflib import Graph, URIRef
 from typing import Dict, Iterable, List, Optional, Tuple, Union
 
-from .exception import IllegalCaseError
-from .graph_wrapper import GraphWrapper
-from .parser import call_parser_data_rule
+from draid.defs.exception import IllegalCaseError
+from draid.graph_wrapper import GraphWrapper
+from draid.rule.parser import call_parser_data_rule
 # from .proto import (
 #         # dump,
 #         # is_ac,
 #         # obtain,
 #         )
-from .rule import ActivationCondition, Attribute, AttributeCapsule, ObligationDeclaration, DataRuleContainer, FlowRule, PortedRules
-from .setting import FLOW_RULE_DEF
+from draid.rule import ActivationCondition, Attribute, AttributeCapsule, ObligationDeclaration, DataRuleContainer, FlowRule, PortedRules
+from draid.rule.flow_rule import Delete, Edit, Propagate
+from draid.setting import FLOW_RULE_DEF
 
 import logging
 logger = logging.getLogger(__name__)
@@ -53,8 +54,7 @@ def _attr_id_for_prolog(attr_name, attr_ord) -> str:
 _PL_NULL = 'null'  # The string literal which will be interpreted as null (in our semantics) in the prolog reasoner.
 _PL_EMPTY_LIST = '[]'
 def _is_pl_null(s):
-    if isinstance(s, bytes):
-        s = s.decode()
+    s = s.decode()  # s should be bytes
     return s == _PL_NULL
 
 def dump_data_rule(drc: 'DataRuleContainer', port, situation='s0') -> str:
@@ -71,7 +71,7 @@ def dump_data_rule(drc: 'DataRuleContainer', port, situation='s0') -> str:
     def dump_attr_refs(attr_refs):
         return ["[{}, {}]".format(_pl_str(port), _pl_str(_attr_id_for_prolog(attr_name, attr_ord))) for attr_name, attr_ord in attr_refs]
     for ob in drc._rules:
-        name = ob.name()
+        name = ob.name().dump()
         attr_repr = '[' + ", ".join(dump_attr_refs(ob._attr_ref)) + ']'
         vb_repr = '[' + ", ".join(dump_attr_refs(ob._validity_binding)) + ']'
         ac = ob._ac.dump()
@@ -84,13 +84,13 @@ def pl_act_flow_rule(flow_rule: FlowRule) -> List[str]:
     lst = []
     output_ports = set()  # The output ports need to be identified from the flow rules
     for action in flow_rule:
-        if isinstance(action, FlowRule.Propagate):
+        if isinstance(action, Propagate):
             o_ports = action.output_ports
             output_ports.update(o_ports)
             lst.append(f"pr({_pl_str_act(action.input_port)}, [{','.join(map(_pl_str_act, o_ports))}])")
-        elif isinstance(action, FlowRule.Edit):
+        elif isinstance(action, Edit):
             lst.append(f"edit({_pl_str_act(action.name)}, {_pl_str_act(action.match_type)}, {_pl_value_act(action.match_value)}, {_pl_str_act(action.new_type)}, {_pl_value_act(action.new_value)}, {_pl_str_act(action.input_port)}, {_pl_str_act(action.output_port)})")
-        elif isinstance(action, FlowRule.Delete):
+        elif isinstance(action, Delete):
             lst.append(f"del({_pl_str_act(action.name)}, {_pl_str_act(action.match_type)}, {_pl_value_act(action.match_value)}, {_pl_str_act(action.input_port)}, {_pl_str_act(action.output_port)})")
         else:
             raise IllegalCaseError()
@@ -188,12 +188,11 @@ def _parse_obligation(res_iter, attr_hist):
         vb = [attr_hist[tuple(raw_vb)] for raw_vb in raw_vb_list]
         ac = r_ob['Ac']
         if _is_pl_null(ac):
-            ac = None
+            ac_expr = ''
         else:
             ac = ac.decode()
             ac_expr = call_parser_data_rule(ac, part='activation_condition')
-            ac = ActivationCondition.from_raw(ac_expr)
-        ob = ObligationDeclaration((ob, attr), vb, ac)
+        ob = ObligationDeclaration.from_raw((ob, attr), vb, ac_expr)
         ported_obs[port].append(ob)
     logger.debug("Retrieved obligations in %d ports. Summary ({PORT: #-OF-OBLIGATIONS}): %s", len(ported_obs), { port: len(obs) for port, obs in ported_obs.items() })
     return ported_obs
