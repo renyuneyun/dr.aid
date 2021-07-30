@@ -99,6 +99,8 @@
 
     <owl:Class rdf:about="http://www.semanticweb.org/draid/ontologies/2019/9/core#Acknowledge">
         <rdfs:subClassOf rdf:resource="http://www.semanticweb.org/draid/ontologies/2019/9/core#Obligation"/>
+        <rdfs:comment>The user should properly acknowledge the data source, using the statement contained in the argument.
+The argument should be a string representing the expected form of acknowledgement.</rdfs:comment>
     </owl:Class>
     
 
@@ -156,6 +158,8 @@
 
     <owl:Class rdf:about="http://www.semanticweb.org/draid/ontologies/2019/9/core#Cite">
         <rdfs:subClassOf rdf:resource="http://www.semanticweb.org/draid/ontologies/2019/9/core#Obligation"/>
+        <rdfs:comment>The user should properly give citation to the given source, represented in the argument.
+The argument should be the citation target, either as text (string) in an appropriate citation style, or a URL to a webpage containing the appropriate text.</rdfs:comment>
     </owl:Class>
     
 
@@ -189,6 +193,8 @@
 
     <owl:Class rdf:about="http://www.semanticweb.org/draid/ontologies/2019/9/core#Include">
         <rdfs:subClassOf rdf:resource="http://www.semanticweb.org/draid/ontologies/2019/9/core#Obligation"/>
+        <rdfs:comment>User should read the precise policy represented in the argument.
+It should normally be an URL to a single policy text, or the policy text itself.</rdfs:comment>
     </owl:Class>
     
 
@@ -243,6 +249,16 @@
 
     <owl:Class rdf:about="http://www.semanticweb.org/draid/ontologies/2019/9/core#Processing">
         <rdfs:subClassOf rdf:resource="http://www.semanticweb.org/draid/ontologies/2019/9/core#Stage"/>
+    </owl:Class>
+    
+
+
+    <!-- http://www.semanticweb.org/draid/ontologies/2019/9/core#Report -->
+
+    <owl:Class rdf:about="http://www.semanticweb.org/draid/ontologies/2019/9/core#Report">
+        <rdfs:subClassOf rdf:resource="http://www.semanticweb.org/draid/ontologies/2019/9/core#Obligation"/>
+        <rdfs:comment>User should report their usage of the data to the location represented in the argument.
+The argument should be a URL.</rdfs:comment>
     </owl:Class>
     
 
