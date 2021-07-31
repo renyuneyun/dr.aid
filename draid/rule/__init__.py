@@ -1,5 +1,9 @@
 from . import parser
-from .activation import ActivationCondition, EqualAC, NEqualAC, Never
+from .activation import (
+                ActivationCondition,
+                EqualAC, NEqualAC, Never,
+                And, Or, Not,
+                )
 from .data_rule import (
         ActivatedObligation,
         Attribute,

@@ -15,6 +15,14 @@ import pytest
 
 from draid.rule import parser
 from draid.rule import ObligationDeclaration, DataRuleContainer, AttributeCapsule, FlowRule, Propagate, Edit, Delete
+from draid.rule.activation import (
+        EqualAC,
+        NEqualAC,
+        Never,
+        And,
+        Or,
+        Not,
+        )
 
 
 @pytest.mark.parametrize('s, attrcap', [
@@ -69,6 +77,31 @@ def test_simple_obligations(s, rule):
     ])
 def test_obligation_with_attribute(s, obligations, amap):
     rule = DataRuleContainer(obligations, amap)
+    assert parser.parse_data_rule(s) == rule
+
+
+@pytest.mark.parametrize('s, rule', [
+    ('''begin
+        obligation(ob1, [], action = "publish").
+    end''', DataRuleContainer([ObligationDeclaration('ob1', activation_condition=EqualAC('action', 'publish'))], [])),
+
+    ('''begin
+        obligation(ob1, [], stage != "import").
+    end''', DataRuleContainer([ObligationDeclaration('ob1', activation_condition=NEqualAC('stage', 'import'))], [])),
+
+    ('''begin
+        obligation(ob1, [], (stage != "import") and (action = "publish")).
+    end''', DataRuleContainer([ObligationDeclaration('ob1', activation_condition=And(NEqualAC('stage', 'import'), EqualAC('action', 'publish')))], [])),
+
+    ('''begin
+        obligation(ob1, [], stage != "import" and action = "publish").
+    end''', DataRuleContainer([ObligationDeclaration('ob1', activation_condition=And(NEqualAC('stage', 'import'), EqualAC('action', 'publish')))], [])),
+
+    ('''begin
+        obligation(ob1, [], (stage != "import") and ((action = "publish") or (not user = "rand_user"))).
+    end''', DataRuleContainer([ObligationDeclaration('ob1', activation_condition=And(NEqualAC('stage', 'import'), Or(EqualAC('action', 'publish'), Not(EqualAC('user', 'rand_user')))))], [])),
+    ])
+def test_obligations_with_activation(s, rule):
     assert parser.parse_data_rule(s) == rule
 
 

@@ -20,6 +20,7 @@ import re
 from typing import Dict, List, Optional, Union, Tuple, Type
 
 from .data_rule import ObligationDeclaration, DataRuleContainer, AttributeCapsule
+from .activation import And, Or, Not
 from .flow_rule import FlowRule, Propagate, Edit, Delete
 
 
@@ -42,11 +43,16 @@ attribute_value_field : attribute_value_expr
 action_ref : external_identifier
 action_spec : attribute_reference*
 attribute_reference : attribute_name [ "[" INT "]" ]
-activation_condition_expr : AC_TARGET OPERATOR ac_value
+activation_condition_expr : activation_condition_expr BINARY_CONNECTIVE activation_condition_expr
+                            | UNARY_CONNECTIVE activation_condition_expr
+                            | AC_TARGET OPERATOR ac_value
+                            | "(" activation_condition_expr ")"
 identifier : CNAME
 attribute_value_expr : attribute_type attribute_value
 NULL : "null"
 external_identifier : identifier | STRING
+BINARY_CONNECTIVE : "and" | "or"
+UNARY_CONNECTIVE : "not"
 AC_TARGET : "action" | "stage" | "user" | "date" | "processId" | "purpose"
 OPERATOR : "=" | "!="
 ac_value : value | ANY
@@ -138,8 +144,30 @@ class TreeToDataRuleContent(Transformer):
             return None
         return item
     def activation_condition_expr(self, items):
-        ac_target, operator, ac_value = items
-        return (operator, (ac_target, ac_value))
+        if len(items) == 1:
+            (items,) = items
+            return items
+        elif items[0] == Not:
+            return (items[0], items[1])
+        elif items[1] == And or items[1] == Or:
+            return (items[1], items[0], items[2])
+        else:
+            ac_target, operator, ac_value = items
+            return (operator, (ac_target, ac_value))
+    def BINARY_CONNECTIVE(self, s):
+        s = str(s)
+        if s == 'and':
+            return And
+        elif s == 'or':
+            return Or
+        else:
+            raise MalformedRuleException(f'binary logic connective can only be "and" or "or", but "{s}" got')
+    def UNARY_CONNECTIVE(self, s):
+        s = str(s)
+        if s == 'not':
+            return Not
+        else:
+            raise MalformedRuleException(f'unary logic connective can only be "not", but "{s}" got')
     def AC_TARGET(self, s):
         return str(s)
     def OPERATOR(self, s):
