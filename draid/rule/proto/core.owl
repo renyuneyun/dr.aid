@@ -1,12 +1,12 @@
 <?xml version="1.0"?>
-<rdf:RDF xmlns="http://www.semanticweb.org/draid/ontologies/2019/9/untitled-ontology-21#"
-     xml:base="http://www.semanticweb.org/draid/ontologies/2019/9/untitled-ontology-21"
+<rdf:RDF xmlns="https://github.com/renyuneyun/dr.aid/raw/master/draid/rule/proto/core.owl#"
+     xml:base="https://github.com/renyuneyun/dr.aid/raw/master/draid/rule/proto/core.owl"
      xmlns:owl="http://www.w3.org/2002/07/owl#"
      xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
      xmlns:xml="http://www.w3.org/XML/1998/namespace"
      xmlns:xsd="http://www.w3.org/2001/XMLSchema#"
      xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#">
-    <owl:Ontology rdf:about="http://www.semanticweb.org/draid/ontologies/2019/9/core"/>
+    <owl:Ontology rdf:about="https://github.com/renyuneyun/dr.aid/raw/master/draid/rule/proto/core.owl"/>
     
 
 
@@ -21,129 +21,129 @@
     
 
 
-    <!-- http://www.semanticweb.org/draid/ontologies/2019/9/core#Acknowledge -->
+    <!-- https://github.com/renyuneyun/dr.aid/raw/master/draid/rule/proto/core.owl#Acknowledge -->
 
-    <owl:Class rdf:about="http://www.semanticweb.org/draid/ontologies/2019/9/core#Acknowledge">
-        <rdfs:subClassOf rdf:resource="http://www.semanticweb.org/draid/ontologies/2019/9/core#Obligation"/>
+    <owl:Class rdf:about="https://github.com/renyuneyun/dr.aid/raw/master/draid/rule/proto/core.owl#Acknowledge">
+        <rdfs:subClassOf rdf:resource="https://github.com/renyuneyun/dr.aid/raw/master/draid/rule/proto/core.owl#Obligation"/>
         <rdfs:comment>The user should properly acknowledge the data source, using the statement contained in the argument.
 The argument should be a string representing the expected form of acknowledgement.</rdfs:comment>
     </owl:Class>
     
 
 
-    <!-- http://www.semanticweb.org/draid/ontologies/2019/9/core#Cite -->
+    <!-- https://github.com/renyuneyun/dr.aid/raw/master/draid/rule/proto/core.owl#Cite -->
 
-    <owl:Class rdf:about="http://www.semanticweb.org/draid/ontologies/2019/9/core#Cite">
-        <rdfs:subClassOf rdf:resource="http://www.semanticweb.org/draid/ontologies/2019/9/core#Obligation"/>
+    <owl:Class rdf:about="https://github.com/renyuneyun/dr.aid/raw/master/draid/rule/proto/core.owl#Cite">
+        <rdfs:subClassOf rdf:resource="https://github.com/renyuneyun/dr.aid/raw/master/draid/rule/proto/core.owl#Obligation"/>
         <rdfs:comment>The user should properly give citation to the given source, represented in the argument.
 The argument should be the citation target, either as text (string) in an appropriate citation style, or a URL to a webpage containing the appropriate text.</rdfs:comment>
     </owl:Class>
     
 
 
-    <!-- http://www.semanticweb.org/draid/ontologies/2019/9/core#Finished -->
+    <!-- https://github.com/renyuneyun/dr.aid/raw/master/draid/rule/proto/core.owl#Finished -->
 
-    <owl:Class rdf:about="http://www.semanticweb.org/draid/ontologies/2019/9/core#Finished">
-        <rdfs:subClassOf rdf:resource="http://www.semanticweb.org/draid/ontologies/2019/9/core#Stage"/>
-        <owl:disjointWith rdf:resource="http://www.semanticweb.org/draid/ontologies/2019/9/core#Imported"/>
+    <owl:Class rdf:about="https://github.com/renyuneyun/dr.aid/raw/master/draid/rule/proto/core.owl#Finished">
+        <rdfs:subClassOf rdf:resource="https://github.com/renyuneyun/dr.aid/raw/master/draid/rule/proto/core.owl#Stage"/>
+        <owl:disjointWith rdf:resource="https://github.com/renyuneyun/dr.aid/raw/master/draid/rule/proto/core.owl#Imported"/>
     </owl:Class>
     
 
 
-    <!-- http://www.semanticweb.org/draid/ontologies/2019/9/core#ForTesting -->
+    <!-- https://github.com/renyuneyun/dr.aid/raw/master/draid/rule/proto/core.owl#ForTesting -->
 
-    <owl:Class rdf:about="http://www.semanticweb.org/draid/ontologies/2019/9/core#ForTesting">
-        <rdfs:subClassOf rdf:resource="http://www.semanticweb.org/draid/ontologies/2019/9/core#Obligation"/>
+    <owl:Class rdf:about="https://github.com/renyuneyun/dr.aid/raw/master/draid/rule/proto/core.owl#ForTesting">
+        <rdfs:subClassOf rdf:resource="https://github.com/renyuneyun/dr.aid/raw/master/draid/rule/proto/core.owl#Obligation"/>
     </owl:Class>
     
 
 
-    <!-- http://www.semanticweb.org/draid/ontologies/2019/9/core#Imported -->
+    <!-- https://github.com/renyuneyun/dr.aid/raw/master/draid/rule/proto/core.owl#Imported -->
 
-    <owl:Class rdf:about="http://www.semanticweb.org/draid/ontologies/2019/9/core#Imported">
-        <rdfs:subClassOf rdf:resource="http://www.semanticweb.org/draid/ontologies/2019/9/core#Stage"/>
+    <owl:Class rdf:about="https://github.com/renyuneyun/dr.aid/raw/master/draid/rule/proto/core.owl#Imported">
+        <rdfs:subClassOf rdf:resource="https://github.com/renyuneyun/dr.aid/raw/master/draid/rule/proto/core.owl#Stage"/>
     </owl:Class>
     
 
 
-    <!-- http://www.semanticweb.org/draid/ontologies/2019/9/core#Include -->
+    <!-- https://github.com/renyuneyun/dr.aid/raw/master/draid/rule/proto/core.owl#Include -->
 
-    <owl:Class rdf:about="http://www.semanticweb.org/draid/ontologies/2019/9/core#Include">
-        <rdfs:subClassOf rdf:resource="http://www.semanticweb.org/draid/ontologies/2019/9/core#Obligation"/>
+    <owl:Class rdf:about="https://github.com/renyuneyun/dr.aid/raw/master/draid/rule/proto/core.owl#Include">
+        <rdfs:subClassOf rdf:resource="https://github.com/renyuneyun/dr.aid/raw/master/draid/rule/proto/core.owl#Obligation"/>
         <rdfs:comment>User should read the precise policy represented in the argument.
 It should normally be an URL to a single policy text, or the policy text itself.</rdfs:comment>
     </owl:Class>
     
 
 
-    <!-- http://www.semanticweb.org/draid/ontologies/2019/9/core#Obligation -->
+    <!-- https://github.com/renyuneyun/dr.aid/raw/master/draid/rule/proto/core.owl#Obligation -->
 
-    <owl:Class rdf:about="http://www.semanticweb.org/draid/ontologies/2019/9/core#Obligation">
+    <owl:Class rdf:about="https://github.com/renyuneyun/dr.aid/raw/master/draid/rule/proto/core.owl#Obligation">
         <rdfs:comment>Obligated action class</rdfs:comment>
     </owl:Class>
     
 
 
-    <!-- http://www.semanticweb.org/draid/ontologies/2019/9/core#Processing -->
+    <!-- https://github.com/renyuneyun/dr.aid/raw/master/draid/rule/proto/core.owl#Processing -->
 
-    <owl:Class rdf:about="http://www.semanticweb.org/draid/ontologies/2019/9/core#Processing">
-        <rdfs:subClassOf rdf:resource="http://www.semanticweb.org/draid/ontologies/2019/9/core#Stage"/>
+    <owl:Class rdf:about="https://github.com/renyuneyun/dr.aid/raw/master/draid/rule/proto/core.owl#Processing">
+        <rdfs:subClassOf rdf:resource="https://github.com/renyuneyun/dr.aid/raw/master/draid/rule/proto/core.owl#Stage"/>
     </owl:Class>
     
 
 
-    <!-- http://www.semanticweb.org/draid/ontologies/2019/9/core#Report -->
+    <!-- https://github.com/renyuneyun/dr.aid/raw/master/draid/rule/proto/core.owl#Report -->
 
-    <owl:Class rdf:about="http://www.semanticweb.org/draid/ontologies/2019/9/core#Report">
-        <rdfs:subClassOf rdf:resource="http://www.semanticweb.org/draid/ontologies/2019/9/core#Obligation"/>
+    <owl:Class rdf:about="https://github.com/renyuneyun/dr.aid/raw/master/draid/rule/proto/core.owl#Report">
+        <rdfs:subClassOf rdf:resource="https://github.com/renyuneyun/dr.aid/raw/master/draid/rule/proto/core.owl#Obligation"/>
         <rdfs:comment>User should report their usage of the data to the location represented in the argument.
 The argument should be a URL.</rdfs:comment>
     </owl:Class>
     
 
 
-    <!-- http://www.semanticweb.org/draid/ontologies/2019/9/core#Stage -->
+    <!-- https://github.com/renyuneyun/dr.aid/raw/master/draid/rule/proto/core.owl#Stage -->
 
-    <owl:Class rdf:about="http://www.semanticweb.org/draid/ontologies/2019/9/core#Stage"/>
+    <owl:Class rdf:about="https://github.com/renyuneyun/dr.aid/raw/master/draid/rule/proto/core.owl#Stage"/>
     
 
 
-    <!-- http://www.semanticweb.org/draid/ontologies/2019/9/core#credit -->
+    <!-- https://github.com/renyuneyun/dr.aid/raw/master/draid/rule/proto/core.owl#credit -->
 
-    <owl:Class rdf:about="http://www.semanticweb.org/draid/ontologies/2019/9/core#credit">
-        <rdfs:subClassOf rdf:resource="http://www.semanticweb.org/draid/ontologies/2019/9/core#ForTesting"/>
+    <owl:Class rdf:about="https://github.com/renyuneyun/dr.aid/raw/master/draid/rule/proto/core.owl#credit">
+        <rdfs:subClassOf rdf:resource="https://github.com/renyuneyun/dr.aid/raw/master/draid/rule/proto/core.owl#ForTesting"/>
     </owl:Class>
     
 
 
-    <!-- http://www.semanticweb.org/draid/ontologies/2019/9/core#hide -->
+    <!-- https://github.com/renyuneyun/dr.aid/raw/master/draid/rule/proto/core.owl#hide -->
 
-    <owl:Class rdf:about="http://www.semanticweb.org/draid/ontologies/2019/9/core#hide">
-        <rdfs:subClassOf rdf:resource="http://www.semanticweb.org/draid/ontologies/2019/9/core#ForTesting"/>
+    <owl:Class rdf:about="https://github.com/renyuneyun/dr.aid/raw/master/draid/rule/proto/core.owl#hide">
+        <rdfs:subClassOf rdf:resource="https://github.com/renyuneyun/dr.aid/raw/master/draid/rule/proto/core.owl#ForTesting"/>
     </owl:Class>
     
 
 
-    <!-- http://www.semanticweb.org/draid/ontologies/2019/9/core#ob1 -->
+    <!-- https://github.com/renyuneyun/dr.aid/raw/master/draid/rule/proto/core.owl#ob1 -->
 
-    <owl:Class rdf:about="http://www.semanticweb.org/draid/ontologies/2019/9/core#ob1">
-        <rdfs:subClassOf rdf:resource="http://www.semanticweb.org/draid/ontologies/2019/9/core#ForTesting"/>
+    <owl:Class rdf:about="https://github.com/renyuneyun/dr.aid/raw/master/draid/rule/proto/core.owl#ob1">
+        <rdfs:subClassOf rdf:resource="https://github.com/renyuneyun/dr.aid/raw/master/draid/rule/proto/core.owl#ForTesting"/>
     </owl:Class>
     
 
 
-    <!-- http://www.semanticweb.org/draid/ontologies/2019/9/core#ob2 -->
+    <!-- https://github.com/renyuneyun/dr.aid/raw/master/draid/rule/proto/core.owl#ob2 -->
 
-    <owl:Class rdf:about="http://www.semanticweb.org/draid/ontologies/2019/9/core#ob2">
-        <rdfs:subClassOf rdf:resource="http://www.semanticweb.org/draid/ontologies/2019/9/core#ForTesting"/>
+    <owl:Class rdf:about="https://github.com/renyuneyun/dr.aid/raw/master/draid/rule/proto/core.owl#ob2">
+        <rdfs:subClassOf rdf:resource="https://github.com/renyuneyun/dr.aid/raw/master/draid/rule/proto/core.owl#ForTesting"/>
     </owl:Class>
     
 
 
-    <!-- http://www.semanticweb.org/draid/ontologies/2019/9/core#ru1 -->
+    <!-- https://github.com/renyuneyun/dr.aid/raw/master/draid/rule/proto/core.owl#ru1 -->
 
-    <owl:Class rdf:about="http://www.semanticweb.org/draid/ontologies/2019/9/core#ru1">
-        <rdfs:subClassOf rdf:resource="http://www.semanticweb.org/draid/ontologies/2019/9/core#ForTesting"/>
+    <owl:Class rdf:about="https://github.com/renyuneyun/dr.aid/raw/master/draid/rule/proto/core.owl#ru1">
+        <rdfs:subClassOf rdf:resource="https://github.com/renyuneyun/dr.aid/raw/master/draid/rule/proto/core.owl#ForTesting"/>
     </owl:Class>
 </rdf:RDF>
 
