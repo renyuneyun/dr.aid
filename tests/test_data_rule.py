@@ -20,6 +20,11 @@ from draid.rule import EqualAC
 WhenImported = EqualAC('stage', 'import')
 
 
+NAMESPACES = {
+        'test': 'test.owl',
+        }
+
+
 pc1 = AttributeCapsule.from_raw('pr1', [('str', 'a')])
 pc1_2 = AttributeCapsule.from_raw('pr1', [('str', 'b'), ('str', 'a'), ('str', 'c')])
 pc_m = AttributeCapsule.from_raw('pr1', [('str', 'a'), ('str', 'b'), ('str', 'c')])
@@ -27,12 +32,12 @@ pc_m = AttributeCapsule.from_raw('pr1', [('str', 'a'), ('str', 'b'), ('str', 'c'
 pc2 = AttributeCapsule.from_raw('pr2', [('str', 'A'), ('str', 'B'), ('str', 'C')])
 
 ob1 = (
-        ObligationDeclaration('ob1'),
-        ObligationDeclaration('ob1', [('pr1', 0)]),
-        ObligationDeclaration('ob1', [('pr1', 0)], WhenImported),
+        ObligationDeclaration('test:ob1', namespaces=NAMESPACES),
+        ObligationDeclaration('test:ob1', [('pr1', 0)], namespaces=NAMESPACES),
+        ObligationDeclaration('test:ob1', [('pr1', 0)], WhenImported, namespaces=NAMESPACES),
         )
-ob2 = ObligationDeclaration('ob2', [('pr2', 0)])
-ob3 = ObligationDeclaration('ob2', [('pr2', 1)])
+ob2 = ObligationDeclaration('test:ob2', [('pr2', 0)], namespaces=NAMESPACES)
+ob3 = ObligationDeclaration('test:ob2', [('pr2', 1)], namespaces=NAMESPACES)
 
 rule1 = DataRuleContainer([ob1[0], ob1[1], ob2], [pc1, pc2])
 rule2 = DataRuleContainer([ob1[0], ob1[1], ob2, ob3], [pc1, pc2])

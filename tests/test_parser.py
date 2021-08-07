@@ -25,6 +25,12 @@ from draid.rule.activation import (
         )
 
 
+NAMESPACES = {
+        '': 'test.owl',
+        'test': 'test.owl',
+        }
+
+
 @pytest.mark.parametrize('s, attrcap', [
     ('''attribute(pr1, ["str" "a", "str" "b"]).''', AttributeCapsule.from_raw('pr1', [('str', 'a'), ('str', 'b')]))
     ])
@@ -43,9 +49,9 @@ def test_empty_rule(s, rule):
 
 @pytest.mark.parametrize('s, rule', [
     ('''begin
-        obligation(ob1, [], null).
-        obligation(ob2, [], null).
-    end''', DataRuleContainer([ObligationDeclaration('ob1'), ObligationDeclaration('ob2')], []))
+        obligation("test:ob1", [], null).
+        obligation("test:ob2", [], null).
+    end''', DataRuleContainer([ObligationDeclaration(':ob1', namespaces=NAMESPACES), ObligationDeclaration(':ob2', namespaces=NAMESPACES)], []))
     ])
 def test_simple_obligations(s, rule):
     assert parser.parse_data_rule(s) == rule
@@ -53,27 +59,27 @@ def test_simple_obligations(s, rule):
 
 @pytest.mark.parametrize('s, obligations, amap', [
     ('''begin
-        obligation(ob1, [pr1], null).
+        obligation("test:ob1", [pr1], null).
         attribute(pr1, "str" "ddd").
-    end''', [ObligationDeclaration('ob1', [('pr1', 0)])], [AttributeCapsule.from_raw('pr1', [('str', 'ddd')])]),
+    end''', [ObligationDeclaration(':ob1', [('pr1', 0)], namespaces=NAMESPACES)], [AttributeCapsule.from_raw('pr1', [('str', 'ddd')])]),
 
     ('''
     begin
 
-        obligation (ob1, [], null).
+        obligation ("test:ob1", [], null).
 
-        obligation ( ob2, [pr1], null).
+        obligation ("test:ob2", [pr1], null).
 
         attribute (pr1, "str" "www")  .
 
-    end''', [ObligationDeclaration('ob1'), ObligationDeclaration('ob2', [('pr1', 0)])], [AttributeCapsule.from_raw('pr1', [('str', 'www')])]),
+    end''', [ObligationDeclaration(':ob1', namespaces=NAMESPACES), ObligationDeclaration(':ob2', [('pr1', 0)], namespaces=NAMESPACES)], [AttributeCapsule.from_raw('pr1', [('str', 'www')])]),
 
     ('''begin
-        obligation (ob1, [pr1[0]], null) .
-        obligation (ob2, [pr1[1]], null) .
+        obligation ("test:ob1", [pr1[0]], null) .
+        obligation ("test:ob2", [pr1[1]], null) .
         attribute (pr1, ["str" 1, "str" 2]) .
     end
-    ''', [ObligationDeclaration('ob1', [('pr1', 0)]), ObligationDeclaration('ob2', [('pr1', 1)])], [AttributeCapsule.from_raw('pr1', [('str', 1), ('str', 2)])]),
+    ''', [ObligationDeclaration(':ob1', [('pr1', 0)]), ObligationDeclaration(':ob2', [('pr1', 1)])], [AttributeCapsule.from_raw('pr1', [('str', 1), ('str', 2)])]),
     ])
 def test_obligation_with_attribute(s, obligations, amap):
     rule = DataRuleContainer(obligations, amap)
@@ -82,24 +88,24 @@ def test_obligation_with_attribute(s, obligations, amap):
 
 @pytest.mark.parametrize('s, rule', [
     ('''begin
-        obligation(ob1, [], action = "publish").
-    end''', DataRuleContainer([ObligationDeclaration('ob1', activation_condition=EqualAC('action', 'publish'))], [])),
+        obligation("test:ob1", [], action = "publish").
+    end''', DataRuleContainer([ObligationDeclaration(':ob1', activation_condition=EqualAC('action', 'publish'), namespaces=NAMESPACES)], [])),
 
     ('''begin
-        obligation(ob1, [], stage != "import").
-    end''', DataRuleContainer([ObligationDeclaration('ob1', activation_condition=NEqualAC('stage', 'import'))], [])),
+        obligation("test:ob1", [], stage != "import").
+    end''', DataRuleContainer([ObligationDeclaration(':ob1', activation_condition=NEqualAC('stage', 'import'), namespaces=NAMESPACES)], [])),
 
     ('''begin
-        obligation(ob1, [], (stage != "import") and (action = "publish")).
-    end''', DataRuleContainer([ObligationDeclaration('ob1', activation_condition=And(NEqualAC('stage', 'import'), EqualAC('action', 'publish')))], [])),
+        obligation("test:ob1", [], (stage != "import") and (action = "publish")).
+    end''', DataRuleContainer([ObligationDeclaration(':ob1', activation_condition=And(NEqualAC('stage', 'import'), EqualAC('action', 'publish')), namespaces=NAMESPACES)], [])),
 
     ('''begin
-        obligation(ob1, [], stage != "import" and action = "publish").
-    end''', DataRuleContainer([ObligationDeclaration('ob1', activation_condition=And(NEqualAC('stage', 'import'), EqualAC('action', 'publish')))], [])),
+        obligation("test:ob1", [], stage != "import" and action = "publish").
+    end''', DataRuleContainer([ObligationDeclaration(':ob1', activation_condition=And(NEqualAC('stage', 'import'), EqualAC('action', 'publish')), namespaces=NAMESPACES)], [])),
 
     ('''begin
-        obligation(ob1, [], (stage != "import") and ((action = "publish") or (not user = "rand_user"))).
-    end''', DataRuleContainer([ObligationDeclaration('ob1', activation_condition=And(NEqualAC('stage', 'import'), Or(EqualAC('action', 'publish'), Not(EqualAC('user', 'rand_user')))))], [])),
+        obligation("test:ob1", [], (stage != "import") and ((action = "publish") or (not user = "rand_user"))).
+    end''', DataRuleContainer([ObligationDeclaration(':ob1', activation_condition=And(NEqualAC('stage', 'import'), Or(EqualAC('action', 'publish'), Not(EqualAC('user', 'rand_user')))), namespaces=NAMESPACES)], [])),
     ])
 def test_obligations_with_activation(s, rule):
     assert parser.parse_data_rule(s) == rule

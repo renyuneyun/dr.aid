@@ -24,7 +24,8 @@ when_imported = EqualAC('stage', 'import')
 
 
 NAMESPACES = {
-        'core': 'core.owl',
+        '': 'test.owl',
+        'test': 'test.owl',
         }
 
 
@@ -40,25 +41,25 @@ def test_attribute_serialise(name, values):
 
 
 @pytest.mark.parametrize('name, validity_binding, activation_condition', [
-    ('ru1', [('a', 1)], None),
     (':ru1', [('a', 1)], None),
-    (':ru1', [('a', 1)], when_imported),
-    (':ru1', [('a', 1)], on_publish),
-    (':ru1', [('a', 1)], And(on_publish, when_imported)),
-    (':ru1', [('a', 1)], Or(on_publish, when_imported)),
-    (':ru1', [('a', 1)], Not(on_publish)),
-    ('core:ru1', [('a', 1)], when_imported),
+    ('test:ru1', [('a', 1)], None),
+    ('test:ru1', [('a', 1)], when_imported),
+    ('test:ru1', [('a', 1)], on_publish),
+    ('test:ru1', [('a', 1)], And(on_publish, when_imported)),
+    ('test:ru1', [('a', 1)], Or(on_publish, when_imported)),
+    ('test:ru1', [('a', 1)], Not(on_publish)),
     ])
 def test_data_rule_serialise(name, validity_binding, activation_condition):
     r = ObligationDeclaration(name, validity_binding, activation_condition, namespaces=NAMESPACES)
     s = r.dump()
+    print(s)
     _, (obligated_action, validity_binding, activation_condition_ref) = parser.call_parser_data_rule(s, 'obligation_decl')
     r2 = ObligationDeclaration.from_raw(obligated_action, validity_binding, activation_condition_ref, namespaces=NAMESPACES)
     assert r2 == r
 
 
 @pytest.mark.parametrize('obligations, amap', [
-    ([ObligationDeclaration('ob1', [('pr1', 0)]), ObligationDeclaration('ob2', [('pr1', 1)])],
+    ([ObligationDeclaration('test:ob1', [('pr1', 0)], namespaces=NAMESPACES), ObligationDeclaration('test:ob2', [('pr1', 1)])],
         [AttributeCapsule.from_raw('pr1', [('str', '1'), ('str', '2')])]),
     ])
 def test_whole_data_rule_serialise(obligations, amap):

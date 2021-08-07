@@ -37,7 +37,7 @@ class OntologiableString:
             self.nm.bind(k, v)
         if namespaces:
             for k, v in namespaces.items():
-                self.nm.bind(k, v)
+                self.nm.bind(k, v, replace=True)
         self._s = s
         parts = s.split(':')
         if len(parts) == 1:

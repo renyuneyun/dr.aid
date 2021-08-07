@@ -1,12 +1,12 @@
 <?xml version="1.0"?>
-<rdf:RDF xmlns="https://github.com/renyuneyun/dr.aid/raw/master/draid/rule/proto/core.owl#"
-     xml:base="https://github.com/renyuneyun/dr.aid/raw/master/draid/rule/proto/core.owl"
+<rdf:RDF xmlns="urn:draid:core#"
+     xml:base="urn:draid:core"
      xmlns:owl="http://www.w3.org/2002/07/owl#"
      xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
      xmlns:xml="http://www.w3.org/XML/1998/namespace"
      xmlns:xsd="http://www.w3.org/2001/XMLSchema#"
      xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#">
-    <owl:Ontology rdf:about="https://github.com/renyuneyun/dr.aid/raw/master/draid/rule/proto/core.owl"/>
+    <owl:Ontology rdf:about="urn:draid:core"/>
     
 
 
@@ -21,130 +21,82 @@
     
 
 
-    <!-- https://github.com/renyuneyun/dr.aid/raw/master/draid/rule/proto/core.owl#Acknowledge -->
+    <!-- urn:draid:core#Acknowledge -->
 
-    <owl:Class rdf:about="https://github.com/renyuneyun/dr.aid/raw/master/draid/rule/proto/core.owl#Acknowledge">
-        <rdfs:subClassOf rdf:resource="https://github.com/renyuneyun/dr.aid/raw/master/draid/rule/proto/core.owl#Obligation"/>
+    <owl:Class rdf:about="urn:draid:core#Acknowledge">
+        <rdfs:subClassOf rdf:resource="urn:draid:core#Obligation"/>
         <rdfs:comment>The user should properly acknowledge the data source, using the statement contained in the argument.
 The argument should be a string representing the expected form of acknowledgement.</rdfs:comment>
     </owl:Class>
     
 
 
-    <!-- https://github.com/renyuneyun/dr.aid/raw/master/draid/rule/proto/core.owl#Cite -->
+    <!-- urn:draid:core#Cite -->
 
-    <owl:Class rdf:about="https://github.com/renyuneyun/dr.aid/raw/master/draid/rule/proto/core.owl#Cite">
-        <rdfs:subClassOf rdf:resource="https://github.com/renyuneyun/dr.aid/raw/master/draid/rule/proto/core.owl#Obligation"/>
+    <owl:Class rdf:about="urn:draid:core#Cite">
+        <rdfs:subClassOf rdf:resource="urn:draid:core#Obligation"/>
         <rdfs:comment>The user should properly give citation to the given source, represented in the argument.
 The argument should be the citation target, either as text (string) in an appropriate citation style, or a URL to a webpage containing the appropriate text.</rdfs:comment>
     </owl:Class>
     
 
 
-    <!-- https://github.com/renyuneyun/dr.aid/raw/master/draid/rule/proto/core.owl#Finished -->
+    <!-- urn:draid:core#Finished -->
 
-    <owl:Class rdf:about="https://github.com/renyuneyun/dr.aid/raw/master/draid/rule/proto/core.owl#Finished">
-        <rdfs:subClassOf rdf:resource="https://github.com/renyuneyun/dr.aid/raw/master/draid/rule/proto/core.owl#Stage"/>
-        <owl:disjointWith rdf:resource="https://github.com/renyuneyun/dr.aid/raw/master/draid/rule/proto/core.owl#Imported"/>
+    <owl:Class rdf:about="urn:draid:core#Finished">
+        <rdfs:subClassOf rdf:resource="urn:draid:core#Stage"/>
+        <owl:disjointWith rdf:resource="urn:draid:core#Imported"/>
     </owl:Class>
     
 
 
-    <!-- https://github.com/renyuneyun/dr.aid/raw/master/draid/rule/proto/core.owl#ForTesting -->
+    <!-- urn:draid:core#Imported -->
 
-    <owl:Class rdf:about="https://github.com/renyuneyun/dr.aid/raw/master/draid/rule/proto/core.owl#ForTesting">
-        <rdfs:subClassOf rdf:resource="https://github.com/renyuneyun/dr.aid/raw/master/draid/rule/proto/core.owl#Obligation"/>
+    <owl:Class rdf:about="urn:draid:core#Imported">
+        <rdfs:subClassOf rdf:resource="urn:draid:core#Stage"/>
     </owl:Class>
     
 
 
-    <!-- https://github.com/renyuneyun/dr.aid/raw/master/draid/rule/proto/core.owl#Imported -->
+    <!-- urn:draid:core#Include -->
 
-    <owl:Class rdf:about="https://github.com/renyuneyun/dr.aid/raw/master/draid/rule/proto/core.owl#Imported">
-        <rdfs:subClassOf rdf:resource="https://github.com/renyuneyun/dr.aid/raw/master/draid/rule/proto/core.owl#Stage"/>
-    </owl:Class>
-    
-
-
-    <!-- https://github.com/renyuneyun/dr.aid/raw/master/draid/rule/proto/core.owl#Include -->
-
-    <owl:Class rdf:about="https://github.com/renyuneyun/dr.aid/raw/master/draid/rule/proto/core.owl#Include">
-        <rdfs:subClassOf rdf:resource="https://github.com/renyuneyun/dr.aid/raw/master/draid/rule/proto/core.owl#Obligation"/>
+    <owl:Class rdf:about="urn:draid:core#Include">
+        <rdfs:subClassOf rdf:resource="urn:draid:core#Obligation"/>
         <rdfs:comment>User should read the precise policy represented in the argument.
 It should normally be an URL to a single policy text, or the policy text itself.</rdfs:comment>
     </owl:Class>
     
 
 
-    <!-- https://github.com/renyuneyun/dr.aid/raw/master/draid/rule/proto/core.owl#Obligation -->
+    <!-- urn:draid:core#Obligation -->
 
-    <owl:Class rdf:about="https://github.com/renyuneyun/dr.aid/raw/master/draid/rule/proto/core.owl#Obligation">
+    <owl:Class rdf:about="urn:draid:core#Obligation">
         <rdfs:comment>Obligated action class</rdfs:comment>
     </owl:Class>
     
 
 
-    <!-- https://github.com/renyuneyun/dr.aid/raw/master/draid/rule/proto/core.owl#Processing -->
+    <!-- urn:draid:core#Processing -->
 
-    <owl:Class rdf:about="https://github.com/renyuneyun/dr.aid/raw/master/draid/rule/proto/core.owl#Processing">
-        <rdfs:subClassOf rdf:resource="https://github.com/renyuneyun/dr.aid/raw/master/draid/rule/proto/core.owl#Stage"/>
+    <owl:Class rdf:about="urn:draid:core#Processing">
+        <rdfs:subClassOf rdf:resource="urn:draid:core#Stage"/>
     </owl:Class>
     
 
 
-    <!-- https://github.com/renyuneyun/dr.aid/raw/master/draid/rule/proto/core.owl#Report -->
+    <!-- urn:draid:core#Report -->
 
-    <owl:Class rdf:about="https://github.com/renyuneyun/dr.aid/raw/master/draid/rule/proto/core.owl#Report">
-        <rdfs:subClassOf rdf:resource="https://github.com/renyuneyun/dr.aid/raw/master/draid/rule/proto/core.owl#Obligation"/>
+    <owl:Class rdf:about="urn:draid:core#Report">
+        <rdfs:subClassOf rdf:resource="urn:draid:core#Obligation"/>
         <rdfs:comment>User should report their usage of the data to the location represented in the argument.
 The argument should be a URL.</rdfs:comment>
     </owl:Class>
     
 
 
-    <!-- https://github.com/renyuneyun/dr.aid/raw/master/draid/rule/proto/core.owl#Stage -->
+    <!-- urn:draid:core#Stage -->
 
-    <owl:Class rdf:about="https://github.com/renyuneyun/dr.aid/raw/master/draid/rule/proto/core.owl#Stage"/>
-    
-
-
-    <!-- https://github.com/renyuneyun/dr.aid/raw/master/draid/rule/proto/core.owl#credit -->
-
-    <owl:Class rdf:about="https://github.com/renyuneyun/dr.aid/raw/master/draid/rule/proto/core.owl#credit">
-        <rdfs:subClassOf rdf:resource="https://github.com/renyuneyun/dr.aid/raw/master/draid/rule/proto/core.owl#ForTesting"/>
-    </owl:Class>
-    
-
-
-    <!-- https://github.com/renyuneyun/dr.aid/raw/master/draid/rule/proto/core.owl#hide -->
-
-    <owl:Class rdf:about="https://github.com/renyuneyun/dr.aid/raw/master/draid/rule/proto/core.owl#hide">
-        <rdfs:subClassOf rdf:resource="https://github.com/renyuneyun/dr.aid/raw/master/draid/rule/proto/core.owl#ForTesting"/>
-    </owl:Class>
-    
-
-
-    <!-- https://github.com/renyuneyun/dr.aid/raw/master/draid/rule/proto/core.owl#ob1 -->
-
-    <owl:Class rdf:about="https://github.com/renyuneyun/dr.aid/raw/master/draid/rule/proto/core.owl#ob1">
-        <rdfs:subClassOf rdf:resource="https://github.com/renyuneyun/dr.aid/raw/master/draid/rule/proto/core.owl#ForTesting"/>
-    </owl:Class>
-    
-
-
-    <!-- https://github.com/renyuneyun/dr.aid/raw/master/draid/rule/proto/core.owl#ob2 -->
-
-    <owl:Class rdf:about="https://github.com/renyuneyun/dr.aid/raw/master/draid/rule/proto/core.owl#ob2">
-        <rdfs:subClassOf rdf:resource="https://github.com/renyuneyun/dr.aid/raw/master/draid/rule/proto/core.owl#ForTesting"/>
-    </owl:Class>
-    
-
-
-    <!-- https://github.com/renyuneyun/dr.aid/raw/master/draid/rule/proto/core.owl#ru1 -->
-
-    <owl:Class rdf:about="https://github.com/renyuneyun/dr.aid/raw/master/draid/rule/proto/core.owl#ru1">
-        <rdfs:subClassOf rdf:resource="https://github.com/renyuneyun/dr.aid/raw/master/draid/rule/proto/core.owl#ForTesting"/>
-    </owl:Class>
+    <owl:Class rdf:about="urn:draid:core#Stage"/>
 </rdf:RDF>
 
 

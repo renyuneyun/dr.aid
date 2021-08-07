@@ -8,6 +8,13 @@ from draid.rule import EqualAC
 
 from draid.reason import prolog_handle
 
+
+NAMESPACES = {
+        '': 'test.owl',
+        'test': 'test.owl',
+        }
+
+
 WhenImported = EqualAC('stage', 'import')
 
 pc1 = AttributeCapsule.from_raw('name', [('str', 'UoE')])
@@ -19,12 +26,12 @@ pc1_2 = AttributeCapsule.from_raw('name', [
 pc2 = AttributeCapsule.from_raw('sens', [('str', '1')])
 
 ob1 = (
-        ObligationDeclaration('credit', [('name', 0)]),
-        ObligationDeclaration('credit', [('name', 1)]),
-        ObligationDeclaration('credit', [('name', 0)], WhenImported),
-        ObligationDeclaration('credit', [('name', 1)], WhenImported),
+        ObligationDeclaration(':credit', [('name', 0)], namespaces=NAMESPACES),
+        ObligationDeclaration(':credit', [('name', 1)], namespaces=NAMESPACES),
+        ObligationDeclaration(':credit', [('name', 0)], WhenImported, namespaces=NAMESPACES),
+        ObligationDeclaration(':credit', [('name', 1)], WhenImported, namespaces=NAMESPACES),
         )
-ob2 = ObligationDeclaration('hide', [('sens', 0)])
+ob2 = ObligationDeclaration(':hide', [('sens', 0)], namespaces=NAMESPACES)
 
 rule1 = DataRuleContainer([ob1[0], ob2], [pc1, pc2])
 # rule2 = DataRuleContainer([ob1[0], ob1[1], ob2, ob3], [pc1, pc2])
